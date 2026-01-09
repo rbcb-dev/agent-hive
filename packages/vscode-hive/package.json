@@ -2,7 +2,7 @@
   "name": "vscode-hive",
   "displayName": "Agent Hive",
   "description": "From Vibe Coding to Hive Coding - Review and approve AI-generated plans",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "tctinh",
   "license": "MIT WITH Commons-Clause",
   "icon": "icon.png",
@@ -30,7 +30,7 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:.hive"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {

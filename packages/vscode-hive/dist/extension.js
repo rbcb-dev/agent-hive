@@ -637,142 +637,202 @@ function findHiveRoot(startPath) {
   }
   return null;
 }
-function activate(context) {
-  const workspaceFolder = vscode5.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!workspaceFolder) return;
-  const workspaceRoot = findHiveRoot(workspaceFolder);
-  if (!workspaceRoot) return;
-  const sidebarProvider = new HiveSidebarProvider(workspaceRoot);
-  const launcher = new Launcher(workspaceRoot);
-  const commentController = new PlanCommentController(workspaceRoot);
-  vscode5.window.registerTreeDataProvider("hive.features", sidebarProvider);
-  commentController.registerCommands(context);
-  context.subscriptions.push(
-    vscode5.commands.registerCommand("hive.refresh", () => {
-      sidebarProvider.refresh();
-    }),
-    vscode5.commands.registerCommand("hive.newFeature", async () => {
-      const name = await vscode5.window.showInputBox({
-        prompt: "Feature name",
-        placeHolder: "my-feature"
-      });
-      if (name) {
-        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-        terminal.sendText(`opencode --command "/hive ${name}"`);
-        terminal.show();
+var HiveExtension = class {
+  constructor(context, workspaceFolder) {
+    this.context = context;
+    this.workspaceFolder = workspaceFolder;
+    this.sidebarProvider = null;
+    this.launcher = null;
+    this.commentController = null;
+    this.hiveWatcher = null;
+    this.creationWatcher = null;
+    this.workspaceRoot = null;
+    this.initialized = false;
+  }
+  initialize() {
+    this.workspaceRoot = findHiveRoot(this.workspaceFolder);
+    if (this.workspaceRoot) {
+      this.initializeWithHive(this.workspaceRoot);
+    } else {
+      this.initializeWithoutHive();
+    }
+  }
+  initializeWithHive(workspaceRoot) {
+    if (this.initialized) return;
+    this.initialized = true;
+    this.sidebarProvider = new HiveSidebarProvider(workspaceRoot);
+    this.launcher = new Launcher(workspaceRoot);
+    this.commentController = new PlanCommentController(workspaceRoot);
+    vscode5.window.registerTreeDataProvider("hive.features", this.sidebarProvider);
+    this.commentController.registerCommands(this.context);
+    this.hiveWatcher = new HiveWatcher(workspaceRoot, () => this.sidebarProvider?.refresh());
+    this.context.subscriptions.push({ dispose: () => this.hiveWatcher?.dispose() });
+    if (this.creationWatcher) {
+      this.creationWatcher.dispose();
+      this.creationWatcher = null;
+    }
+  }
+  initializeWithoutHive() {
+    this.creationWatcher = vscode5.workspace.createFileSystemWatcher(
+      new vscode5.RelativePattern(this.workspaceFolder, ".hive/**")
+    );
+    const onHiveCreated = () => {
+      const newRoot = findHiveRoot(this.workspaceFolder);
+      if (newRoot && !this.initialized) {
+        this.workspaceRoot = newRoot;
+        this.initializeWithHive(newRoot);
+        vscode5.window.showInformationMessage("Hive: .hive directory detected, extension activated");
       }
-    }),
-    vscode5.commands.registerCommand("hive.openFeatureInOpenCode", (featureName) => {
-      launcher.openFeature("opencode", featureName);
-    }),
-    vscode5.commands.registerCommand("hive.openTaskInOpenCode", (item) => {
-      if (item?.featureName && item?.folder) {
-        launcher.openStep("opencode", item.featureName, item.folder);
-      }
-    }),
-    vscode5.commands.registerCommand("hive.openFile", (filePath) => {
-      if (filePath) {
-        vscode5.workspace.openTextDocument(filePath).then((doc) => vscode5.window.showTextDocument(doc));
-      }
-    }),
-    vscode5.commands.registerCommand("hive.approvePlan", async (item) => {
-      if (item?.featureName) {
-        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-        terminal.sendText(`opencode --command "hive_plan_approve"`);
-        terminal.show();
-      }
-    }),
-    vscode5.commands.registerCommand("hive.syncTasks", async (item) => {
-      if (item?.featureName) {
-        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-        terminal.sendText(`opencode --command "hive_tasks_sync"`);
-        terminal.show();
-      }
-    }),
-    vscode5.commands.registerCommand("hive.startTask", async (item) => {
-      if (item?.featureName && item?.folder) {
-        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-        terminal.sendText(`opencode --command "hive_exec_start task=${item.folder}"`);
-        terminal.show();
-      }
-    }),
-    vscode5.commands.registerCommand("hive.openSession", async (item) => {
-      if (item?.session?.sessionId) {
-        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-        terminal.sendText(`opencode --session "${item.session.sessionId}"`);
-        terminal.show();
-      }
-    }),
-    vscode5.commands.registerCommand("hive.plan.doneReview", async () => {
-      const editor = vscode5.window.activeTextEditor;
-      if (!editor) return;
-      const filePath = editor.document.uri.fsPath;
-      const featureMatch = filePath.match(/\.hive\/features\/([^/]+)\/plan\.md$/);
-      if (!featureMatch) {
-        vscode5.window.showErrorMessage("Not a plan.md file");
-        return;
-      }
-      const featureName = featureMatch[1];
-      const featureJsonPath = path3.join(workspaceRoot, ".hive", "features", featureName, "feature.json");
-      const commentsPath = path3.join(workspaceRoot, ".hive", "features", featureName, "comments.json");
-      let sessionId;
-      let comments2 = [];
-      try {
-        const featureData = JSON.parse(fs3.readFileSync(featureJsonPath, "utf-8"));
-        sessionId = featureData.sessionId;
-      } catch (error) {
-        console.warn(`Hive: failed to read sessionId for feature '${featureName}'`, error);
-      }
-      try {
-        const commentsData = JSON.parse(fs3.readFileSync(commentsPath, "utf-8"));
-        comments2 = commentsData.threads || [];
-      } catch (error) {
-        console.warn(`Hive: failed to read comments for feature '${featureName}'`, error);
-      }
-      const hasComments = comments2.length > 0;
-      const inputPrompt = hasComments ? `${comments2.length} comment(s) found. Add feedback or leave empty to submit comments only` : "Enter your review feedback (or leave empty to approve)";
-      const userInput = await vscode5.window.showInputBox({
-        prompt: inputPrompt,
-        placeHolder: hasComments ? "Additional feedback (optional)" : 'e.g., "looks good" to approve, or describe changes needed'
-      });
-      if (userInput === void 0) return;
-      let prompt;
-      if (hasComments) {
-        const allComments = comments2.map((c) => `Line ${c.line}: ${c.body}`).join("\n");
-        if (userInput === "") {
-          prompt = `User review comments:
+    };
+    this.creationWatcher.onDidCreate(onHiveCreated);
+    this.context.subscriptions.push(this.creationWatcher);
+  }
+  registerCommands() {
+    const workspaceFolder = this.workspaceFolder;
+    this.context.subscriptions.push(
+      vscode5.commands.registerCommand("hive.refresh", () => {
+        if (!this.initialized) {
+          const newRoot = findHiveRoot(workspaceFolder);
+          if (newRoot) {
+            this.workspaceRoot = newRoot;
+            this.initializeWithHive(newRoot);
+          } else {
+            vscode5.window.showWarningMessage("Hive: No .hive directory found. Create a feature with OpenCode first.");
+            return;
+          }
+        }
+        this.sidebarProvider?.refresh();
+      }),
+      vscode5.commands.registerCommand("hive.newFeature", async () => {
+        const name = await vscode5.window.showInputBox({
+          prompt: "Feature name",
+          placeHolder: "my-feature"
+        });
+        if (name) {
+          const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+          terminal.sendText(`opencode --command "/hive ${name}"`);
+          terminal.show();
+        }
+      }),
+      vscode5.commands.registerCommand("hive.openFeatureInOpenCode", (featureName) => {
+        this.launcher?.openFeature("opencode", featureName);
+      }),
+      vscode5.commands.registerCommand("hive.openTaskInOpenCode", (item) => {
+        if (item?.featureName && item?.folder) {
+          this.launcher?.openStep("opencode", item.featureName, item.folder);
+        }
+      }),
+      vscode5.commands.registerCommand("hive.openFile", (filePath) => {
+        if (filePath) {
+          vscode5.workspace.openTextDocument(filePath).then((doc) => vscode5.window.showTextDocument(doc));
+        }
+      }),
+      vscode5.commands.registerCommand("hive.approvePlan", async (item) => {
+        if (item?.featureName) {
+          const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+          terminal.sendText(`opencode --command "hive_plan_approve"`);
+          terminal.show();
+        }
+      }),
+      vscode5.commands.registerCommand("hive.syncTasks", async (item) => {
+        if (item?.featureName) {
+          const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+          terminal.sendText(`opencode --command "hive_tasks_sync"`);
+          terminal.show();
+        }
+      }),
+      vscode5.commands.registerCommand("hive.startTask", async (item) => {
+        if (item?.featureName && item?.folder) {
+          const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+          terminal.sendText(`opencode --command "hive_exec_start task=${item.folder}"`);
+          terminal.show();
+        }
+      }),
+      vscode5.commands.registerCommand("hive.openSession", async (item) => {
+        if (item?.session?.sessionId) {
+          const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+          terminal.sendText(`opencode --session "${item.session.sessionId}"`);
+          terminal.show();
+        }
+      }),
+      vscode5.commands.registerCommand("hive.plan.doneReview", async () => {
+        const editor = vscode5.window.activeTextEditor;
+        if (!editor) return;
+        if (!this.workspaceRoot) {
+          vscode5.window.showErrorMessage("Hive: No .hive directory found");
+          return;
+        }
+        const filePath = editor.document.uri.fsPath;
+        const featureMatch = filePath.match(/\.hive\/features\/([^/]+)\/plan\.md$/);
+        if (!featureMatch) {
+          vscode5.window.showErrorMessage("Not a plan.md file");
+          return;
+        }
+        const featureName = featureMatch[1];
+        const featureJsonPath = path3.join(this.workspaceRoot, ".hive", "features", featureName, "feature.json");
+        const commentsPath = path3.join(this.workspaceRoot, ".hive", "features", featureName, "comments.json");
+        let sessionId;
+        let comments2 = [];
+        try {
+          const featureData = JSON.parse(fs3.readFileSync(featureJsonPath, "utf-8"));
+          sessionId = featureData.sessionId;
+        } catch (error) {
+          console.warn(`Hive: failed to read sessionId for feature '${featureName}'`, error);
+        }
+        try {
+          const commentsData = JSON.parse(fs3.readFileSync(commentsPath, "utf-8"));
+          comments2 = commentsData.threads || [];
+        } catch (error) {
+          console.warn(`Hive: failed to read comments for feature '${featureName}'`, error);
+        }
+        const hasComments = comments2.length > 0;
+        const inputPrompt = hasComments ? `${comments2.length} comment(s) found. Add feedback or leave empty to submit comments only` : "Enter your review feedback (or leave empty to approve)";
+        const userInput = await vscode5.window.showInputBox({
+          prompt: inputPrompt,
+          placeHolder: hasComments ? "Additional feedback (optional)" : 'e.g., "looks good" to approve, or describe changes needed'
+        });
+        if (userInput === void 0) return;
+        let prompt;
+        if (hasComments) {
+          const allComments = comments2.map((c) => `Line ${c.line}: ${c.body}`).join("\n");
+          if (userInput === "") {
+            prompt = `User review comments:
 ${allComments}`;
-        } else {
-          prompt = `User review comments:
+          } else {
+            prompt = `User review comments:
 ${allComments}
 
 Additional feedback: ${userInput}`;
-        }
-      } else {
-        if (userInput === "") {
-          prompt = "User reviewed the plan and approved. Run hive_plan_approve and then hive_tasks_sync.";
+          }
         } else {
-          prompt = `User review feedback: "${userInput}"`;
+          if (userInput === "") {
+            prompt = "User reviewed the plan and approved. Run hive_plan_approve and then hive_tasks_sync.";
+          } else {
+            prompt = `User review feedback: "${userInput}"`;
+          }
         }
-      }
-      const shellEscapeSingleQuotes = (value) => {
-        return `'${value.replace(/'/g, `'"'"'`)}'`;
-      };
-      const terminal = vscode5.window.createTerminal("OpenCode - Hive");
-      const escapedPrompt = shellEscapeSingleQuotes(prompt);
-      if (sessionId) {
-        const escapedSessionId = shellEscapeSingleQuotes(sessionId);
-        terminal.sendText(`opencode run --session ${escapedSessionId} ${escapedPrompt}`);
-      } else {
-        terminal.sendText(`opencode run ${escapedPrompt}`);
-      }
-      terminal.show();
-    })
-  );
-  const watcher = new HiveWatcher(workspaceRoot, () => sidebarProvider.refresh());
-  context.subscriptions.push(
-    { dispose: () => watcher.dispose() }
-  );
+        const shellEscapeSingleQuotes = (value) => {
+          return `'${value.replace(/'/g, `'"'"'`)}'`;
+        };
+        const terminal = vscode5.window.createTerminal("OpenCode - Hive");
+        const escapedPrompt = shellEscapeSingleQuotes(prompt);
+        if (sessionId) {
+          const escapedSessionId = shellEscapeSingleQuotes(sessionId);
+          terminal.sendText(`opencode run --session ${escapedSessionId} ${escapedPrompt}`);
+        } else {
+          terminal.sendText(`opencode run ${escapedPrompt}`);
+        }
+        terminal.show();
+      })
+    );
+  }
+};
+function activate(context) {
+  const workspaceFolder = vscode5.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspaceFolder) return;
+  const extension = new HiveExtension(context, workspaceFolder);
+  extension.registerCommands();
+  extension.initialize();
 }
 function deactivate() {
 }
