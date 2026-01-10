@@ -316,16 +316,56 @@ Clean git history (worktree merges), full documentation (generated as you work),
 
 ## Philosophy
 
-Hive is built on 6 core principles:
+Hive is built on 6 core principles, grounded in [battle-tested practices from the AI coding community](https://www.anthropic.com/research/claude-code-best-practices):
 
-1. **Context Persists** — Calibration survives sessions. The "3 months later" problem solved.
-2. **Plan → Approve → Execute** — Dialogue until approved, then trust. Two phases with a clear gate.
+1. **Context Persists** — Calibration survives sessions. The "3 months later" problem solved. *(Boris's Tip 4)*
+2. **Plan → Approve → Execute** — Dialogue until approved, then trust. Two phases with a clear gate. *(Boris's Tip 6)*
 3. **Human Shapes, Agent Builds** — Human owns the why. Agent owns the how.
 4. **Good Enough Wins** — Capture what works for this context. Reject over-engineering.
-5. **Batched Parallelism** — Parallel tasks in batches. Sequential batches share context.
-6. **Tests Define Done** — For implementation tasks, tests provide the feedback loop. TDD for agents.
+5. **Batched Parallelism** — Parallel tasks in batches. Sequential batches share context. *(Boris's Tip 8)*
+6. **Tests Define Done** — For implementation tasks, tests provide the feedback loop. TDD for agents. *(Boris's Tip 13)*
+
+> *"Give Claude a way to verify its work. When Claude has a feedback loop, it will 2-3x the quality of the final result."* — Boris Cherny
 
 See [PHILOSOPHY.md](PHILOSOPHY.md) for the full framework.
+
+---
+
+## TDD Subtasks
+
+Break complex tasks into subtasks with their own `spec.md` (what to do) and `report.md` (what was done):
+
+```
+tasks/01-auth-service/
+├── spec.md
+├── report.md
+└── subtasks/
+    ├── 1-write-failing-tests/
+    │   ├── spec.md      ← Test requirements
+    │   └── report.md    ← Tests written, all failing ✓
+    ├── 2-implement-service/
+    │   ├── spec.md      ← Implementation approach
+    │   └── report.md    ← All tests passing ✓
+    └── 3-verify-coverage/
+        └── report.md    ← Final verification ✓
+```
+
+**Subtask types:** `test`, `implement`, `verify`, `review`, `research`, `debug`, `custom`
+
+**Smart click in VS Code:** Click subtask → opens `spec.md` (pending) or `report.md` (done)
+
+---
+
+## Related Tools
+
+Hive complements these excellent projects:
+
+| Tool | What It Does | How Hive Relates |
+|------|--------------|------------------|
+| **[Oh My OpenCode](https://github.com/code-yeongyu/oh-my-opencode)** | Agent-first delegation with specialized workers | Perfect combo: OMO as Hive Queen orchestrating Hive workers |
+| **[Conductor](https://github.com/gemini-cli-extensions/conductor)** | Context-driven track-based execution | Similar goals; Hive adds worktree isolation + batching |
+| **[Spec Kit](https://github.com/github/spec-kit)** | Heavy upfront specification | Hive: specs emerge from planning, not before |
+| **[Ralph Wiggum](https://awesomeclaude.ai/ralph-wiggum)** | Loop-until-done persistence | Different philosophy; Hive plans first, not retries first |
 
 ---
 

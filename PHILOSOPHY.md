@@ -5,6 +5,21 @@
 
 ---
 
+## Built on Battle-Tested Principles
+
+Hive's design is grounded in proven practices from the AI coding community, particularly [Boris Cherny's 13 Pro Tips for Claude Code](https://www.anthropic.com/research/claude-code-best-practices).
+
+| Boris's Tip | Hive Implementation |
+|-------------|---------------------|
+| **Tip 4: Team CLAUDE.md** | Context persists per-feature in `.hive/context/` |
+| **Tip 6: Start in Plan mode** | Plan → Approve → Execute workflow |
+| **Tip 8: Leverage subagents** | Batched parallelism with worktree isolation |
+| **Tip 13: Give feedback loops** | TDD subtasks — tests define done |
+
+> *"Give Claude a way to verify its work. When Claude has a feedback loop, it will 2-3x the quality of the final result."* — Boris Cherny
+
+---
+
 ## Why Hive Exists
 
 Vibe coding is powerful but chaotic. We identified 6 pain points:
@@ -22,7 +37,7 @@ Vibe coding is powerful but chaotic. We identified 6 pain points:
 
 ---
 
-## The 5 Core Principles
+## The 6 Core Principles
 
 ### P1: Context Persists
 
@@ -35,6 +50,8 @@ Store grounded, project-specific knowledge:
 
 **Don't store**: General knowledge the agent already has.
 
+*Inspired by Boris's Tip 4: "Share a single CLAUDE.md file for your codebase... Whenever Claude does something incorrectly, add it so Claude learns not to repeat the mistake."*
+
 ### P2: Plan → Approve → Execute
 
 Two phases with a clear gate between them.
@@ -45,6 +62,8 @@ Two phases with a clear gate between them.
 | **Execution** | Trust | Agent runs, human monitors |
 
 Planning is collaborative. Execution is autonomous. The approval gate is where trust is earned.
+
+*Inspired by Boris's Tip 6: "Most sessions should start in Plan mode... A good plan makes all the difference."*
 
 ### P3: Human Shapes, Agent Builds
 
@@ -87,6 +106,64 @@ Batch 1 (parallel):     Batch 2 (parallel):
 ```
 
 This solves multi-agent coordination without complex orchestration. Each task gets a worktree. Glue tasks merge and synthesize.
+
+*Inspired by Boris's Tip 8: "Use a few subagents regularly to automate common workflows."*
+
+### P6: Tests Define Done
+
+For implementation tasks, tests provide the feedback loop that dramatically improves quality.
+
+**TDD Subtask Pattern:**
+```
+Task: Implement calculator
+├── Subtask 1.1 [test]: Write failing tests
+│   └── spec.md: Test requirements
+│   └── report.md: Tests written, all failing ✓
+├── Subtask 1.2 [implement]: Make tests pass
+│   └── spec.md: Implementation approach
+│   └── report.md: All tests passing ✓
+└── Subtask 1.3 [verify]: Final verification
+    └── report.md: 100% coverage, shipped ✓
+```
+
+Each subtask has its own `spec.md` (what to do) and `report.md` (what was done) — first-class audit trail.
+
+*Inspired by Boris's Tip 13: "Give Claude a way to verify its work. When Claude has a feedback loop, it will 2-3x the quality of the final result."*
+
+---
+
+## Subtasks: First-Class TDD Support
+
+Subtasks enable granular tracking within a task, perfect for TDD workflows:
+
+```
+.hive/features/user-auth/tasks/01-auth-service/
+├── spec.md
+├── report.md
+└── subtasks/
+    ├── 1-write-failing-tests/
+    │   ├── status.json
+    │   ├── spec.md      ← Detailed test requirements
+    │   └── report.md    ← What tests were written
+    ├── 2-implement-auth-service/
+    │   ├── status.json
+    │   ├── spec.md      ← Implementation approach
+    │   └── report.md    ← What was implemented
+    └── 3-verify-coverage/
+        ├── status.json
+        └── report.md    ← Final verification results
+```
+
+**Subtask Types:**
+| Type | Purpose |
+|------|---------|
+| `test` | Write failing tests first |
+| `implement` | Make tests pass |
+| `verify` | Final verification |
+| `review` | Code review checkpoint |
+| `research` | Investigation before coding |
+| `debug` | Fix issues |
+| `custom` | Anything else |
 
 ---
 
@@ -139,6 +216,7 @@ Hive works WITH existing tools, not instead of them.
 - A structure for multi-agent coordination
 - A context persistence layer
 - A platform that enhances existing tools
+- A TDD-friendly workflow with subtask tracking
 
 ### Hive IS NOT:
 - A visual dashboard (Vibe Kanban does this better)
@@ -152,10 +230,10 @@ Hive works WITH existing tools, not instead of them.
 
 | Tool | Philosophy | Hive's Take |
 |------|------------|-------------|
-| **Spec Kit** (60k stars) | Spec-first, heavy upfront docs | Too heavy. Specs emerge from planning, not before. |
-| **Ralph Wiggum** | Loop until done, persistence wins | Different philosophy. We plan first, not retry first. |
-| **Conductor** | Context-driven, track-based | Similar goals. We add worktree isolation + batching. |
-| **Oh My OpenCode** | Agent-first, delegation model | We're a platform, not an agent replacement. |
+| **[Spec Kit](https://github.com/github/spec-kit)** | Spec-first, heavy upfront docs | Too heavy. Specs emerge from planning, not before. |
+| **[Ralph Wiggum](https://awesomeclaude.ai/ralph-wiggum)** | Loop until done, persistence wins | Different philosophy. We plan first, not retry first. |
+| **[Conductor](https://github.com/gemini-cli-extensions/conductor)** | Context-driven, track-based | Similar goals. We add worktree isolation + batching. |
+| **[Oh My OpenCode](https://github.com/code-yeongyu/oh-my-opencode)** | Agent-first, delegation model | Great complement! OMO as Hive Queen, Hive as workflow. |
 | **Vibe Kanban** | Visual dashboard for agents | We're workflow, not UI. Could complement each other. |
 
 **Hive's unique value**:
@@ -163,6 +241,7 @@ Hive works WITH existing tools, not instead of them.
 2. Worktree isolation per task (clean discard)
 3. Two-phase autonomy with approval gate
 4. Task-based everything (even fixes are tasks)
+5. TDD subtasks with spec.md/report.md audit trail
 
 ---
 
@@ -172,12 +251,13 @@ Hive works WITH existing tools, not instead of them.
 Feature
 └── Plan (dialogue until approved)
     └── Tasks (parallel in batches)
-        └── Worktrees (isolated execution)
-            └── Reports (what was done)
-                └── Context (persists for next time)
+        └── Subtasks (TDD: test → implement → verify)
+            └── Worktrees (isolated execution)
+                └── Reports (what was done)
+                    └── Context (persists for next time)
 ```
 
-Human shapes at the top. Agent builds at the bottom. Gate in the middle.
+Human shapes at the top. Agent builds at the bottom. Gate in the middle. Tests verify the work.
 
 ---
 
@@ -191,8 +271,15 @@ Human shapes at the top. Agent builds at the bottom. Gate in the middle.
 - Dropped "revert command" idea after bad experience
 - Chose free-form context over prescribed structure
 
+### v0.8 (Subtask Folder Structure)
+- Added P6: Tests Define Done
+- Subtasks became first-class with own folders
+- Each subtask has spec.md and report.md
+- TDD workflow: test → implement → verify
+- Inspired by Boris Cherny's "feedback loop" principle
+
 ---
 
 <p align="center">
-  <em>Plan first. Execute with trust. Context persists.</em>
+  <em>Plan first. Execute with trust. Context persists. Tests verify.</em>
 </p>
