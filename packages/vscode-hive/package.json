@@ -2,7 +2,7 @@
   "name": "vscode-hive",
   "displayName": "Agent Hive",
   "description": "From Vibe Coding to Hive Coding - Review and approve AI-generated plans",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "publisher": "tctinh",
   "license": "MIT WITH Commons-Clause",
   "icon": "icon.png",
@@ -53,7 +53,9 @@
               "description": "Optional ticket/issue reference"
             }
           },
-          "required": ["name"]
+          "required": [
+            "name"
+          ]
         }
       },
       {
@@ -81,7 +83,9 @@
               "description": "Feature name to mark as completed"
             }
           },
-          "required": ["name"]
+          "required": [
+            "name"
+          ]
         }
       },
       {
@@ -102,7 +106,10 @@
               "description": "Plan content in markdown. Use ### 1. Task Name format for tasks."
             }
           },
-          "required": ["feature", "content"]
+          "required": [
+            "feature",
+            "content"
+          ]
         }
       },
       {
@@ -119,7 +126,9 @@
               "description": "Feature name"
             }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -136,7 +145,9 @@
               "description": "Feature name"
             }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -153,7 +164,9 @@
               "description": "Feature name"
             }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -178,7 +191,10 @@
               "description": "Optional order number for the task"
             }
           },
-          "required": ["feature", "name"]
+          "required": [
+            "feature",
+            "name"
+          ]
         }
       },
       {
@@ -200,7 +216,12 @@
             },
             "status": {
               "type": "string",
-              "enum": ["pending", "in_progress", "done", "cancelled"],
+              "enum": [
+                "pending",
+                "in_progress",
+                "done",
+                "cancelled"
+              ],
               "description": "New status"
             },
             "summary": {
@@ -208,7 +229,10 @@
               "description": "Summary of what was done"
             }
           },
-          "required": ["feature", "task"]
+          "required": [
+            "feature",
+            "task"
+          ]
         }
       },
       {
@@ -220,12 +244,37 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "name": { "type": "string", "description": "Subtask name" },
-            "type": { "type": "string", "enum": ["test", "implement", "review", "verify", "research", "debug", "custom"], "description": "Subtask type" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "name": {
+              "type": "string",
+              "description": "Subtask name"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "test",
+                "implement",
+                "review",
+                "verify",
+                "research",
+                "debug",
+                "custom"
+              ],
+              "description": "Subtask type"
+            }
           },
-          "required": ["feature", "task", "name"]
+          "required": [
+            "feature",
+            "task",
+            "name"
+          ]
         }
       },
       {
@@ -237,12 +286,35 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "subtask": { "type": "string", "description": "Subtask ID (e.g., 1.1)" },
-            "status": { "type": "string", "enum": ["pending", "in_progress", "done", "cancelled"], "description": "New status" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "subtask": {
+              "type": "string",
+              "description": "Subtask ID (e.g., 1.1)"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "in_progress",
+                "done",
+                "cancelled"
+              ],
+              "description": "New status"
+            }
           },
-          "required": ["feature", "task", "subtask", "status"]
+          "required": [
+            "feature",
+            "task",
+            "subtask",
+            "status"
+          ]
         }
       },
       {
@@ -254,10 +326,19 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            }
           },
-          "required": ["feature", "task"]
+          "required": [
+            "feature",
+            "task"
+          ]
         }
       },
       {
@@ -269,12 +350,29 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "subtask": { "type": "string", "description": "Subtask ID (e.g., 1.1)" },
-            "content": { "type": "string", "description": "Spec content in markdown" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "subtask": {
+              "type": "string",
+              "description": "Subtask ID (e.g., 1.1)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Spec content in markdown"
+            }
           },
-          "required": ["feature", "task", "subtask", "content"]
+          "required": [
+            "feature",
+            "task",
+            "subtask",
+            "content"
+          ]
         }
       },
       {
@@ -286,12 +384,29 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "subtask": { "type": "string", "description": "Subtask ID (e.g., 1.1)" },
-            "content": { "type": "string", "description": "Report content in markdown" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "subtask": {
+              "type": "string",
+              "description": "Subtask ID (e.g., 1.1)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Report content in markdown"
+            }
           },
-          "required": ["feature", "task", "subtask", "content"]
+          "required": [
+            "feature",
+            "task",
+            "subtask",
+            "content"
+          ]
         }
       },
       {
@@ -303,10 +418,19 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            }
           },
-          "required": ["feature", "task"]
+          "required": [
+            "feature",
+            "task"
+          ]
         }
       },
       {
@@ -318,11 +442,24 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "summary": { "type": "string", "description": "Summary of what was done" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "summary": {
+              "type": "string",
+              "description": "Summary of what was done"
+            }
           },
-          "required": ["feature", "task", "summary"]
+          "required": [
+            "feature",
+            "task",
+            "summary"
+          ]
         }
       },
       {
@@ -334,10 +471,19 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            }
           },
-          "required": ["feature", "task"]
+          "required": [
+            "feature",
+            "task"
+          ]
         }
       },
       {
@@ -349,11 +495,28 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Task folder name" },
-            "strategy": { "type": "string", "enum": ["merge", "squash", "rebase"], "description": "Merge strategy (default: merge)" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Task folder name"
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "merge",
+                "squash",
+                "rebase"
+              ],
+              "description": "Merge strategy (default: merge)"
+            }
           },
-          "required": ["feature", "task"]
+          "required": [
+            "feature",
+            "task"
+          ]
         }
       },
       {
@@ -365,9 +528,14 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -379,11 +547,24 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "name": { "type": "string", "description": "Context file name (without .md)" },
-            "content": { "type": "string", "description": "Context content in markdown" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "name": {
+              "type": "string",
+              "description": "Context file name (without .md)"
+            },
+            "content": {
+              "type": "string",
+              "description": "Context content in markdown"
+            }
           },
-          "required": ["feature", "name", "content"]
+          "required": [
+            "feature",
+            "name",
+            "content"
+          ]
         }
       },
       {
@@ -395,10 +576,18 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "name": { "type": "string", "description": "Context file name (optional)" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "name": {
+              "type": "string",
+              "description": "Context file name (optional)"
+            }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -410,9 +599,14 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -424,10 +618,18 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" },
-            "task": { "type": "string", "description": "Optional task to focus on" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            },
+            "task": {
+              "type": "string",
+              "description": "Optional task to focus on"
+            }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       },
       {
@@ -439,13 +641,17 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "feature": { "type": "string", "description": "Feature name" }
+            "feature": {
+              "type": "string",
+              "description": "Feature name"
+            }
           },
-          "required": ["feature"]
+          "required": [
+            "feature"
+          ]
         }
       }
     ],
-
     "viewsContainers": {
       "activitybar": [
         {
