@@ -138,6 +138,7 @@ Instead, escalate via the blocker protocol:
 \`\`\`
 hive_exec_complete({
   task: "${task}",
+  feature: "${feature}",
   status: "blocked",
   summary: "What you accomplished so far",
   blocker: {
@@ -148,6 +149,8 @@ hive_exec_complete({
   }
 })
 \`\`\`
+
+**After calling hive_exec_complete with blocked status, STOP IMMEDIATELY.**
 
 The Hive Master will:
 1. Receive your blocker info
@@ -165,16 +168,22 @@ When your task is **fully complete**:
 \`\`\`
 hive_exec_complete({
   task: "${task}",
+  feature: "${feature}",
   status: "completed",
   summary: "Concise summary of what you accomplished"
 })
 \`\`\`
+
+**CRITICAL: After calling hive_exec_complete, you MUST STOP IMMEDIATELY.**
+Do NOT continue working. Do NOT respond further. Your session is DONE.
+The Hive Master will take over from here.
 
 If you encounter an **unrecoverable error**:
 
 \`\`\`
 hive_exec_complete({
   task: "${task}",
+  feature: "${feature}",
   status: "failed",
   summary: "What went wrong and what was attempted"
 })
@@ -185,10 +194,31 @@ If you made **partial progress** but can't continue:
 \`\`\`
 hive_exec_complete({
   task: "${task}",
+  feature: "${feature}",
   status: "partial",
   summary: "What was completed and what remains"
 })
 \`\`\`
+
+---
+
+## TDD Protocol (Required)
+
+1. **Red**: Write failing test first
+2. **Green**: Minimal code to pass
+3. **Refactor**: Clean up, keep tests green
+
+Never write implementation before test exists.
+Exception: Pure refactoring of existing tested code.
+
+## Debugging Protocol (When stuck)
+
+1. **Reproduce**: Get consistent failure
+2. **Isolate**: Binary search to find cause
+3. **Hypothesize**: Form theory, test it
+4. **Fix**: Minimal change that resolves
+
+After 3 failed attempts at same fix: STOP and report blocker.
 
 ---
 

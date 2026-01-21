@@ -62,6 +62,7 @@ import {
   PlanService,
   TaskService,
   ContextService,
+  ConfigService,
   detectContext,
   listFeatures,
 } from "hive-core";
@@ -156,44 +157,24 @@ type ToolContext = {
 };
 
 const plugin: Plugin = async (ctx) => {
-  const { directory } = ctx;
+  const { directory, client } = ctx;
 
   const featureService = new FeatureService(directory);
   const planService = new PlanService(directory);
   const taskService = new TaskService(directory);
   const contextService = new ContextService(directory);
+  const configService = new ConfigService(); // User config at ~/.config/opencode/agent_hive.json
   const worktreeService = new WorktreeService({
     baseDir: directory,
     hiveDir: path.join(directory, '.hive'),
   });
 
-  // OMO-Slim detection state
-  let omoSlimDetected = false;
-  let detectionDone = false;
-
   /**
-   * Detect OMO-Slim by checking for background_task tool.
-   * Called lazily on first tool invocation that needs delegation.
+   * Check if OMO-Slim delegation is enabled via user config.
+   * Users enable this in ~/.config/opencode/agent_hive.json
    */
-  const detectOmoSlim = (toolContext: unknown): boolean => {
-    if (detectionDone) return omoSlimDetected;
-    
-    const ctx = toolContext as any;
-    // Check if background_task is available in tool registry
-    // This indicates OMO-Slim is installed
-    if (ctx?.tools?.includes?.('background_task') || 
-        ctx?.background_task || 
-        typeof ctx?.callTool === 'function') {
-      // We'll verify on first actual use
-      omoSlimDetected = true;
-    }
-    detectionDone = true;
-    
-    if (omoSlimDetected) {
-      console.log('[Hive] OMO-Slim detected: delegated execution with tmux panes enabled');
-    }
-    
-    return omoSlimDetected;
+  const isOmoSlimEnabled = (): boolean => {
+    return configService.isOmoSlimEnabled();
   };
 
   const resolveFeature = (explicit?: string): string | null => {
@@ -273,7 +254,40 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         },
         async execute({ name, ticket }) {
           const feature = featureService.create(name, ticket);
-          return `Feature "${name}" created. Status: ${feature.status}. Write a plan with hive_plan_write.`;
+          return `Feature "${name}" created.
+
+## Discovery Phase Required
+
+Before writing a plan, you MUST:
+1. Ask clarifying questions about the feature
+2. Document Q&A in plan.md with a \`## Discovery\` section
+3. Research the codebase (grep, read existing code)
+4. Save findings with hive_context_write
+
+Example discovery section:
+\`\`\`markdown
+## Discovery
+
+**Q: What authentication system do we use?**
+A: JWT with refresh tokens, see src/auth/
+
+**Q: Should this work offline?**
+A: No, online-only is fine
+
+**Research:**
+- Found existing theme system in src/theme/
+- Uses CSS variables pattern
+\`\`\`
+
+## Planning Guidelines
+
+When writing your plan, include:
+- \`## Non-Goals\` - What we're explicitly NOT building (scope boundaries)
+- \`## Ghost Diffs\` - Alternatives you considered but rejected
+
+These prevent scope creep and re-proposing rejected solutions.
+
+NEXT: Ask your first clarifying question about this feature.`;
         },
       }),
 
@@ -303,6 +317,37 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         },
       }),
 
+      hive_journal_append: tool({
+        description: 'Append entry to .hive/journal.md for audit trail',
+        args: {
+          feature: tool.schema.string().describe('Feature name for context'),
+          trouble: tool.schema.string().describe('What went wrong'),
+          resolution: tool.schema.string().describe('How it was fixed'),
+          constraint: tool.schema.string().optional().describe('Never/Always rule derived'),
+        },
+        async execute({ feature, trouble, resolution, constraint }) {
+          const journalPath = path.join(directory, '.hive', 'journal.md');
+          
+          if (!fs.existsSync(journalPath)) {
+            return `Error: journal.md not found. Create a feature first to initialize the journal.`;
+          }
+          
+          const date = new Date().toISOString().split('T')[0];
+          const entry = `
+### ${date}: ${feature}
+
+**Trouble**: ${trouble}
+**Resolution**: ${resolution}
+${constraint ? `**Constraint**: ${constraint}` : ''}
+**See**: .hive/features/${feature}/plan.md
+
+---
+`;
+          fs.appendFileSync(journalPath, entry);
+          return `Journal entry added for ${feature}. ${constraint ? `Constraint: "${constraint}"` : ''}`;
+        },
+      }),
+
       hive_plan_write: tool({
         description: 'Write plan.md (clears existing comments)',
         args: { 
@@ -312,6 +357,20 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         async execute({ content, feature: explicitFeature }, toolContext) {
           const feature = resolveFeature(explicitFeature);
           if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          
+          // GATE: Check for discovery section
+          const hasDiscovery = content.toLowerCase().includes('## discovery');
+          if (!hasDiscovery) {
+            return `BLOCKED: Discovery section required before planning.
+
+Your plan must include a \`## Discovery\` section documenting:
+- Questions you asked and answers received
+- Research findings from codebase exploration
+- Key decisions made
+
+Add this section to your plan content and try again.`;
+          }
+          
           captureSession(feature, toolContext);
           const planPath = planService.write(feature, content);
           return `Plan written to ${planPath}. Comments cleared for fresh review.`;
@@ -471,10 +530,8 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
 
           taskService.writeSpec(feature, task, specContent);
 
-          // Check for OMO-Slim and delegate if available
-          detectOmoSlim(toolContext);
-          
-          if (omoSlimDetected) {
+          // Check if OMO-Slim delegation is enabled in config
+          if (isOmoSlimEnabled()) {
             // Prepare context for worker prompt
             const contextFiles: ContextFile[] = [];
             const contextDir = path.join(directory, '.hive', 'features', feature, 'context');
@@ -511,41 +568,44 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
             // Select appropriate agent based on task content
             const agent = selectAgent(taskInfo.name, specContent);
 
-            // Call OMO-Slim's background_task
-            try {
-              const ctx = toolContext as any;
-              if (ctx.callTool) {
-                const result = await ctx.callTool('background_task', {
-                  agent,
-                  prompt: workerPrompt,
-                  description: `Hive: ${task}`,
-                  sync: false,
-                });
+            // Return delegation instructions for the agent
+            // Agent will call background_task tool itself
+            return JSON.stringify({
+              worktreePath: worktree.path,
+              branch: worktree.branch,
+              mode: 'delegate',
+              agent,
+              delegationRequired: true,
+              backgroundTaskCall: {
+                agent,
+                prompt: workerPrompt,
+                description: `Hive: ${task}`,
+                sync: false,
+              },
+              instructions: `## Delegation Required
 
-                // Store worker info in task
-                taskService.update(feature, task, {
-                  status: 'in_progress',
-                  workerId: result?.task_id,
-                  agent,
-                  mode: 'omo-slim',
-                } as any);
+You MUST now call background_task to spawn a worker:
 
-                return JSON.stringify({
-                  worktreePath: worktree.path,
-                  branch: worktree.branch,
-                  mode: 'delegated',
-                  agent,
-                  taskId: result?.task_id,
-                  message: `Worker spawned via OMO-Slim (${agent} agent). Watch in tmux pane. Use hive_worker_status to check progress.`,
-                }, null, 2);
-              }
-            } catch (e: any) {
-              // Fall through to inline mode if delegation fails
-              console.log('[Hive] OMO-Slim delegation failed, falling back to inline:', e.message);
-            }
+\`\`\`
+background_task({
+  agent: "${agent}",
+  prompt: <the workerPrompt below>,
+  description: "Hive: ${task}",
+  sync: false
+})
+\`\`\`
+
+After spawning:
+- Monitor with hive_worker_status
+- Handle blockers when worker exits
+- Merge completed work with hive_merge
+
+DO NOT do the work yourself. Delegate it.`,
+              workerPrompt,
+            }, null, 2);
           }
 
-          // Inline mode (no OMO-Slim or delegation failed)
+          // Inline mode (no OMO-Slim)
           return `Worktree created at ${worktree.path}\nBranch: ${worktree.branch}\nBase commit: ${worktree.commit}\nSpec: ${task}/spec.md generated\nReminder: do all work inside this worktree and ensure any subagents do the same.`;
         },
       }),
@@ -571,6 +631,26 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
           const taskInfo = taskService.get(feature, task);
           if (!taskInfo) return `Error: Task "${task}" not found`;
           if (taskInfo.status !== 'in_progress' && taskInfo.status !== 'blocked') return "Error: Task not in progress";
+
+          // GATE: Check for verification mention when completing
+          if (status === 'completed') {
+            const verificationKeywords = ['test', 'build', 'lint', 'vitest', 'jest', 'npm run', 'pnpm', 'cargo', 'pytest', 'verified', 'passes', 'succeeds'];
+            const summaryLower = summary.toLowerCase();
+            const hasVerificationMention = verificationKeywords.some(kw => summaryLower.includes(kw));
+            
+            if (!hasVerificationMention) {
+              return `BLOCKED: No verification detected in summary.
+
+Before claiming completion, you must:
+1. Run tests (vitest, jest, pytest, etc.)
+2. Run build (npm run build, cargo build, etc.)
+3. Include verification results in summary
+
+Example summary: "Implemented auth flow. Tests pass (vitest). Build succeeds."
+
+Re-run with updated summary showing verification results.`;
+            }
+          }
 
           // Handle blocked status - don't commit, just update status
           if (status === 'blocked') {
@@ -711,9 +791,10 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
             };
           }));
 
+          const omoSlimEnabled = isOmoSlimEnabled();
           return JSON.stringify({
             feature,
-            omoSlimDetected,
+            omoSlimEnabled,
             workers,
             hint: workers.some(w => w.status === 'blocked')
               ? 'Use hive_exec_start(task, continueFrom: "blocked", decision: answer) to resume blocked workers'
@@ -1045,8 +1126,8 @@ Make the requested changes, then call hive_request_review again.`;
       }
 
       // If we have feature context or OMO-Slim, rebuild with dynamic content
-      if (featureContext || omoSlimDetected) {
-        return buildHiveAgentPrompt(featureContext, omoSlimDetected);
+      if (featureContext || isOmoSlimEnabled()) {
+        return buildHiveAgentPrompt(featureContext, isOmoSlimEnabled());
       }
 
       return existingPrompt;

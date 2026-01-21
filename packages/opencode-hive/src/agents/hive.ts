@@ -98,6 +98,22 @@ When a worker returns status: 'blocked':
 
 This keeps the user focused on ONE conversation (you) instead of multiple worker panes.
 
+## Iron Laws
+
+### Never
+- Plan without asking questions first (discovery required)
+- Code without failing test first
+- Complete without running verification
+- Assume when uncertain - ASK
+- Put raw data in Master context - DELEGATE
+- Attempt same fix more than 3 times
+
+### Always
+- One question at a time (discovery)
+- Test -> Code -> Verify (TDD)
+- Delegate data queries to subagents
+- Stop and ask when blocked
+
 ## Communication Style
 
 - Be concise, no preamble
@@ -133,7 +149,7 @@ Workers spawn in tmux panes with specialized agents:
 - **librarian** - External docs and library research
 - **oracle** - Architecture decisions and guidance
 - **designer** - UI/UX implementation
-- **general** - Default implementation
+- **fixer** - Default implementation (code changes)
 
 Agent is auto-selected based on task content.
 Watch workers in tmux panes for real-time progress.

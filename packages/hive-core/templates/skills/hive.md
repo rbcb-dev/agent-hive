@@ -23,6 +23,31 @@ Feature -> Plan -> Review -> Approve -> Execute -> Merge -> Complete
 hive_feature_create({ name: "feature-name" })
 ```
 
+### Discovery Phase (Required)
+
+BEFORE writing a plan, you MUST:
+1. Ask clarifying questions about the feature
+2. Document Q&A in plan.md with a `## Discovery` section
+3. Research the codebase (grep, read existing code)
+4. Save findings with hive_context_write
+
+Your plan MUST include a `## Discovery` section or hive_plan_write will be BLOCKED.
+
+Example discovery section:
+```markdown
+## Discovery
+
+**Q: What authentication system do we use?**
+A: JWT with refresh tokens, see src/auth/
+
+**Q: Should this work offline?**
+A: No, online-only is fine
+
+**Research:**
+- Found existing theme system in src/theme/
+- Uses CSS variables pattern
+```
+
 ### Research First
 
 Before writing anything:
@@ -48,6 +73,17 @@ hive_context_write({
 ```
 
 ### Write the Plan
+
+Your plan should include these sections:
+
+| Section | Required | Purpose |
+|---------|----------|---------|
+| `## Discovery` | Yes (gate enforced) | Q&A and research before planning |
+| `## Problem` | Yes | What we're solving |
+| `## Non-Goals` | Recommended | What we're NOT building (scope boundaries) |
+| `## Tasks` | Yes | Implementation steps with `### N. Task Name` format |
+| `## Ghost Diffs` | Recommended | Rejected alternatives (prevents re-proposing) |
+| `## Success Criteria` | Optional | How we know we're done |
 
 Format for task parsing:
 
@@ -114,8 +150,10 @@ Work in the isolated worktree path. Read `spec.md` for context.
 
 #### 3. Complete (commits to branch)
 ```
-hive_exec_complete({ task: "01-task-name", summary: "What was done" })
+hive_exec_complete({ task: "01-task-name", summary: "What was done. Tests pass." })
 ```
+
+**Note**: Summary must mention verification (tests/build) or completion will be BLOCKED.
 
 #### 4. Merge (integrates to main)
 ```
