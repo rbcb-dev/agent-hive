@@ -77,6 +77,7 @@ import {
 import { buildWorkerPrompt, type ContextFile, type CompletedTask } from "./utils/worker-prompt";
 import { createBackgroundManager, type OpencodeClient } from "./background/index.js";
 import { createBackgroundTools } from "./tools/background-tools.js";
+import { HIVE_AGENT_NAMES, isHiveAgent, normalizeVariant } from "./hooks/variant-hook.js";
 
 const HIVE_SYSTEM_PROMPT = `
 ## Hive - Feature Development System
@@ -261,6 +262,44 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         }
       }
     },
+
+    // Apply per-agent variant to messages (covers built-in task() tool)
+    // Type assertion needed because TypeScript's contravariance rules are too strict
+    // for the hook's output parameter type. The hook only accesses output.message.variant
+    // which exists on UserMessage.
+    "chat.message": (async (
+      input: {
+        sessionID: string;
+        agent?: string;
+        model?: { providerID: string; modelID: string };
+        messageID?: string;
+        variant?: string;
+      },
+      output: {
+        message: { variant?: string };
+        parts: unknown[];
+      },
+    ): Promise<void> => {
+      const { agent } = input;
+
+      // Skip if no agent specified
+      if (!agent) return;
+
+      // Skip if not a Hive agent
+      if (!isHiveAgent(agent)) return;
+
+      // Skip if variant is already set (respect explicit selection)
+      if (output.message.variant !== undefined) return;
+
+      // Look up configured variant for this agent
+      const agentConfig = configService.getAgentConfig(agent);
+      const configuredVariant = normalizeVariant(agentConfig.variant);
+
+      // Apply configured variant if present
+      if (configuredVariant !== undefined) {
+        output.message.variant = configuredVariant;
+      }
+    }) as any,
 
     mcp: builtinMcps,
 
