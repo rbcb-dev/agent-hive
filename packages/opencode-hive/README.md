@@ -88,7 +88,7 @@ Description.
 
 ## Configuration
 
-Hive uses a config file at `~/.config/opencode/agent_hive.json`. You can customize agent models, disable skills, and disable MCP servers.
+Hive uses a config file at `~/.config/opencode/agent_hive.json`. You can customize agent models, variants, disable skills, and disable MCP servers.
 
 ### Disable Skills or MCPs
 
@@ -147,6 +147,52 @@ Each agent can have specific skills enabled. If configured, only those skills ar
 | `skills: ["tdd", "debug"]` | Only those skills enabled |
 
 Note: Wildcards like `["*"]` are **not supported** - use explicit skill names or omit the field entirely for all skills.
+
+### Per-Agent Model Variants
+
+You can set a `variant` for each Hive agent to control model reasoning/effort level. Variants are keys that map to model-specific option overrides defined in your `opencode.json`.
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/tctinh/agent-hive/main/packages/opencode-hive/schema/agent_hive.schema.json",
+  "agents": {
+    "hive-master": {
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "variant": "high"
+    },
+    "forager-worker": {
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "variant": "medium"
+    },
+    "scout-researcher": {
+      "variant": "low"
+    }
+  }
+}
+```
+
+The `variant` value must match a key in your OpenCode config at `provider.<provider>.models.<model>.variants`. For example, with Anthropic models you might configure thinking budgets:
+
+```json
+// opencode.json
+{
+  "provider": {
+    "anthropic": {
+      "models": {
+        "claude-sonnet-4-20250514": {
+          "variants": {
+            "low": { "thinking": { "budget_tokens": 5000 } },
+            "medium": { "thinking": { "budget_tokens": 10000 } },
+            "high": { "thinking": { "budget_tokens": 25000 } }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Precedence:** If a prompt already has an explicit variant set, the per-agent config acts as a default and will not override it. Invalid or missing variant keys are treated as no-op (the model runs with default settings).
 
 ### Custom Models
 
