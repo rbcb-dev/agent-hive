@@ -37,7 +37,7 @@ describe("agentMode gating", () => {
     }
   });
 
-  it("registers hive-master and worker agents in unified mode", async () => {
+  it("registers hive-master, scout, forager, and hygienic in unified mode", async () => {
     const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     fs.writeFileSync(
