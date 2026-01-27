@@ -96,35 +96,22 @@ Add `opencode-hive` to your `opencode.json`:
 
 OpenCode handles the rest — no manual npm install needed.
 
-### Agent Hive Config (Optional)
+### Agent Hive Config
 
-Hive reads `~/.config/opencode/agent_hive.json` for per-agent overrides. A schema asset is available in this repo:
+Run Agent Hive once to auto-generate a default configuration at `~/.config/opencode/agent_hive.json`. The default configuration is a good starting point, but you should review it to ensure it matches your local setup.
 
-- `https://raw.githubusercontent.com/tctinh/agent-hive/main/packages/opencode-hive/schema/agent_hive.schema.json`
+**Key Configuration Options:**
 
-Example config:
+- **`agentMode`**: 
+  - `unified`: (Default) Combines Planning (Architect) and Orchestration (Swarm) into a single primary agent (`hive-master`). Specialized workers (Scout, Forager) are still used for execution.
+  - `dedicated`: Tools and roles are distributed across separate specialized agents (Architect, Swarm, Scout, Forager, etc.).
+- **`delegateMode`**: 
+  - `task`: (Default) Use OpenCode's built-in `task()` tool for background execution.
+  - `hive`: Use Hive's specialized background task tools (`hive_background_task`).
+- **`agents`**: This section maps agent roles to specific models. **You should always update these to use models available on your system** (e.g., `openai/gpt-5.2-codex`, `google/gemini-3-pro-preview`, `github-copilot/claude-opus-4.5` or local models).
+- **`skills`**: A list of enabled skills. To remove extra agent features or reduce context usage, simply remove the unwanted skills from this list.
 
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/tctinh/agent-hive/main/packages/opencode-hive/schema/agent_hive.schema.json",
-  "agents": {
-    "hive": {
-      "skills": ["brainstorming", "writing-plans", "dispatching-parallel-agents", "executing-plans"]
-    },
-    "architect": {
-      "skills": ["brainstorming", "writing-plans"]
-    },
-    "swarm": {
-      "skills": ["dispatching-parallel-agents", "executing-plans"]
-    },
-    "forager": {
-      "skills": ["test-driven-development", "verification-before-completion"]
-    }
-  }
-}
-```
-
-**MCP Research Tools** are auto-enabled: `grep_app_searchGitHub`, `context7_query-docs`, `websearch_web_search_exa`, and `ast_grep_search`. Set `EXA_API_KEY` for web search (optional).
+**MCP Research Tools** are auto-enabled: `grep_app_searchGitHub`, `context7_query-docs`, `websearch_web_search_exa`, and `ast_grep_search`.
 
 ### Start Hiving
 
