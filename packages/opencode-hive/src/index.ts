@@ -781,7 +781,7 @@ Add this section to your plan content and try again.`;
           const workerPromptPath = writeWorkerPromptFile(feature, task, workerPrompt, hiveDir);
           
           // Convert to relative path for portability in output
-          const relativePromptPath = path.relative(directory, workerPromptPath);
+          const relativePromptPath = path.relative(directory, workerPromptPath).replace(/\\/g, '/');
 
           // Build workerPromptPreview (truncated for display, max 200 chars)
           const PREVIEW_MAX_LENGTH = 200;

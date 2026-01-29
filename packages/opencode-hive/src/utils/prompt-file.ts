@@ -62,11 +62,13 @@ export function isValidPromptFilePath(filePath: string, workspaceRoot: string): 
     // Normalize both paths to resolve any .. or . segments
     const normalizedFilePath = path.resolve(filePath);
     const normalizedWorkspace = path.resolve(workspaceRoot);
+    const normalizedFilePathForCompare = normalizedFilePath.replace(/\\/g, '/');
+    const normalizedWorkspaceForCompare = normalizedWorkspace.replace(/\\/g, '/');
 
     // Check that the file path starts with the workspace root
     // This prevents path traversal attacks
-    if (!normalizedFilePath.startsWith(normalizedWorkspace + path.sep) && 
-        normalizedFilePath !== normalizedWorkspace) {
+    if (!normalizedFilePathForCompare.startsWith(normalizedWorkspaceForCompare + '/') &&
+        normalizedFilePathForCompare !== normalizedWorkspaceForCompare) {
       return false;
     }
 
