@@ -9,9 +9,10 @@ import type { ReviewSession, Range, AnnotationType, ReviewConfig, ReviewNotifica
  */
 type WebviewToExtensionMessage =
   | { type: 'ready' }
-  | { type: 'addComment'; threadId?: string; entityId: string; uri?: string; range: Range; body: string; annotationType: string }
+  | { type: 'addComment'; threadId?: string; entityId: string; uri?: string; range: { start: { line: number; character: number }; end: { line: number; character: number } }; body: string; annotationType: string }
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
+  | { type: 'applySuggestion'; threadId: string; annotationId: string; uri: string; range: Range; replacement: string }
   | { type: 'submit'; verdict: string; summary: string }
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
@@ -33,7 +34,8 @@ type ExtensionToWebviewMessage =
    | { type: 'error'; message: string }
    | { type: 'scopeChanged'; scope: string; scopeContent?: { uri: string; content: string; language: string } }
    | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
-   | { type: 'fileError'; uri: string; error: string };
+   | { type: 'fileError'; uri: string; error: string }
+   | { type: 'suggestionApplied'; threadId: string; annotationId: string; success: boolean; error?: string };
 
 /**
  * Large file threshold in bytes (10MB)
@@ -204,6 +206,10 @@ export class ReviewPanel {
 
       case 'resolve':
         await this._handleResolve(message);
+        break;
+
+      case 'applySuggestion':
+        await this._handleApplySuggestion(message);
         break;
 
       case 'submit':
@@ -642,6 +648,58 @@ export class ReviewPanel {
       this._postMessage({
         type: 'error',
         message: `Failed to load scope content: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+  }
+
+  /**
+   * Handle code suggestion application
+   */
+  private async _handleApplySuggestion(message: any): Promise<void> {
+    console.log('[HIVE WEBVIEW] Applying suggestion');
+
+    try {
+      const { uri, range, replacement } = message;
+      const filePath = path.resolve(this._workspaceRoot, uri);
+      
+      // Read the current file
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n');
+
+      // Apply the replacement
+      const startLine = Math.max(0, range.start.line);
+      const endLine = Math.min(lines.length - 1, range.end.line);
+      
+      const newLines = [
+        ...lines.slice(0, startLine),
+        replacement,
+        ...lines.slice(endLine + 1),
+      ];
+
+      // Write back the file
+      fs.writeFileSync(filePath, newLines.join('\n'));
+
+      // Mark the suggestion as applied in the review service
+      if (this._currentSession && message.threadId && message.annotationId) {
+        await this._reviewService.markSuggestionApplied(message.threadId, message.annotationId);
+      }
+
+      this._postMessage({
+        type: 'suggestionApplied',
+        threadId: message.threadId,
+        annotationId: message.annotationId,
+        success: true,
+      });
+
+      console.log('[HIVE WEBVIEW] Suggestion applied successfully');
+    } catch (error) {
+      console.error('[HIVE WEBVIEW] Error applying suggestion:', error);
+      this._postMessage({
+        type: 'suggestionApplied',
+        threadId: message.threadId,
+        annotationId: message.annotationId,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

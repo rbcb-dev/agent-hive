@@ -191,7 +191,23 @@ export function App(): React.ReactElement {
   }, []);
 
   const handleReply = (threadId: string, body: string) => {
-    postMessage({ type: 'reply', threadId, body });
+    if (!session) return;
+    
+    const thread = session.threads.find(t => t.id === threadId);
+    if (!thread) {
+      // This is a new thread, so we need to create it with addComment
+      postMessage({
+        type: 'addComment',
+        entityId: threadId,
+        uri: scopeContent?.uri || activeScope,
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+        body,
+        annotationType: 'comment',
+      });
+    } else {
+      // This is a reply to existing thread
+      postMessage({ type: 'reply', threadId, body });
+    }
   };
 
   const handleAddComment = useCallback(() => {
