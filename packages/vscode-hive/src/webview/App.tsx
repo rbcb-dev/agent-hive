@@ -72,6 +72,16 @@ export function App(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // File content state for inline viewing
+  const [fileContentCache, setFileContentCache] = useState<Map<string, {
+    content: string;
+    language?: string;
+    warning?: string;
+    timestamp: number;
+  }>>(new Map());
+  const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
+  const [loadingFiles, setLoadingFiles] = useState<Set<string>>(new Set());
 
   // Handle messages from extension
   const handleMessage = useCallback((message: ExtensionToWebviewMessage) => {
@@ -85,6 +95,45 @@ export function App(): React.ReactElement {
         break;
       case 'error':
         console.error('Extension error:', message.message);
+        break;
+      case 'fileContent':
+        // Store file content in cache with timestamp
+        setFileContentCache(prev => {
+          const newCache = new Map(prev);
+          newCache.set(message.uri, {
+            content: message.content,
+            language: message.language,
+            warning: message.warning,
+            timestamp: Date.now(),
+          });
+          return newCache;
+        });
+        // Clear any previous error for this file
+        setFileErrors(prev => {
+          const newErrors = new Map(prev);
+          newErrors.delete(message.uri);
+          return newErrors;
+        });
+        // Remove from loading state
+        setLoadingFiles(prev => {
+          const newLoading = new Set(prev);
+          newLoading.delete(message.uri);
+          return newLoading;
+        });
+        break;
+      case 'fileError':
+        // Store the error
+        setFileErrors(prev => {
+          const newErrors = new Map(prev);
+          newErrors.set(message.uri, message.error);
+          return newErrors;
+        });
+        // Remove from loading state
+        setLoadingFiles(prev => {
+          const newLoading = new Set(prev);
+          newLoading.delete(message.uri);
+          return newLoading;
+        });
         break;
     }
   }, []);
@@ -125,6 +174,80 @@ export function App(): React.ReactElement {
     postMessage({ type: 'submit', verdict, summary });
     // Note: isSubmitting will be reset when we receive a session update
   };
+
+  /**
+   * Request file content for inline viewing
+   * This does NOT open an editor tab - content is received via fileContent message
+   * @param uri - File path (relative or absolute)
+   */
+  const requestFileContent = useCallback((uri: string) => {
+    // Don't request if already loading
+    if (loadingFiles.has(uri)) {
+      return;
+    }
+    
+    // Mark as loading
+    setLoadingFiles(prev => {
+      const newLoading = new Set(prev);
+      newLoading.add(uri);
+      return newLoading;
+    });
+    
+    // Send request to extension
+    postMessage({ type: 'requestFile', uri });
+  }, [loadingFiles]);
+
+  /**
+   * Get cached file content, or request if not cached
+   * Cache entries expire after 5 minutes to prevent memory bloat
+   */
+  const getFileContent = useCallback((uri: string) => {
+    const cached = fileContentCache.get(uri);
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached;
+    }
+    
+    // Request fresh content
+    requestFileContent(uri);
+    return null;
+  }, [fileContentCache, requestFileContent]);
+
+  /**
+   * Check if a file is currently loading
+   */
+  const isFileLoading = useCallback((uri: string) => {
+    return loadingFiles.has(uri);
+  }, [loadingFiles]);
+
+  /**
+   * Get error for a file, if any
+   */
+  const getFileError = useCallback((uri: string) => {
+    return fileErrors.get(uri);
+  }, [fileErrors]);
+
+  /**
+   * Clear file content cache (useful for forced refresh)
+   */
+  const clearFileCache = useCallback((uri?: string) => {
+    if (uri) {
+      setFileContentCache(prev => {
+        const newCache = new Map(prev);
+        newCache.delete(uri);
+        return newCache;
+      });
+      setFileErrors(prev => {
+        const newErrors = new Map(prev);
+        newErrors.delete(uri);
+        return newErrors;
+      });
+    } else {
+      setFileContentCache(new Map());
+      setFileErrors(new Map());
+    }
+  }, []);
 
   // Derived state
   const threads = session?.threads || [];
