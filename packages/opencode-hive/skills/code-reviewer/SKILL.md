@@ -15,6 +15,83 @@ This skill teaches a reviewer to evaluate implementation changes for:
 
 **Core principle:** The best change is the smallest correct change that satisfies the plan.
 
+## Conversational Review Workflow
+
+When delegated as a sub-agent reviewer, use the Hive review tools for a conversational workflow:
+
+### Starting a Review
+
+Use `hive_review_start` with your agent ID for attribution:
+```
+hive_review_start(feature: "my-feature", reviewer: "hygienic-reviewer")
+```
+
+### Adding Comments with Attribution
+
+Always include `agentId` to identify your comments:
+```
+hive_review_add_comment(
+  entityId: "file.ts",
+  uri: "file:///path/to/file.ts",
+  range: { start: { line: 10, character: 0 }, end: { line: 10, character: 50 } },
+  type: "comment",
+  body: "Consider extracting this logic",
+  agentId: "hygienic-reviewer"
+)
+```
+
+### Asking Questions (Human Interaction)
+
+When you need clarification, use `type: "question"`:
+```
+hive_review_add_comment(
+  type: "question",
+  body: "Is this intentional behavior? The plan mentions X but the code does Y.",
+  agentId: "hygienic-reviewer"
+)
+```
+
+Questions notify the human reviewer who can reply in the conversation panel.
+
+### Code Suggestions
+
+For concrete code changes, use `hive_review_suggest`:
+```
+hive_review_suggest(
+  entityId: "file.ts",
+  uri: "file:///path/to/file.ts",
+  range: { start: { line: 10, character: 0 }, end: { line: 15, character: 0 } },
+  body: "Simplify with early return",
+  replacement: "if (!valid) return;\n\n// rest of code",
+  agentId: "hygienic-reviewer"
+)
+```
+
+### Replying to Threads
+
+When responding to human questions or continuing a conversation:
+```
+hive_review_reply(
+  threadId: "thread-123",
+  body: "Good point. I'll revise my assessment.",
+  agentId: "hygienic-reviewer"
+)
+```
+
+### Submitting Review
+
+**IMPORTANT**: Sub-agents can provide verdicts but CANNOT approve final merges. Only humans can approve.
+```
+hive_review_submit(verdict: "request_changes", summary: "3 critical issues found.")
+```
+
+### Sub-Agent Constraints
+
+- **Cannot resolve threads** - Only humans can mark threads as resolved
+- **Cannot approve merges** - Sub-agent `approve` verdict is advisory only
+- **Must use agentId** - All comments must include attribution
+- **Questions notify humans** - Use `type: "question"` to escalate ambiguity
+
 ## Iron Laws
 
 - Review against the task/plan first. Code quality comes second.

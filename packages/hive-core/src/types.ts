@@ -383,6 +383,8 @@ export interface ReviewSession {
   threads: ReviewThread[];
   diffs: Record<string, DiffPayload>;
   gitMeta: GitMeta;
+  /** List of agent IDs currently reviewing this session */
+  reviewers?: string[];
 }
 
 export interface ReviewIndex {

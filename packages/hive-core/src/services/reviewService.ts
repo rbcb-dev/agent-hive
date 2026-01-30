@@ -205,7 +205,7 @@ export class ReviewService {
   /**
    * Reply to an existing thread
    */
-  async replyToThread(threadId: string, body: string): Promise<ReviewAnnotation> {
+  async replyToThread(threadId: string, body: string, agentId?: string): Promise<ReviewAnnotation> {
     const { session, thread } = await this.findThread(threadId);
 
     const now = new Date().toISOString();
@@ -215,7 +215,7 @@ export class ReviewService {
       id: annotationId,
       type: 'comment',
       body,
-      author: { type: 'human', name: 'user' }, // Default author for replies
+      author: { type: agentId ? 'llm' : 'human', name: agentId ? 'Agent' : 'user', agentId },
       createdAt: now,
       updatedAt: now,
     };
@@ -243,6 +243,13 @@ export class ReviewService {
     await this.saveSession(session);
 
     return thread;
+  }
+
+  /**
+   * Update an existing review session
+   */
+  async updateSession(session: ReviewSession): Promise<void> {
+    await this.saveSession(session);
   }
 
   // ============================================================================
