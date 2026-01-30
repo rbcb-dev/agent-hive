@@ -115,6 +115,7 @@ import {
   TaskService,
   ContextService,
   ConfigService,
+  ReviewService,
   detectContext,
   listFeatures,
 } from "hive-core";
@@ -125,6 +126,7 @@ import { writeWorkerPromptFile } from "./utils/prompt-file";
 import { createBackgroundManager, type OpencodeClient } from "./background/index.js";
 import { formatElapsed, formatRelativeTime } from "./utils/format";
 import { createBackgroundTools } from "./tools/background-tools.js";
+import { createReviewTools } from "./tools/review-tools.js";
 import { HIVE_AGENT_NAMES, isHiveAgent, normalizeVariant } from "./hooks/variant-hook.js";
 
 const HIVE_SYSTEM_PROMPT = `
@@ -132,7 +134,7 @@ const HIVE_SYSTEM_PROMPT = `
 
 Plan-first development: Write plan → User reviews → Approve → Execute tasks
 
-### Tools (19 total)
+### Tools (27 total)
 
 | Domain | Tools |
 |--------|-------|
@@ -145,6 +147,7 @@ Plan-first development: Write plan → User reviews → Approve → Execute task
 | Context | hive_context_write |
 | Status | hive_status |
 | Skill | hive_skill |
+| Review | hive_review_start, hive_review_list, hive_review_get, hive_review_add_comment, hive_review_suggest, hive_review_reply, hive_review_resolve, hive_review_submit |
 
 ### Workflow
 
@@ -225,6 +228,7 @@ const plugin: Plugin = async (ctx) => {
   const planService = new PlanService(directory);
   const taskService = new TaskService(directory);
   const contextService = new ContextService(directory);
+  const reviewService = new ReviewService(directory);
   const configService = new ConfigService(); // User config at ~/.config/opencode/agent_hive.json
   const disabledMcps = configService.getDisabledMcps();
   const disabledSkills = configService.getDisabledSkills();
@@ -275,6 +279,9 @@ const plugin: Plugin = async (ctx) => {
 
     return null;
   };
+
+  // Create review tools for code review workflow
+  const reviewTools = createReviewTools(reviewService, resolveFeature);
 
   const captureSession = (feature: string, toolContext: unknown) => {
     const ctx = toolContext as ToolContext;
@@ -386,6 +393,16 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         hive_background_output: backgroundTools.hive_background_output,
         hive_background_cancel: backgroundTools.hive_background_cancel,
       }),
+
+      // Review tools for code review workflow
+      hive_review_start: reviewTools.hive_review_start,
+      hive_review_list: reviewTools.hive_review_list,
+      hive_review_get: reviewTools.hive_review_get,
+      hive_review_add_comment: reviewTools.hive_review_add_comment,
+      hive_review_suggest: reviewTools.hive_review_suggest,
+      hive_review_reply: reviewTools.hive_review_reply,
+      hive_review_resolve: reviewTools.hive_review_resolve,
+      hive_review_submit: reviewTools.hive_review_submit,
 
       hive_feature_create: tool({
         description: 'Create a new feature and set it as active',
