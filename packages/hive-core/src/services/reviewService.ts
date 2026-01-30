@@ -245,6 +245,36 @@ export class ReviewService {
     return thread;
   }
 
+  /**
+   * Mark a suggestion annotation as applied
+   */
+  async markSuggestionApplied(threadId: string, annotationId: string): Promise<ReviewAnnotation> {
+    const { session, thread } = await this.findThread(threadId);
+
+    const annotation = thread.annotations.find(a => a.id === annotationId);
+    if (!annotation) {
+      throw new Error(`Annotation not found: ${annotationId}`);
+    }
+
+    if (annotation.type !== 'suggestion' || !annotation.suggestion) {
+      throw new Error(`Annotation ${annotationId} is not a suggestion`);
+    }
+
+    const now = new Date().toISOString();
+    annotation.meta = {
+      ...annotation.meta,
+      applied: true,
+      appliedAt: now,
+    };
+    annotation.updatedAt = now;
+    thread.updatedAt = now;
+    session.updatedAt = now;
+
+    await this.saveSession(session);
+
+    return annotation;
+  }
+
   // ============================================================================
   // Private helpers
   // ============================================================================

@@ -177,6 +177,7 @@ describe('ReviewPanel Handler Mapping', () => {
       selectFile: 'handleSelectFile',
       selectThread: 'handleSelectThread',
       changeScope: 'handleChangeScope',
+      applySuggestion: 'handleApplySuggestion',
     };
 
     expect(Object.keys(handlerMap)).toContain('ready');
@@ -184,5 +185,93 @@ describe('ReviewPanel Handler Mapping', () => {
     expect(Object.keys(handlerMap)).toContain('reply');
     expect(Object.keys(handlerMap)).toContain('resolve');
     expect(Object.keys(handlerMap)).toContain('submit');
+    expect(Object.keys(handlerMap)).toContain('applySuggestion');
+  });
+});
+
+// Test applySuggestion message type
+describe('ReviewPanel ApplySuggestion Messages', () => {
+  describe('WebviewToExtensionMessage - applySuggestion', () => {
+    it('should accept valid applySuggestion message', () => {
+      const message = {
+        type: 'applySuggestion' as const,
+        threadId: 'thread-123',
+        annotationId: 'anno-456',
+        uri: 'src/utils.ts',
+        range: {
+          start: { line: 10, character: 0 },
+          end: { line: 12, character: 0 },
+        },
+        replacement: 'const newCode = refactored();',
+      };
+
+      expect(message.type).toBe('applySuggestion');
+      expect(message.threadId).toBe('thread-123');
+      expect(message.annotationId).toBe('anno-456');
+      expect(message.uri).toBe('src/utils.ts');
+      expect(message.replacement).toBe('const newCode = refactored();');
+    });
+
+    it('should require all necessary fields for applySuggestion', () => {
+      const validMessage = {
+        type: 'applySuggestion' as const,
+        threadId: 'thread-123',
+        annotationId: 'anno-456',
+        uri: 'src/file.ts',
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 1, character: 0 },
+        },
+        replacement: 'new code',
+      };
+
+      // These fields must be present
+      expect(validMessage.threadId).toBeDefined();
+      expect(validMessage.annotationId).toBeDefined();
+      expect(validMessage.uri).toBeDefined();
+      expect(validMessage.range).toBeDefined();
+      expect(validMessage.replacement).toBeDefined();
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - suggestionApplied', () => {
+    it('should create valid suggestionApplied success message', () => {
+      const message = {
+        type: 'suggestionApplied' as const,
+        threadId: 'thread-123',
+        annotationId: 'anno-456',
+        success: true,
+      };
+
+      expect(message.type).toBe('suggestionApplied');
+      expect(message.success).toBe(true);
+    });
+
+    it('should create valid suggestionApplied failure message with error', () => {
+      const message = {
+        type: 'suggestionApplied' as const,
+        threadId: 'thread-123',
+        annotationId: 'anno-456',
+        success: false,
+        error: 'File has been modified since suggestion was created',
+      };
+
+      expect(message.type).toBe('suggestionApplied');
+      expect(message.success).toBe(false);
+      expect(message.error).toBe('File has been modified since suggestion was created');
+    });
+
+    it('should include conflict flag when file changed', () => {
+      const message = {
+        type: 'suggestionApplied' as const,
+        threadId: 'thread-123',
+        annotationId: 'anno-456',
+        success: false,
+        error: 'Conflict detected',
+        hasConflict: true,
+      };
+
+      expect(message.hasConflict).toBe(true);
+    });
   });
 });

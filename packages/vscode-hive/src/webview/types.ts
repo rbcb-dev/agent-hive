@@ -34,7 +34,8 @@ export type WebviewToExtensionMessage =
   | { type: 'submit'; verdict: string; summary: string }
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
-  | { type: 'changeScope'; scope: string };
+  | { type: 'changeScope'; scope: string }
+  | { type: 'applySuggestion'; threadId: string; annotationId: string; uri: string; range: { start: { line: number; character: number }; end: { line: number; character: number } }; replacement: string };
 
 /**
  * Messages sent from extension to webview
@@ -43,7 +44,8 @@ export type ExtensionToWebviewMessage =
   | { type: 'sessionData'; session: import('hive-core').ReviewSession }
   | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
   | { type: 'error'; message: string }
-  | { type: 'scopeChanged'; scope: string };
+  | { type: 'scopeChanged'; scope: string }
+  | { type: 'suggestionApplied'; threadId: string; annotationId: string; success: boolean; error?: string; hasConflict?: boolean };
 
 /**
  * File tree item for navigation

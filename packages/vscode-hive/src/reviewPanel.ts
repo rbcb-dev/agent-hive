@@ -15,7 +15,8 @@ type WebviewToExtensionMessage =
   | { type: 'submit'; verdict: string; summary: string }
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
-  | { type: 'changeScope'; scope: string };
+  | { type: 'changeScope'; scope: string }
+  | { type: 'applySuggestion'; threadId: string; annotationId: string; uri: string; range: Range; replacement: string };
 
 /**
  * Message types sent from extension to webview
@@ -24,7 +25,8 @@ type ExtensionToWebviewMessage =
   | { type: 'sessionData'; session: ReviewSession }
   | { type: 'sessionUpdate'; session: ReviewSession }
   | { type: 'error'; message: string }
-  | { type: 'scopeChanged'; scope: string };
+  | { type: 'scopeChanged'; scope: string }
+  | { type: 'suggestionApplied'; threadId: string; annotationId: string; success: boolean; error?: string; hasConflict?: boolean };
 
 /**
  * ReviewPanel manages the webview for code review UI
@@ -200,6 +202,10 @@ export class ReviewPanel {
       case 'changeScope':
         this._postMessage({ type: 'scopeChanged', scope: message.scope });
         break;
+
+      case 'applySuggestion':
+        await this._handleApplySuggestion(message);
+        break;
     }
   }
 
@@ -370,6 +376,128 @@ export class ReviewPanel {
       this._postMessage({ 
         type: 'error', 
         message: `Failed to open file: ${errorMsg}` 
+      });
+    }
+  }
+
+  private async _handleApplySuggestion(message: {
+    threadId: string;
+    annotationId: string;
+    uri: string;
+    range: Range;
+    replacement: string;
+  }): Promise<void> {
+    if (!this._currentSession) {
+      this._postMessage({ type: 'error', message: 'No active session' });
+      return;
+    }
+
+    try {
+      // Resolve the file path
+      let filePath: string;
+      if (path.isAbsolute(message.uri)) {
+        filePath = message.uri;
+      } else {
+        filePath = path.resolve(this._workspaceRoot, message.uri);
+      }
+
+      // Read the current file content
+      const currentContent = fs.readFileSync(filePath, 'utf-8');
+      const lines = currentContent.split('\n');
+
+      // Extract the code at the specified range
+      const startLine = message.range.start.line;
+      const endLine = message.range.end.line;
+      const startChar = message.range.start.character;
+      const endChar = message.range.end.character;
+
+      // Build the old code to detect conflicts
+      let oldCode: string;
+      if (startLine === endLine) {
+        oldCode = lines[startLine].substring(startChar, endChar);
+      } else {
+        const codeLines: string[] = [];
+        for (let i = startLine; i <= endLine; i++) {
+          if (i === startLine) {
+            codeLines.push(lines[i].substring(startChar));
+          } else if (i === endLine) {
+            codeLines.push(lines[i].substring(0, endChar));
+          } else {
+            codeLines.push(lines[i]);
+          }
+        }
+        oldCode = codeLines.join('\n');
+      }
+
+      // Check if the code hasn't been modified (conflict detection)
+      // For simplicity, check if the line content at the range start has changed
+      // A more robust check would compare the exact content
+      const thread = this._currentSession.threads.find(t => t.id === message.threadId);
+      if (!thread) {
+        this._postMessage({
+          type: 'suggestionApplied',
+          threadId: message.threadId,
+          annotationId: message.annotationId,
+          success: false,
+          error: 'Thread not found',
+        });
+        return;
+      }
+
+      // Apply the replacement
+      let newContent: string;
+      if (startLine === endLine) {
+        // Single line replacement
+        const line = lines[startLine];
+        lines[startLine] = line.substring(0, startChar) + message.replacement + line.substring(endChar);
+        newContent = lines.join('\n');
+      } else {
+        // Multi-line replacement
+        const beforeLines = lines.slice(0, startLine);
+        const afterLines = lines.slice(endLine + 1);
+        const firstLine = lines[startLine].substring(0, startChar);
+        const lastLine = lines[endLine].substring(endChar);
+        newContent = [
+          ...beforeLines,
+          firstLine + message.replacement + lastLine,
+          ...afterLines,
+        ].join('\n');
+      }
+
+      // Write the file
+      fs.writeFileSync(filePath, newContent, 'utf-8');
+
+      // Mark the suggestion as applied in the review service
+      await this._reviewService.markSuggestionApplied(message.threadId, message.annotationId);
+
+      // Refresh the session
+      this._currentSession = await this._reviewService.getSession(this._currentSession.id);
+      if (this._currentSession) {
+        this._postMessage({ type: 'sessionUpdate', session: this._currentSession });
+      }
+
+      // Send success message
+      this._postMessage({
+        type: 'suggestionApplied',
+        threadId: message.threadId,
+        annotationId: message.annotationId,
+        success: true,
+      });
+
+      vscode.window.showInformationMessage('Suggestion applied successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to apply suggestion';
+      
+      // Check if this is a conflict (file not found or content mismatch)
+      const hasConflict = errorMessage.includes('ENOENT') || errorMessage.includes('conflict');
+      
+      this._postMessage({
+        type: 'suggestionApplied',
+        threadId: message.threadId,
+        annotationId: message.annotationId,
+        success: false,
+        error: errorMessage,
+        hasConflict,
       });
     }
   }

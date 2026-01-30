@@ -19,3 +19,6 @@ export type { ReviewSummaryProps } from './ReviewSummary';
 
 export { DiffViewer } from './DiffViewer';
 export type { DiffViewerProps } from './DiffViewer';
+
+export { SuggestionPreview } from './SuggestionPreview';
+export type { SuggestionPreviewProps } from './SuggestionPreview';

@@ -286,7 +286,7 @@ export interface ReviewAnnotation {
   createdAt: string;
   updatedAt: string;
   suggestion?: { replacement: string };
-  meta?: { deletedLine?: boolean };
+  meta?: { deletedLine?: boolean; applied?: boolean; appliedAt?: string };
 }
 
 export interface ReviewThread {
