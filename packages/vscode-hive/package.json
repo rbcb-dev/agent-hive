@@ -773,6 +773,11 @@
         "command": "hive.openSession",
         "title": "Open Session",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "hive.openReview",
+        "title": "Hive: Open Review",
+        "icon": "$(comment-discussion)"
       }
     ],
     "menus": {
@@ -785,6 +790,11 @@
         {
           "command": "hive.refresh",
           "when": "view == hive.features",
+          "group": "navigation"
+        },
+        {
+          "command": "hive.openReview",
+          "when": "view == hive.features && hive.hasHiveRoot",
           "group": "navigation"
         }
       ],
@@ -801,6 +811,10 @@
         },
         {
           "command": "hive.viewReport",
+          "when": "viewItem == feature"
+        },
+        {
+          "command": "hive.openReview",
           "when": "viewItem == feature"
         },
         {
