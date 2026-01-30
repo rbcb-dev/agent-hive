@@ -896,7 +896,7 @@
     }
   },
   "scripts": {
-    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --define:import.meta.url=__importMetaUrl --banner:js=\"const __importMetaUrl = require('url').pathToFileURL(__filename).href;\" && vsce package --no-dependencies -o vscode-hive.vsix",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --define:import.meta.url=__importMetaUrl --banner:js=\"const __importMetaUrl = require('url').pathToFileURL(__filename).href;\" && npx vsce package --no-dependencies -o vscode-hive.vsix",
     "build:webview": "vite build",
     "watch": "npm run build -- --watch",
     "build:types": "tsc --emitDeclarationOnly",
@@ -909,24 +909,23 @@
     "clean": "rm -rf dist/ vscode-hive.vsix"
   },
   "devDependencies": {
-    "@testing-library/react": "^16.3.2",
     "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.100.0",
     "@vitejs/plugin-react": "^5.1.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.2",
-    "jsdom": "^24.0.0",
+    "jsdom": "^27.4.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "^1.1.1",
+    "@opencode-ai/sdk": "^1.1.46",
     "hive-core": "workspace:*",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "vsce": "^2.15.0"
+    "react-dom": "^19.2.4"
   }
 }
