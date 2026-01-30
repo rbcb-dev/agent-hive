@@ -54,9 +54,11 @@ export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): R
       </div>
 
       <div className="summary-input">
+        <label htmlFor="review-summary" className="visually-hidden">Review summary</label>
         <textarea
+          id="review-summary"
           className="summary-textarea"
-          placeholder="Leave a summary for your review..."
+          placeholder="Leave a summary for your review…"
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           disabled={isSubmitting}
@@ -69,8 +71,9 @@ export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): R
           className="btn-submit"
           onClick={handleSubmit}
           disabled={!selectedVerdict || isSubmitting}
+          aria-label={isSubmitting ? 'Submitting review' : 'Submit review'}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+          {isSubmitting ? 'Submitting…' : 'Submit Review'}
         </button>
       </div>
     </div>

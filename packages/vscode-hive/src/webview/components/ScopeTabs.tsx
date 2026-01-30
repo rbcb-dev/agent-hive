@@ -24,15 +24,18 @@ export function ScopeTabs({ scopes, activeScope, onScopeChange }: ScopeTabsProps
   };
 
   return (
-    <div className="scope-tabs">
+    <div className="scope-tabs" role="tablist" aria-label="Review scope">
       {scopes.map((scope) => (
         <button
           key={scope.id}
           className={`scope-tab ${scope.id === activeScope ? 'active' : ''}`}
           onClick={() => handleClick(scope.id)}
+          role="tab"
           aria-selected={scope.id === activeScope}
+          aria-controls={`scope-panel-${scope.id}`}
+          id={`scope-tab-${scope.id}`}
         >
-          {scope.icon && <span className="scope-tab-icon">{scope.icon}</span>}
+          {scope.icon && <span className="scope-tab-icon" aria-hidden="true">{scope.icon}</span>}
           {scope.label}
         </button>
       ))}

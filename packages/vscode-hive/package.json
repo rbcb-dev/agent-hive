@@ -901,7 +901,12 @@
     "watch": "npm run build -- --watch",
     "build:types": "tsc --emitDeclarationOnly",
     "test:webview": "vitest run --config vitest.webview.config.ts",
-    "test:webview:watch": "vitest watch --config vitest.webview.config.ts"
+    "test:webview:watch": "vitest watch --config vitest.webview.config.ts",
+    "test:local": "npm run test:local:all",
+    "test:local:all": "npm run clean && npm run build:webview && npm run test:webview && npm run build && npm run test:local:verify",
+    "test:local:verify": "node scripts/verify-build.mjs",
+    "test:local:quick": "npm run test:webview && npm run build",
+    "clean": "rm -rf dist/ vscode-hive.vsix"
   },
   "devDependencies": {
     "@testing-library/react": "^14.3.0",

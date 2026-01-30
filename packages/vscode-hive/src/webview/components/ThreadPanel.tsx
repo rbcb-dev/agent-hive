@@ -72,6 +72,7 @@ export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): R
             <button
               className="btn-resolve"
               onClick={() => onResolve(thread.id)}
+              aria-label="Mark thread as resolved"
             >
               Resolve
             </button>
@@ -86,18 +87,23 @@ export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): R
       </div>
 
       <div className="thread-reply">
+        <label htmlFor="reply-input" className="visually-hidden">Reply to thread</label>
         <textarea
+          id="reply-input"
           className="reply-input"
-          placeholder="Reply..."
+          placeholder="Reply…"
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={3}
+          aria-describedby="reply-hint"
         />
+        <span id="reply-hint" className="visually-hidden">Press Cmd+Enter to submit</span>
         <button
           className="btn-reply"
           onClick={handleReply}
           disabled={!replyText.trim()}
+          aria-label="Submit reply"
         >
           Reply
         </button>

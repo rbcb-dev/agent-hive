@@ -98,7 +98,7 @@ describe('ThreadPanel', () => {
       />
     );
 
-    expect(screen.getByPlaceholderText('Reply...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Reply…')).toBeInTheDocument();
   });
 
   it('calls onReply when reply is submitted', () => {
@@ -111,7 +111,7 @@ describe('ThreadPanel', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('Reply...');
+    const input = screen.getByPlaceholderText('Reply…');
     fireEvent.change(input, { target: { value: 'My reply' } });
     fireEvent.click(screen.getByText('Reply'));
 

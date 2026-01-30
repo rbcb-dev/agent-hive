@@ -5,9 +5,10 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   root: resolve(__dirname, 'src/webview'),
+  // Use relative paths for webview (important for VSCode webview CSP)
+  base: '',
   build: {
     outDir: resolve(__dirname, 'dist/webview'),
-    emptyDirBeforeWrite: true,
     rollupOptions: {
       input: resolve(__dirname, 'src/webview/index.html'),
       output: {

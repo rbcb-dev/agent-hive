@@ -32,13 +32,13 @@ function DiffLine({ line }: { line: DiffHunkLine }): React.ReactElement {
 
 function DiffHunkView({ hunk }: { hunk: DiffHunk }): React.ReactElement {
   return (
-    <div className="diff-hunk">
+    <div className="diff-hunk" role="region" aria-label={`Diff hunk starting at line ${hunk.newStart}`}>
       <div className="hunk-header">
         @@ -{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@
       </div>
       <div className="hunk-lines">
         {hunk.lines.map((line, index) => (
-          <DiffLine key={index} line={line} />
+          <DiffLine key={`${hunk.newStart}-${index}-${line.type}`} line={line} />
         ))}
       </div>
     </div>

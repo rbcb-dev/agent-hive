@@ -349,11 +349,14 @@ export class ReviewPanel {
     // Read the index.html
     let html = fs.readFileSync(indexHtmlPath, 'utf-8');
 
-    // Get URIs for assets
-    const assetsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets'));
+    // Get the URI for the assets directory
+    const assetsDir = vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets');
+    const assetsUri = webview.asWebviewUri(assetsDir);
 
     // Rewrite asset paths to webview URIs
-    // Replace href="assets/..." and src="assets/..."
+    // Handle both absolute paths (/assets/) and relative paths (assets/)
+    html = html.replace(/href="\/assets\//g, `href="${assetsUri}/`);
+    html = html.replace(/src="\/assets\//g, `src="${assetsUri}/`);
     html = html.replace(/href="assets\//g, `href="${assetsUri}/`);
     html = html.replace(/src="assets\//g, `src="${assetsUri}/`);
 

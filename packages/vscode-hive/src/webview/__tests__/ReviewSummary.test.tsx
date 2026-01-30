@@ -89,7 +89,7 @@ describe('ReviewSummary', () => {
     const textarea = screen.getByPlaceholderText(/summary/i);
     expect(textarea).toBeDisabled();
     
-    const submitButton = screen.getByText('Submitting...');
+    const submitButton = screen.getByText('Submitting…');
     expect(submitButton).toBeDisabled();
   });
 
