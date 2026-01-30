@@ -68,6 +68,27 @@ describe('App', () => {
     
     expect(notifyReady).toHaveBeenCalled();
   });
+
+  describe('content type routing', () => {
+    it('isMarkdownFile returns true for .md files', async () => {
+      const { isMarkdownFile } = await import('../App');
+      expect(isMarkdownFile('README.md')).toBe(true);
+      expect(isMarkdownFile('docs/guide.md')).toBe(true);
+      expect(isMarkdownFile('CHANGELOG.MD')).toBe(true);
+    });
+
+    it('isMarkdownFile returns true for .markdown files', async () => {
+      const { isMarkdownFile } = await import('../App');
+      expect(isMarkdownFile('readme.markdown')).toBe(true);
+    });
+
+    it('isMarkdownFile returns false for non-markdown files', async () => {
+      const { isMarkdownFile } = await import('../App');
+      expect(isMarkdownFile('app.ts')).toBe(false);
+      expect(isMarkdownFile('style.css')).toBe(false);
+      expect(isMarkdownFile('package.json')).toBe(false);
+    });
+  });
 });
 
 describe('App - File Content Request Protocol', () => {
