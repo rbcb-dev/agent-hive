@@ -175,13 +175,27 @@ class HiveExtension {
         }
       }),
 
-      vscode.commands.registerCommand('hive.openReview', async (item?: { featureName?: string }) => {
+      vscode.commands.registerCommand('hive.openReview', async (item?: any) => {
         if (!this.workspaceRoot) {
           vscode.window.showErrorMessage('Hive: No .hive directory found')
           return
         }
 
-        let featureName = item?.featureName
+        // Extract feature name from either:
+        // 1. FeatureItem tree node (has 'name' property)
+        // 2. Legacy object (has 'featureName' property)
+        let featureName: string | undefined;
+        
+        if (item) {
+          // Check if it's a FeatureItem from the tree (has 'name' property)
+          if ('name' in item && typeof item.name === 'string') {
+            featureName = item.name;
+          }
+          // Check if it's a legacy object (has 'featureName' property)
+          else if ('featureName' in item && typeof item.featureName === 'string') {
+            featureName = item.featureName;
+          }
+        }
 
         // If no feature name provided, prompt for one
         if (!featureName) {
