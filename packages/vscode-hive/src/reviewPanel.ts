@@ -384,17 +384,19 @@ export class ReviewPanel {
      console.log('[HIVE WEBVIEW] Assets URI (from asWebviewUri):', assetsUri.toString());
 
      // === LOGGING: Asset Path Detection ===
-     const assetPathsInHtml = html.match(/(?:href|src)="(?:\/)?assets\/[^"]+"/g) || [];
+     const assetPathsInHtml = html.match(/(?:href|src)="(?:\.\/)?(?:\/)?assets\/[^"]+"/g) || [];
      console.log('[HIVE WEBVIEW] Asset paths found in HTML:', assetPathsInHtml.length);
      assetPathsInHtml.slice(0, 5).forEach((match, idx) => {
        console.log(`  [HIVE WEBVIEW]   ${idx + 1}. ${match}`);
      });
 
      // Rewrite asset paths to webview URIs
-     // Handle both absolute paths (/assets/) and relative paths (assets/)
+     // Handle all formats: /assets/, assets/, ./assets/
      const beforeRewrite = html;
      html = html.replace(/href="\/assets\//g, `href="${assetsUri}/`);
      html = html.replace(/src="\/assets\//g, `src="${assetsUri}/`);
+     html = html.replace(/href="\.\/assets\//g, `href="${assetsUri}/`);
+     html = html.replace(/src="\.\/assets\//g, `src="${assetsUri}/`);
      html = html.replace(/href="assets\//g, `href="${assetsUri}/`);
      html = html.replace(/src="assets\//g, `src="${assetsUri}/`);
 
