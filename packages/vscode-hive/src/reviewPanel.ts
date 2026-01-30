@@ -27,13 +27,13 @@ type ResolvedReviewConfig = Required<ReviewConfig> & { notifications: Required<R
  * Message types sent from extension to webview
  */
 type ExtensionToWebviewMessage =
-  | { type: 'sessionData'; session: ReviewSession; config: ResolvedReviewConfig }
-  | { type: 'sessionUpdate'; session: ReviewSession }
-  | { type: 'configUpdate'; config: ResolvedReviewConfig }
-  | { type: 'error'; message: string }
-  | { type: 'scopeChanged'; scope: string }
-  | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
-  | { type: 'fileError'; uri: string; error: string };
+   | { type: 'sessionData'; session: ReviewSession; config: ResolvedReviewConfig }
+   | { type: 'sessionUpdate'; session: ReviewSession }
+   | { type: 'configUpdate'; config: ResolvedReviewConfig }
+   | { type: 'error'; message: string }
+   | { type: 'scopeChanged'; scope: string; scopeContent?: { uri: string; content: string; language: string } }
+   | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
+   | { type: 'fileError'; uri: string; error: string };
 
 /**
  * Large file threshold in bytes (10MB)
@@ -50,6 +50,7 @@ export class ReviewPanel {
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private readonly _workspaceRoot: string;
+  private readonly _featureName: string | undefined;
   private readonly _disposables: vscode.Disposable[] = [];
   private readonly _reviewService: ReviewService;
   private readonly _configService: ConfigService;
@@ -85,17 +86,18 @@ export class ReviewPanel {
     return ReviewPanel.currentPanel;
   }
 
-   private constructor(
-     panel: vscode.WebviewPanel,
-     extensionUri: vscode.Uri,
-     workspaceRoot: string,
-     featureName?: string
-   ) {
-     this._panel = panel;
-     this._extensionUri = extensionUri;
-     this._workspaceRoot = workspaceRoot;
-     this._reviewService = new ReviewService(workspaceRoot);
-     this._configService = new ConfigService();
+    private constructor(
+      panel: vscode.WebviewPanel,
+      extensionUri: vscode.Uri,
+      workspaceRoot: string,
+      featureName?: string
+    ) {
+      this._panel = panel;
+      this._extensionUri = extensionUri;
+      this._workspaceRoot = workspaceRoot;
+      this._featureName = featureName;
+      this._reviewService = new ReviewService(workspaceRoot);
+      this._configService = new ConfigService();
 
      console.log('[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel');
      console.log('[HIVE WEBVIEW] Extension URI:', extensionUri.toString());
@@ -216,7 +218,7 @@ export class ReviewPanel {
         break;
 
       case 'changeScope':
-        this._postMessage({ type: 'scopeChanged', scope: message.scope });
+        await this._handleChangeScope(message.scope);
         break;
 
       case 'requestFile':
@@ -540,6 +542,105 @@ export class ReviewPanel {
       '.dockerfile': 'dockerfile',
     };
     return languageMap[ext] || 'plaintext';
+   }
+
+  /**
+   * Handle scope change - load content for the requested scope
+   */
+  private async _handleChangeScope(scope: string): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling changeScope:', scope);
+
+    try {
+      if (!this._featureName) {
+        this._postMessage({
+          type: 'error',
+          message: 'No feature is currently loaded',
+        });
+        return;
+      }
+
+      const featureDir = path.join(this._workspaceRoot, '.hive', 'features', this._featureName);
+
+      let scopeContent: { uri: string; content: string; language: string } | undefined;
+
+      switch (scope) {
+        case 'plan': {
+          const planPath = path.join(featureDir, 'plan.md');
+          if (fs.existsSync(planPath)) {
+            const content = fs.readFileSync(planPath, 'utf-8');
+            scopeContent = {
+              uri: planPath,
+              content,
+              language: 'markdown',
+            };
+          }
+          break;
+        }
+
+        case 'task': {
+          const tasksPath = path.join(featureDir, 'tasks.json');
+          if (fs.existsSync(tasksPath)) {
+            const content = fs.readFileSync(tasksPath, 'utf-8');
+            scopeContent = {
+              uri: tasksPath,
+              content,
+              language: 'json',
+            };
+          }
+          break;
+        }
+
+        case 'context': {
+          // Load first context file (usually the most important)
+          const contextsDir = path.join(featureDir, 'contexts');
+          if (fs.existsSync(contextsDir)) {
+            const files = fs.readdirSync(contextsDir).filter(f => f.endsWith('.md'));
+            if (files.length > 0) {
+              const firstFile = path.join(contextsDir, files[0]);
+              const content = fs.readFileSync(firstFile, 'utf-8');
+              scopeContent = {
+                uri: firstFile,
+                content,
+                language: 'markdown',
+              };
+            }
+          }
+          break;
+        }
+
+        case 'feature': {
+          const featurePath = path.join(featureDir, 'feature.json');
+          if (fs.existsSync(featurePath)) {
+            const content = fs.readFileSync(featurePath, 'utf-8');
+            scopeContent = {
+              uri: featurePath,
+              content,
+              language: 'json',
+            };
+          }
+          break;
+        }
+
+        case 'code': {
+          // Code scope doesn't load a specific file, just shows threads
+          break;
+        }
+      }
+
+      this._postMessage({
+        type: 'scopeChanged',
+        scope,
+        scopeContent,
+      });
+
+      console.log('[HIVE WEBVIEW] Scope changed to:', scope, { hasContent: !!scopeContent });
+    } catch (error) {
+      console.error('[HIVE WEBVIEW] Error changing scope:', error);
+      this._postMessage({
+        type: 'error',
+        message: `Failed to load scope content: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
   }
 
   private _postMessage(message: ExtensionToWebviewMessage): void {

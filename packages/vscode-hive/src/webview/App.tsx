@@ -9,6 +9,7 @@ import { ThreadList } from './components/ThreadList';
 import { ThreadPanel } from './components/ThreadPanel';
 import { ReviewSummary } from './components/ReviewSummary';
 import { DiffViewer } from './components/DiffViewer';
+import { CodeViewer } from './components/CodeViewer';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { notifyReady, addMessageListener, postMessage } from './vscodeApi';
 import type { 
@@ -91,6 +92,7 @@ export function App(): React.ReactElement {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scopeContent, setScopeContent] = useState<{ uri: string; content: string; language: string } | undefined>(undefined);
   
   // File content state for inline viewing
   const [fileContentCache, setFileContentCache] = useState<Map<string, {
@@ -111,6 +113,7 @@ export function App(): React.ReactElement {
         break;
       case 'scopeChanged':
         setActiveScope(message.scope);
+        setScopeContent(message.scopeContent);
         break;
       case 'error':
         console.error('Extension error:', message.message);
@@ -179,6 +182,13 @@ export function App(): React.ReactElement {
     setSelectedThread(threadId);
     postMessage({ type: 'selectThread', threadId });
   };
+
+  // Wrapper for CodeViewer's thread click callback
+  const handleCodeViewerThreadClick = useCallback((threads: ReviewThread[]) => {
+    if (threads.length > 0) {
+      handleSelectThread(threads[0].id);
+    }
+  }, []);
 
   const handleReply = (threadId: string, body: string) => {
     postMessage({ type: 'reply', threadId, body });
@@ -320,31 +330,48 @@ export function App(): React.ReactElement {
         </nav>
 
         <main className="review-main" role="main">
-          <div className="content-area">
-            {activeScope === 'code' && isSelectedFileMarkdown && (
-              <MarkdownViewer 
-                content={markdownContent} 
-                filePath={selectedFile || undefined}
-              />
-            )}
-            {activeScope === 'code' && !isSelectedFileMarkdown && (
-              <DiffViewer file={selectedFileData} />
-            )}
-            {activeScope !== 'code' && (
-              <div className="scope-content">
-                <p>Review content for {activeScope} scope</p>
-              </div>
-            )}
-          </div>
+           <div className="content-area">
+             {activeScope === 'code' && isSelectedFileMarkdown && (
+               <MarkdownViewer 
+                 content={markdownContent} 
+                 filePath={selectedFile || undefined}
+               />
+             )}
+             {activeScope === 'code' && !isSelectedFileMarkdown && (
+               <DiffViewer file={selectedFileData} />
+             )}
+             {activeScope !== 'code' && scopeContent && (
+               <>
+                 {scopeContent.language === 'markdown' ? (
+                   <MarkdownViewer 
+                     content={scopeContent.content}
+                     filePath={scopeContent.uri}
+                   />
+                 ) : (
+                   <CodeViewer
+                     code={scopeContent.content}
+                     language={scopeContent.language}
+                     threads={[]}
+                     onThreadClick={handleCodeViewerThreadClick}
+                   />
+                 )}
+               </>
+             )}
+             {activeScope !== 'code' && !scopeContent && (
+               <div className="scope-content">
+                 <p>No content available for {activeScope} scope</p>
+               </div>
+             )}
+           </div>
 
-          <aside className="thread-sidebar">
-            <ThreadPanel
-              thread={selectedThreadData}
-              onReply={handleReply}
-              onResolve={handleResolve}
-            />
-          </aside>
-        </main>
+           <aside className="thread-sidebar">
+             <ThreadPanel
+               thread={selectedThreadData}
+               onReply={handleReply}
+               onResolve={handleResolve}
+             />
+           </aside>
+         </main>
       </div>
 
       <footer className="review-footer">

@@ -41,12 +41,12 @@ export type WebviewToExtensionMessage =
  * Messages sent from extension to webview
  */
 export type ExtensionToWebviewMessage =
-  | { type: 'sessionData'; session: import('hive-core').ReviewSession }
-  | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
-  | { type: 'error'; message: string }
-  | { type: 'scopeChanged'; scope: string }
-  | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
-  | { type: 'fileError'; uri: string; error: string };
+   | { type: 'sessionData'; session: import('hive-core').ReviewSession }
+   | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
+   | { type: 'error'; message: string }
+   | { type: 'scopeChanged'; scope: string; scopeContent?: { uri: string; content: string; language: string } }
+   | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
+   | { type: 'fileError'; uri: string; error: string };
 
 /**
  * File tree item for navigation
