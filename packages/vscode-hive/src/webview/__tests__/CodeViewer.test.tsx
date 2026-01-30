@@ -3,8 +3,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { CodeViewer } from '../components/CodeViewer';
+import type { ReviewThread } from 'hive-core';
 
 // Mock shiki with a proper highlighter implementation
 const mockHighlighter = {
@@ -261,6 +262,243 @@ describe('CodeViewer', () => {
       await waitFor(() => {
         const lines = screen.getAllByRole('presentation');
         expect(lines.length).toBe(2);
+      });
+    });
+  });
+
+  describe('thread gutter markers', () => {
+    const mockThread: ReviewThread = {
+      id: 'thread-1',
+      entityId: 'entity-1',
+      uri: 'src/example.ts',
+      range: { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } },
+      status: 'open',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      annotations: [
+        {
+          id: 'ann-1',
+          type: 'comment',
+          body: 'Test comment',
+          author: { type: 'human', name: 'Alice' },
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    };
+
+    it('renders thread marker icon on line with thread', async () => {
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        expect(marker).toBeInTheDocument();
+      });
+    });
+
+    it('shows correct thread count for lines with multiple threads', async () => {
+      const thread1: ReviewThread = {
+        ...mockThread,
+        id: 'thread-1',
+      };
+      const thread2: ReviewThread = {
+        ...mockThread,
+        id: 'thread-2',
+      };
+
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[thread1, thread2]}
+        />
+      );
+
+      await waitFor(() => {
+        // Should show badge with count "2" for stacked threads
+        const marker = screen.getByTestId('thread-marker-1');
+        expect(marker).toHaveTextContent('2');
+      });
+    });
+
+    it('calls onThreadClick when marker is clicked', async () => {
+      const handleThreadClick = vi.fn();
+
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+          onThreadClick={handleThreadClick}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        fireEvent.click(marker);
+      });
+
+      expect(handleThreadClick).toHaveBeenCalledWith([mockThread], 2); // line 2 (1-indexed)
+    });
+
+    it('does not render markers when threads is empty', async () => {
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId(/thread-marker/)).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows open thread marker with different style than resolved', async () => {
+      const resolvedThread: ReviewThread = {
+        ...mockThread,
+        status: 'resolved',
+      };
+
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[resolvedThread]}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        expect(marker).toHaveClass('thread-marker-resolved');
+      });
+    });
+
+    it('expands inline thread when marker is clicked', async () => {
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+          onThreadClick={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        fireEvent.click(marker);
+      });
+
+      // Should show expanded inline thread panel
+      await waitFor(() => {
+        expect(screen.getByTestId('inline-thread')).toBeInTheDocument();
+      });
+    });
+
+    it('supports multiple threads on different lines', async () => {
+      const thread1: ReviewThread = {
+        ...mockThread,
+        id: 'thread-1',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+      };
+      const thread2: ReviewThread = {
+        ...mockThread,
+        id: 'thread-2',
+        range: { start: { line: 2, character: 0 }, end: { line: 2, character: 10 } },
+      };
+
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[thread1, thread2]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('thread-marker-0')).toBeInTheDocument();
+        expect(screen.getByTestId('thread-marker-2')).toBeInTheDocument();
+      });
+    });
+
+    it('passes reply and resolve handlers to inline thread', async () => {
+      const handleReply = vi.fn();
+      const handleResolve = vi.fn();
+
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+          onThreadClick={vi.fn()}
+          onThreadReply={handleReply}
+          onThreadResolve={handleResolve}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        fireEvent.click(marker);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('inline-thread')).toBeInTheDocument();
+      });
+
+      // Reply and resolve buttons should be present
+      const replyButton = screen.getByRole('button', { name: /^reply$/i });
+      const resolveButton = screen.getByRole('button', { name: /resolve/i });
+      expect(replyButton).toBeInTheDocument();
+      expect(resolveButton).toBeInTheDocument();
+    });
+
+    it('closes inline thread when close button is clicked', async () => {
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+          onThreadClick={vi.fn()}
+        />
+      );
+
+      // Open the thread
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('thread-marker-1'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('inline-thread')).toBeInTheDocument();
+      });
+
+      // Close the thread
+      fireEvent.click(screen.getByRole('button', { name: /close/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('inline-thread')).not.toBeInTheDocument();
+      });
+    });
+
+    it('has accessible thread marker button', async () => {
+      render(
+        <CodeViewer
+          code={'line 1\nline 2\nline 3'}
+          language="typescript"
+          threads={[mockThread]}
+        />
+      );
+
+      await waitFor(() => {
+        const marker = screen.getByTestId('thread-marker-1');
+        expect(marker).toHaveAttribute('aria-label');
+        expect(marker.getAttribute('aria-label')).toContain('thread');
       });
     });
   });

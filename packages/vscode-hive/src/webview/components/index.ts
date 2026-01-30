@@ -22,3 +22,6 @@ export type { DiffViewerProps } from './DiffViewer';
 
 export { CodeViewer } from './CodeViewer';
 export type { CodeViewerProps } from './CodeViewer';
+
+export { InlineThread } from './InlineThread';
+export type { InlineThreadProps } from './InlineThread';
