@@ -248,7 +248,10 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
   },
 };
 
+// ============================================================================
 // Review Types
+// ============================================================================
+
 export type ReviewScope = 'feature' | 'task' | 'context' | 'plan' | 'code';
 export type ReviewStatus = 'in_progress' | 'approved' | 'changes_requested' | 'commented';
 export type ReviewVerdict = 'approve' | 'request_changes' | 'comment';
