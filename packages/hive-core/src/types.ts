@@ -247,3 +247,109 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
     },
   },
 };
+
+// ============================================================================
+// Review Types
+// ============================================================================
+
+export type ReviewScope = 'feature' | 'task' | 'context' | 'plan' | 'code';
+export type ReviewStatus = 'in_progress' | 'approved' | 'changes_requested' | 'commented';
+export type ReviewVerdict = 'approve' | 'request_changes' | 'comment';
+export type ThreadStatus = 'open' | 'resolved' | 'outdated';
+export type AnnotationType = 'comment' | 'suggestion' | 'task' | 'question' | 'approval';
+
+export interface Position {
+  line: number;      // 0-based
+  character: number; // 0-based UTF-16
+}
+
+export interface Range {
+  start: Position;   // inclusive
+  end: Position;     // exclusive
+}
+
+export interface GitMeta {
+  repoRoot: string;
+  baseRef: string;
+  headRef: string;
+  mergeBase: string;
+  capturedAt: string;
+  diffStats: { files: number; insertions: number; deletions: number };
+  diffSummary: Array<{ path: string; status: string; additions: number; deletions: number }>;
+}
+
+export interface ReviewAnnotation {
+  id: string;
+  type: AnnotationType;
+  body: string;
+  author: { type: 'human' | 'llm'; name: string; agentId?: string };
+  createdAt: string;
+  updatedAt: string;
+  suggestion?: { replacement: string }; // required for suggestion
+  meta?: { deletedLine?: boolean };
+}
+
+export interface ReviewThread {
+  id: string;
+  entityId: string;
+  uri: string | null; // null for non-code scopes
+  range: Range;
+  status: ThreadStatus;
+  createdAt: string;
+  updatedAt: string;
+  annotations: ReviewAnnotation[]; // non-empty
+}
+
+export interface DiffHunkLine {
+  type: 'context' | 'add' | 'remove';
+  content: string;
+}
+
+export interface DiffHunk {
+  oldStart: number;
+  oldLines: number;
+  newStart: number;
+  newLines: number;
+  lines: DiffHunkLine[];
+  meta?: { duplicates?: boolean; overlap?: boolean };
+}
+
+export interface DiffFile {
+  path: string;
+  status: 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | 'B';
+  additions: number;
+  deletions: number;
+  isBinary?: boolean;
+  hunks: DiffHunk[];
+}
+
+export interface DiffPayload {
+  baseRef: string;
+  headRef: string;
+  mergeBase: string;
+  repoRoot: string;
+  fileRoot: string;
+  diffStats: { files: number; insertions: number; deletions: number };
+  files: DiffFile[];
+}
+
+export interface ReviewSession {
+  schemaVersion: 1;
+  id: string;
+  featureName: string;
+  scope: ReviewScope;
+  status: ReviewStatus;
+  verdict: ReviewVerdict | null;
+  summary: string | null;
+  createdAt: string;
+  updatedAt: string;
+  threads: ReviewThread[];
+  diffs: Record<string, DiffPayload>;
+  gitMeta: GitMeta;
+}
+
+export interface ReviewIndex {
+  schemaVersion: 1;
+  activeSessionId: string | null;
+  sessions: Array<{ id: string; scope: ReviewScope; status: ReviewStatus; updatedAt: string }>;
+}
