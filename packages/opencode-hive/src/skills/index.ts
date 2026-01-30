@@ -13,3 +13,4 @@ export {
   getBuiltinSkillsXml,
   type BuiltinSkillName 
 } from './builtin.js';
+export { loadFileSkill } from './file-loader.js';
