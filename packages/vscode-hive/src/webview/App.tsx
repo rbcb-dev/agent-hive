@@ -9,6 +9,7 @@ import { ThreadList } from './components/ThreadList';
 import { ThreadPanel } from './components/ThreadPanel';
 import { ReviewSummary } from './components/ReviewSummary';
 import { DiffViewer } from './components/DiffViewer';
+import { MarkdownViewer } from './components/MarkdownViewer';
 import { notifyReady, addMessageListener, postMessage } from './vscodeApi';
 import type { 
   ReviewSession, 
@@ -64,6 +65,33 @@ function diffsToFileTree(
   }
   
   return fileItems;
+}
+
+/**
+ * Check if a file path is a markdown file
+ */
+export function isMarkdownFile(filePath: string): boolean {
+  const lowerPath = filePath.toLowerCase();
+  return lowerPath.endsWith('.md') || lowerPath.endsWith('.markdown');
+}
+
+/**
+ * Extract the "new" content from diff hunks (added + context lines)
+ * This reconstructs the file content after the changes
+ */
+function extractContentFromDiff(file: DiffFile): string {
+  const lines: string[] = [];
+  
+  for (const hunk of file.hunks) {
+    for (const line of hunk.lines) {
+      // Include context and added lines (the "new" state)
+      if (line.type === 'context' || line.type === 'add') {
+        lines.push(line.content);
+      }
+    }
+  }
+  
+  return lines.join('\n');
 }
 
 export function App(): React.ReactElement {
@@ -137,6 +165,12 @@ export function App(): React.ReactElement {
         .find((f) => f.path === selectedFile) || null
     : null;
 
+  // Determine if selected file is markdown and extract content
+  const isSelectedFileMarkdown = selectedFile ? isMarkdownFile(selectedFile) : false;
+  const markdownContent = (selectedFileData && isSelectedFileMarkdown) 
+    ? extractContentFromDiff(selectedFileData)
+    : null;
+
   return (
     <div className="hive-review">
       <header className="review-header">
@@ -169,7 +203,13 @@ export function App(): React.ReactElement {
 
         <main className="review-main" role="main">
           <div className="content-area">
-            {activeScope === 'code' && (
+            {activeScope === 'code' && isSelectedFileMarkdown && (
+              <MarkdownViewer 
+                content={markdownContent} 
+                filePath={selectedFile || undefined}
+              />
+            )}
+            {activeScope === 'code' && !isSelectedFileMarkdown && (
               <DiffViewer file={selectedFileData} />
             )}
             {activeScope !== 'code' && (
