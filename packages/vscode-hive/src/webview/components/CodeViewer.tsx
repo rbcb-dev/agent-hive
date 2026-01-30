@@ -1,10 +1,13 @@
 /**
  * CodeViewer component - Renders code with VS Code-style syntax highlighting and line numbers
  * Uses Shiki for accurate TextMate-based highlighting with bundled themes.
+ * Supports thread markers in the gutter for inline thread display.
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { createHighlighter, type Highlighter, type BundledLanguage } from 'shiki/bundle/web';
+import type { ReviewThread } from 'hive-core';
+import { InlineThread } from './InlineThread';
 
 export interface CodeViewerProps {
   /** The code to display */
@@ -23,6 +26,14 @@ export interface CodeViewerProps {
   theme?: 'light' | 'dark';
   /** Optional CSS class name */
   className?: string;
+  /** Review threads anchored to lines in this file (0-indexed line numbers in range.start.line) */
+  threads?: ReviewThread[];
+  /** Called when a thread marker is clicked */
+  onThreadClick?: (threads: ReviewThread[], lineNumber: number) => void;
+  /** Called when user replies to a thread */
+  onThreadReply?: (threadId: string, body: string) => void;
+  /** Called when user resolves a thread */
+  onThreadResolve?: (threadId: string) => void;
 }
 
 // Supported languages - subset for smaller bundle
@@ -86,6 +97,21 @@ interface CodeLine {
   highlighted: boolean;
   type: 'context' | 'add' | 'remove';
   tokens: CodeToken[];
+  /** 0-indexed line index (for matching with threads) */
+  lineIndex: number;
+}
+
+/** Group threads by their starting line (0-indexed) */
+function groupThreadsByLine(threads: ReviewThread[]): Map<number, ReviewThread[]> {
+  const map = new Map<number, ReviewThread[]>();
+  for (const thread of threads) {
+    const line = thread.range.start.line;
+    if (!map.has(line)) {
+      map.set(line, []);
+    }
+    map.get(line)!.push(thread);
+  }
+  return map;
 }
 
 export function CodeViewer({
@@ -97,9 +123,15 @@ export function CodeViewer({
   lineTypes = {},
   theme = 'dark',
   className,
+  threads = [],
+  onThreadClick,
+  onThreadReply,
+  onThreadResolve,
 }: CodeViewerProps): React.ReactElement {
   const [highlightedTokens, setHighlightedTokens] = useState<Array<Array<{ content: string; color?: string }>>>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Track which line (0-indexed) has expanded inline thread
+  const [expandedThreadLine, setExpandedThreadLine] = useState<number | null>(null);
 
   // Parse code into lines
   const lines = useMemo(() => code.split('\n'), [code]);
@@ -166,12 +198,50 @@ export function CodeViewer({
       return {
         content,
         lineNumber,
+        lineIndex: index,
         highlighted: highlightSet.has(lineNumber),
         type: lineTypes[lineNumber] || 'context',
         tokens: highlightedTokens[index] || [{ content }],
       };
     });
   }, [lines, startLine, highlightSet, lineTypes, highlightedTokens]);
+
+  // Group threads by line for gutter markers
+  const threadsByLine = useMemo(() => groupThreadsByLine(threads), [threads]);
+
+  // Handle thread marker click
+  const handleThreadMarkerClick = useCallback((lineIndex: number, lineThreads: ReviewThread[]) => {
+    // Toggle the inline thread expansion
+    if (expandedThreadLine === lineIndex) {
+      setExpandedThreadLine(null);
+    } else {
+      setExpandedThreadLine(lineIndex);
+    }
+    // Call the external handler if provided
+    if (onThreadClick) {
+      // lineNumber is 1-indexed for external callback
+      onThreadClick(lineThreads, lineIndex + 1);
+    }
+  }, [expandedThreadLine, onThreadClick]);
+
+  // Handle closing inline thread
+  const handleCloseInlineThread = useCallback(() => {
+    setExpandedThreadLine(null);
+  }, []);
+
+  // Handle reply to thread
+  const handleThreadReply = useCallback((threadId: string, body: string) => {
+    if (onThreadReply) {
+      onThreadReply(threadId, body);
+    }
+  }, [onThreadReply]);
+
+  // Handle resolve thread
+  const handleThreadResolve = useCallback((threadId: string) => {
+    if (onThreadResolve) {
+      onThreadResolve(threadId);
+    }
+  }, [onThreadResolve]);
 
   // Empty state
   if (!code) {
@@ -183,6 +253,7 @@ export function CodeViewer({
   }
 
   const lineNumberWidth = String(startLine + lines.length - 1).length;
+  const hasThreads = threads.length > 0;
 
   return (
     <div
@@ -202,31 +273,71 @@ export function CodeViewer({
             .filter(Boolean)
             .join(' ');
 
+          // Get threads for this line (0-indexed)
+          const lineThreads = threadsByLine.get(line.lineIndex);
+          const hasLineThreads = lineThreads && lineThreads.length > 0;
+          const isExpanded = expandedThreadLine === line.lineIndex;
+          
+          // Check if any thread on this line is resolved
+          const allResolved = lineThreads?.every(t => t.status === 'resolved') ?? false;
+
           return (
-            <div key={line.lineNumber} className={lineClasses} role="presentation">
-              {showLineNumbers ? (
-                <span
-                  className="line-number"
-                  style={{ minWidth: `${lineNumberWidth}ch` }}
-                >
-                  {line.lineNumber}
+            <React.Fragment key={line.lineNumber}>
+              <div className={lineClasses} role="presentation">
+                {/* Gutter for thread markers */}
+                {hasThreads ? (
+                  <span className="line-gutter">
+                    {hasLineThreads ? (
+                      <button
+                        className={`thread-marker ${allResolved ? 'thread-marker-resolved' : 'thread-marker-open'}`}
+                        data-testid={`thread-marker-${line.lineIndex}`}
+                        onClick={() => handleThreadMarkerClick(line.lineIndex, lineThreads)}
+                        aria-label={`${lineThreads.length} thread${lineThreads.length > 1 ? 's' : ''} on line ${line.lineNumber}`}
+                        aria-expanded={isExpanded}
+                      >
+                        {lineThreads.length > 1 ? lineThreads.length : '💬'}
+                      </button>
+                    ) : null}
+                  </span>
+                ) : null}
+                {showLineNumbers ? (
+                  <span
+                    className="line-number"
+                    style={{ minWidth: `${lineNumberWidth}ch` }}
+                  >
+                    {line.lineNumber}
+                  </span>
+                ) : null}
+                <span className="line-code">
+                  {isLoading ? (
+                    line.content || '\u00A0'
+                  ) : (
+                    line.tokens.map((token, i) => (
+                      <span
+                        key={i}
+                        style={token.color ? { color: token.color } : undefined}
+                      >
+                        {token.content || '\u00A0'}
+                      </span>
+                    ))
+                  )}
                 </span>
+              </div>
+              {/* Inline thread panel when expanded */}
+              {isExpanded && lineThreads ? (
+                <div className="inline-thread-container">
+                  {lineThreads.map((thread) => (
+                    <InlineThread
+                      key={thread.id}
+                      thread={thread}
+                      onReply={handleThreadReply}
+                      onResolve={handleThreadResolve}
+                      onClose={handleCloseInlineThread}
+                    />
+                  ))}
+                </div>
               ) : null}
-              <span className="line-code">
-                {isLoading ? (
-                  line.content || '\u00A0'
-                ) : (
-                  line.tokens.map((token, i) => (
-                    <span
-                      key={i}
-                      style={token.color ? { color: token.color } : undefined}
-                    >
-                      {token.content || '\u00A0'}
-                    </span>
-                  ))
-                )}
-              </span>
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
