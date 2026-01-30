@@ -7,3 +7,4 @@ export type { WorktreeInfo, DiffResult, ApplyResult, CommitResult, MergeResult, 
 export { ContextService } from './contextService.js';
 export { SessionService } from './sessionService.js';
 export { ConfigService } from './configService.js';
+export { ReviewService } from './reviewService.js';

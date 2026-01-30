@@ -248,7 +248,10 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
   },
 };
 
+// ============================================================================
 // Review Types
+// ============================================================================
+
 export type ReviewScope = 'feature' | 'task' | 'context' | 'plan' | 'code';
 export type ReviewStatus = 'in_progress' | 'approved' | 'changes_requested' | 'commented';
 export type ReviewVerdict = 'approve' | 'request_changes' | 'comment';
@@ -282,19 +285,19 @@ export interface ReviewAnnotation {
   author: { type: 'human' | 'llm'; name: string; agentId?: string };
   createdAt: string;
   updatedAt: string;
-  suggestion?: { replacement: string };
+  suggestion?: { replacement: string }; // required for suggestion
   meta?: { deletedLine?: boolean };
 }
 
 export interface ReviewThread {
   id: string;
   entityId: string;
-  uri: string | null;
+  uri: string | null; // null for non-code scopes
   range: Range;
   status: ThreadStatus;
   createdAt: string;
   updatedAt: string;
-  annotations: ReviewAnnotation[];
+  annotations: ReviewAnnotation[]; // non-empty
 }
 
 export interface DiffHunkLine {
