@@ -2,9 +2,9 @@
  * Main App component - Hive Review UI
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScopeTabs } from './components/ScopeTabs';
-import { FileTree } from './components/FileTree';
+import { FileNavigator } from './components/FileNavigator';
 import { ThreadList } from './components/ThreadList';
 import { ThreadPanel } from './components/ThreadPanel';
 import { ReviewSummary } from './components/ReviewSummary';
@@ -16,7 +16,7 @@ import type {
   ReviewVerdict,
   DiffFile,
 } from 'hive-core';
-import type { FileTreeItem, ThreadSummary, ExtensionToWebviewMessage } from './types';
+import type { ThreadSummary, ExtensionToWebviewMessage } from './types';
 
 const SCOPES = [
   { id: 'feature', label: 'Feature' },
@@ -41,29 +41,20 @@ function threadsToSummaries(threads: ReviewThread[]): ThreadSummary[] {
 }
 
 /**
- * Extract file tree items from session diffs
+ * Extract file paths from session diffs for FileNavigator
  */
-function diffsToFileTree(
-  diffs: Record<string, { files: DiffFile[] }>,
-  threads: ReviewThread[]
-): FileTreeItem[] {
-  const fileItems: FileTreeItem[] = [];
+function diffsToFilePaths(
+  diffs: Record<string, { files: DiffFile[] }>
+): string[] {
+  const filePaths: string[] = [];
   
   for (const diffPayload of Object.values(diffs)) {
     for (const file of diffPayload.files) {
-      const commentCount = threads.filter((t) => t.uri === file.path).length;
-      fileItems.push({
-        path: file.path,
-        name: file.path.split('/').pop() || file.path,
-        status: file.status,
-        commentCount,
-        additions: file.additions,
-        deletions: file.deletions,
-      });
+      filePaths.push(file.path);
     }
   }
   
-  return fileItems;
+  return filePaths;
 }
 
 export function App(): React.ReactElement {
@@ -252,7 +243,10 @@ export function App(): React.ReactElement {
   // Derived state
   const threads = session?.threads || [];
   const threadSummaries = threadsToSummaries(threads);
-  const fileTree = session ? diffsToFileTree(session.diffs, threads) : [];
+  const filePaths = useMemo(
+    () => (session ? diffsToFilePaths(session.diffs) : []),
+    [session]
+  );
   const selectedThreadData = threads.find((t) => t.id === selectedThread) || null;
   const selectedFileData = selectedFile 
     ? Object.values(session?.diffs || {})
@@ -274,8 +268,9 @@ export function App(): React.ReactElement {
         <nav className="review-sidebar" role="navigation">
           <div className="sidebar-section">
             <h3>Files</h3>
-            <FileTree
-              files={fileTree}
+            <FileNavigator
+              files={filePaths}
+              threads={threads}
               selectedFile={selectedFile}
               onSelectFile={handleSelectFile}
             />

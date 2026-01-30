@@ -1,5 +1,12 @@
 /**
  * FileTree component - Tree view of files with comment counts
+ * 
+ * @deprecated Use FileNavigator instead, which provides:
+ * - Hierarchical folder structure with expand/collapse
+ * - Thread count badges computed from ReviewThread[]
+ * - Better state management for navigation
+ * 
+ * This component will be removed in a future version.
  */
 
 import React from 'react';
