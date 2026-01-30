@@ -156,6 +156,8 @@ export class ReviewPanel {
    * Load or create a review session for a feature
    */
   public async loadSession(featureName: string): Promise<void> {
+    console.log('[HIVE WEBVIEW] Loading session for feature:', featureName);
+
     try {
       // Get the active session or create a new one
       const sessions = await this._reviewService.listSessions(featureName);
@@ -164,8 +166,8 @@ export class ReviewPanel {
       if (activeSession) {
         this._currentSession = await this._reviewService.getSession(activeSession.id);
       } else {
-        // Create a new session
-        this._currentSession = await this._reviewService.startSession(featureName, 'code');
+        // Create a new session with 'plan' scope for reviewing plans
+        this._currentSession = await this._reviewService.startSession(featureName, 'plan');
       }
 
       if (this._currentSession) {
@@ -174,6 +176,7 @@ export class ReviewPanel {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load session';
+      console.error('[HIVE WEBVIEW] Error loading session:', message);
       this._postMessage({ type: 'error', message });
     }
   }

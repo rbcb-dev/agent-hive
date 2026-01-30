@@ -194,6 +194,35 @@ export function App(): React.ReactElement {
     postMessage({ type: 'reply', threadId, body });
   };
 
+  const handleAddComment = useCallback(() => {
+    if (!session) return;
+    
+    // Create a new thread on the current scope's content
+    const threadId = `thread-${Date.now()}`;
+    const now = new Date().toISOString();
+    
+    // Create a temporary thread for comment input
+    const newThread: ReviewThread = {
+      id: threadId,
+      entityId: threadId,
+      uri: scopeContent?.uri || activeScope,
+      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+      annotations: [],
+      status: 'open',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Select the new thread to show the comment input
+    setSelectedThread(threadId);
+    
+    // Show the thread panel
+    setSession({
+      ...session,
+      threads: [...session.threads, newThread],
+    });
+  }, [session, activeScope, scopeContent]);
+
   const handleResolve = (threadId: string) => {
     postMessage({ type: 'resolve', threadId });
   };
@@ -342,6 +371,15 @@ export function App(): React.ReactElement {
              )}
              {activeScope !== 'code' && scopeContent && (
                <>
+                 <div className="scope-toolbar">
+                   <button 
+                     onClick={handleAddComment}
+                     className="btn btn-primary"
+                     title="Add a comment on this content"
+                   >
+                     + Add Comment
+                   </button>
+                 </div>
                  {scopeContent.language === 'markdown' ? (
                    <MarkdownViewer 
                      content={scopeContent.content}
