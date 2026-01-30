@@ -35,6 +35,7 @@ export class ReviewPanel {
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
+  private readonly _workspaceRoot: string;
   private readonly _disposables: vscode.Disposable[] = [];
   private readonly _reviewService: ReviewService;
   private _currentSession: ReviewSession | null = null;
@@ -77,6 +78,7 @@ export class ReviewPanel {
    ) {
      this._panel = panel;
      this._extensionUri = extensionUri;
+     this._workspaceRoot = workspaceRoot;
      this._reviewService = new ReviewService(workspaceRoot);
 
      console.log('[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel');
@@ -304,25 +306,72 @@ export class ReviewPanel {
     vscode.window.showTextDocument(uri);
   }
 
-  private _handleSelectThread(threadId: string): void {
-    if (!this._currentSession) return;
+  private async _handleSelectThread(threadId: string): Promise<void> {
+    if (!this._currentSession) {
+      console.log('[HIVE WEBVIEW] No session for selectThread');
+      return;
+    }
 
     const thread = this._currentSession.threads.find(t => t.id === threadId);
-    if (!thread || !thread.uri) return;
+    if (!thread || !thread.uri) {
+      console.log('[HIVE WEBVIEW] Thread not found or no URI:', threadId);
+      return;
+    }
 
-    // Open file and navigate to the thread's range
-    const uri = vscode.Uri.file(thread.uri);
-    const range = new vscode.Range(
-      thread.range.start.line,
-      thread.range.start.character,
-      thread.range.end.line,
-      thread.range.end.character
-    );
+    try {
+      console.log('[HIVE WEBVIEW] Selecting thread:', threadId, 'URI:', thread.uri);
+      
+      // Resolve the file URI - handle relative and absolute paths
+      let uri: vscode.Uri;
+      const threadUri = thread.uri.trim();
+      
+      // Check if it's an absolute path
+      if (path.isAbsolute(threadUri)) {
+        uri = vscode.Uri.file(threadUri);
+      } else {
+        // Treat as relative to workspace root
+        const absolutePath = path.resolve(this._workspaceRoot, threadUri);
+        uri = vscode.Uri.file(absolutePath);
+      }
+      
+      console.log('[HIVE WEBVIEW] Resolved URI:', uri.fsPath);
+      
+      // Create range for the thread location
+      const range = new vscode.Range(
+        thread.range.start.line,
+        thread.range.start.character,
+        thread.range.end.line,
+        thread.range.end.character
+      );
 
-    vscode.window.showTextDocument(uri, {
-      selection: range,
-      preserveFocus: false,
-    });
+      console.log('[HIVE WEBVIEW] Opening file with range:', {
+        line: thread.range.start.line,
+        char: thread.range.start.character
+      });
+      
+      // Open the document and show it in the editor
+      const doc = await vscode.workspace.openTextDocument(uri);
+      await vscode.window.showTextDocument(doc, {
+        selection: range,
+        preserveFocus: false,
+      });
+      
+      console.log('[HIVE WEBVIEW] Successfully opened thread file');
+    } catch (error) {
+      console.error('[HIVE WEBVIEW] Error opening thread file:', error);
+      
+      // Show user-friendly error message
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(
+        `Hive: Failed to open file. ${errorMsg}`
+      );
+      
+      // Also send error back to webview
+      this._postMessage({ 
+        type: 'error', 
+        message: `Failed to open file: ${errorMsg}` 
+      });
+    }
   }
 
   private _postMessage(message: ExtensionToWebviewMessage): void {
