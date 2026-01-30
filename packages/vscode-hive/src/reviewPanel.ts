@@ -69,47 +69,54 @@ export class ReviewPanel {
     return ReviewPanel.currentPanel;
   }
 
-  private constructor(
-    panel: vscode.WebviewPanel,
-    extensionUri: vscode.Uri,
-    workspaceRoot: string,
-    featureName?: string
-  ) {
-    this._panel = panel;
-    this._extensionUri = extensionUri;
-    this._reviewService = new ReviewService(workspaceRoot);
+   private constructor(
+     panel: vscode.WebviewPanel,
+     extensionUri: vscode.Uri,
+     workspaceRoot: string,
+     featureName?: string
+   ) {
+     this._panel = panel;
+     this._extensionUri = extensionUri;
+     this._reviewService = new ReviewService(workspaceRoot);
 
-    // Set the webview's initial html content
-    this._update();
+     console.log('[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel');
+     console.log('[HIVE WEBVIEW] Extension URI:', extensionUri.toString());
+     console.log('[HIVE WEBVIEW] Workspace root:', workspaceRoot);
 
-    // Listen for when the panel is disposed
-    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+     // Set the webview's initial html content
+     this._update();
 
-    // Update the content when the panel becomes visible
-    this._panel.onDidChangeViewState(
-      () => {
-        if (this._panel.visible) {
-          this._update();
-        }
-      },
-      null,
-      this._disposables
-    );
+     // Listen for when the panel is disposed
+     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    // Handle messages from the webview
-    this._panel.webview.onDidReceiveMessage(
-      async (message: WebviewToExtensionMessage) => {
-        await this._handleMessage(message);
-      },
-      null,
-      this._disposables
-    );
+     // Update the content when the panel becomes visible
+     this._panel.onDidChangeViewState(
+       () => {
+         if (this._panel.visible) {
+           console.log('[HIVE WEBVIEW] Panel visibility changed to visible, updating...');
+           this._update();
+         }
+       },
+       null,
+       this._disposables
+     );
 
-    // Load session if feature name provided
-    if (featureName) {
-      this.loadSession(featureName);
-    }
-  }
+     // Handle messages from the webview
+     this._panel.webview.onDidReceiveMessage(
+       async (message: WebviewToExtensionMessage) => {
+         console.log('[HIVE WEBVIEW] Received message from webview:', message.type);
+         await this._handleMessage(message);
+       },
+       null,
+       this._disposables
+     );
+
+     // Load session if feature name provided
+     if (featureName) {
+       console.log('[HIVE WEBVIEW] Loading session for feature:', featureName);
+       this.loadSession(featureName);
+     }
+   }
 
   public dispose(): void {
     ReviewPanel.currentPanel = undefined;
@@ -326,65 +333,113 @@ export class ReviewPanel {
     this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview): string {
-    const webviewDistPath = path.join(this._extensionUri.fsPath, 'dist', 'webview');
+   private _getHtmlForWebview(webview: vscode.Webview): string {
+     const webviewDistPath = path.join(this._extensionUri.fsPath, 'dist', 'webview');
 
-    // Check if built webview exists
-    const indexHtmlPath = path.join(webviewDistPath, 'index.html');
-    if (!fs.existsSync(indexHtmlPath)) {
-      return `<!DOCTYPE html>
+     // === LOGGING: Extension Path Info ===
+     console.log('[HIVE WEBVIEW] Extension URI fsPath:', this._extensionUri.fsPath);
+     console.log('[HIVE WEBVIEW] Webview dist path:', webviewDistPath);
+
+     // Check if built webview exists
+     const indexHtmlPath = path.join(webviewDistPath, 'index.html');
+     const indexHtmlExists = fs.existsSync(indexHtmlPath);
+     console.log('[HIVE WEBVIEW] index.html exists:', indexHtmlExists, 'at:', indexHtmlPath);
+
+     if (!indexHtmlExists) {
+       return `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hive Review</title>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Hive Review</title>
 </head>
 <body>
-  <h1>Webview not built</h1>
-  <p>Please run <code>bun run build:webview</code> in packages/vscode-hive</p>
+   <h1>Webview not built</h1>
+   <p>Please run <code>bun run build:webview</code> in packages/vscode-hive</p>
 </body>
 </html>`;
-    }
+     }
 
-    // Read the index.html
-    let html = fs.readFileSync(indexHtmlPath, 'utf-8');
+     // Read the index.html
+     let html = fs.readFileSync(indexHtmlPath, 'utf-8');
+     console.log('[HIVE WEBVIEW] index.html size:', html.length, 'bytes');
 
-    // Get the URI for the assets directory
-    const assetsDir = vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets');
-    const assetsUri = webview.asWebviewUri(assetsDir);
+     // === LOGGING: Asset Directory Info ===
+     const assetsDir = vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets');
+     const assetsDirFsPath = assetsDir.fsPath;
+     const assetsDirExists = fs.existsSync(assetsDirFsPath);
+     console.log('[HIVE WEBVIEW] Assets directory exists:', assetsDirExists, 'at:', assetsDirFsPath);
 
-    // Rewrite asset paths to webview URIs
-    // Handle both absolute paths (/assets/) and relative paths (assets/)
-    html = html.replace(/href="\/assets\//g, `href="${assetsUri}/`);
-    html = html.replace(/src="\/assets\//g, `src="${assetsUri}/`);
-    html = html.replace(/href="assets\//g, `href="${assetsUri}/`);
-    html = html.replace(/src="assets\//g, `src="${assetsUri}/`);
+     if (assetsDirExists) {
+       const assetFiles = fs.readdirSync(assetsDirFsPath);
+       console.log('[HIVE WEBVIEW] Asset files found:', assetFiles);
+       assetFiles.forEach(file => {
+         const filePath = path.join(assetsDirFsPath, file);
+         const fileStat = fs.statSync(filePath);
+         console.log(`  [HIVE WEBVIEW]   - ${file} (${fileStat.size} bytes)`);
+       });
+     }
 
-    // Update CSP to allow webview resources
-    const nonce = getNonce();
-    const csp = [
-      `default-src 'none'`,
-      `style-src ${webview.cspSource} 'unsafe-inline'`,
-      `script-src ${webview.cspSource} 'unsafe-inline'`,
-      `font-src ${webview.cspSource}`,
-      `img-src ${webview.cspSource} data:`,
-    ].join('; ');
+     const assetsUri = webview.asWebviewUri(assetsDir);
+     console.log('[HIVE WEBVIEW] Assets URI (from asWebviewUri):', assetsUri.toString());
 
-    // Replace existing CSP meta tag or add one
-    if (html.includes('Content-Security-Policy')) {
-      html = html.replace(
-        /<meta[^>]*Content-Security-Policy[^>]*>/,
-        `<meta http-equiv="Content-Security-Policy" content="${csp}">`
-      );
-    } else {
-      html = html.replace(
-        '<head>',
-        `<head>\n  <meta http-equiv="Content-Security-Policy" content="${csp}">`
-      );
-    }
+     // === LOGGING: Asset Path Detection ===
+     const assetPathsInHtml = html.match(/(?:href|src)="(?:\/)?assets\/[^"]+"/g) || [];
+     console.log('[HIVE WEBVIEW] Asset paths found in HTML:', assetPathsInHtml.length);
+     assetPathsInHtml.slice(0, 5).forEach((match, idx) => {
+       console.log(`  [HIVE WEBVIEW]   ${idx + 1}. ${match}`);
+     });
 
-    return html;
-  }
+     // Rewrite asset paths to webview URIs
+     // Handle both absolute paths (/assets/) and relative paths (assets/)
+     const beforeRewrite = html;
+     html = html.replace(/href="\/assets\//g, `href="${assetsUri}/`);
+     html = html.replace(/src="\/assets\//g, `src="${assetsUri}/`);
+     html = html.replace(/href="assets\//g, `href="${assetsUri}/`);
+     html = html.replace(/src="assets\//g, `src="${assetsUri}/`);
+
+     // === LOGGING: Rewrite Results ===
+     const assetPathsAfterRewrite = html.match(/(?:href|src)="vscode-webview:\/\/[^"]+"/g) || [];
+     console.log('[HIVE WEBVIEW] Webview URIs after rewrite:', assetPathsAfterRewrite.length);
+     assetPathsAfterRewrite.slice(0, 3).forEach((match, idx) => {
+       console.log(`  [HIVE WEBVIEW]   ${idx + 1}. ${match.substring(0, 80)}...`);
+     });
+
+     // Update CSP to allow webview resources
+     const nonce = getNonce();
+     const csp = [
+       `default-src 'none'`,
+       `style-src ${webview.cspSource} 'unsafe-inline'`,
+       `script-src ${webview.cspSource} 'unsafe-inline'`,
+       `font-src ${webview.cspSource}`,
+       `img-src ${webview.cspSource} data:`,
+     ].join('; ');
+
+     // === LOGGING: CSP Info ===
+     console.log('[HIVE WEBVIEW] CSP Source:', webview.cspSource);
+     console.log('[HIVE WEBVIEW] CSP Policy:', csp);
+
+     // Replace existing CSP meta tag or add one
+     if (html.includes('Content-Security-Policy')) {
+       html = html.replace(
+         /<meta[^>]*Content-Security-Policy[^>]*>/,
+         `<meta http-equiv="Content-Security-Policy" content="${csp}">`
+       );
+       console.log('[HIVE WEBVIEW] Replaced existing CSP meta tag');
+     } else {
+       html = html.replace(
+         '<head>',
+         `<head>\n  <meta http-equiv="Content-Security-Policy" content="${csp}">`
+       );
+       console.log('[HIVE WEBVIEW] Added new CSP meta tag to head');
+     }
+
+     // === LOGGING: Final HTML Info ===
+     console.log('[HIVE WEBVIEW] Final HTML size:', html.length, 'bytes');
+     console.log('[HIVE WEBVIEW] HTML preparation complete, sending to webview');
+
+     return html;
+   }
 }
 
 /**
@@ -394,7 +449,9 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
   return {
     enableScripts: true,
     localResourceRoots: [
+      vscode.Uri.joinPath(extensionUri, 'dist'),
       vscode.Uri.joinPath(extensionUri, 'dist', 'webview'),
+      vscode.Uri.joinPath(extensionUri, 'dist', 'webview', 'assets'),
     ],
   };
 }
