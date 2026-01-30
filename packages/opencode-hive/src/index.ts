@@ -1,7 +1,9 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { tool, type Plugin, type ToolDefinition } from "@opencode-ai/plugin";
 import { getFilteredSkills, loadBuiltinSkill } from './skills/builtin.js';
+import { loadFileSkill } from './skills/file-loader.js';
 import { BUILTIN_SKILLS } from './skills/registry.generated.js';
 import type { SkillDefinition } from './skills/types.js';
 // Bee agents (lean, focused)
@@ -35,12 +37,17 @@ function formatSkillsXml(skills: SkillDefinition[]): string {
 /**
  * Build auto-loaded skill templates for an agent.
  * Returns a string containing all skill templates to append to the agent's prompt.
- * Unknown skill IDs are logged as warnings and skipped.
+ * 
+ * Resolution order for each skill ID:
+ * 1. Builtin skill (wins if exists)
+ * 2. File-based skill (project OpenCode -> global OpenCode -> project Claude -> global Claude)
+ * 3. Warn and skip if not found
  */
-function buildAutoLoadedSkillsContent(
+async function buildAutoLoadedSkillsContent(
   agentName: 'hive-master' | 'architect-planner' | 'swarm-orchestrator' | 'scout-researcher' | 'forager-worker' | 'hygienic-reviewer',
   configService: ConfigService,
-): string {
+  projectRoot: string,
+): Promise<string> {
   const agentConfig = configService.getAgentConfig(agentName);
   const autoLoadSkills = agentConfig.autoLoadSkills ?? [];
 
@@ -48,14 +55,27 @@ function buildAutoLoadedSkillsContent(
     return '';
   }
 
+  // Use process.env.HOME for testability, fallback to os.homedir()
+  const homeDir = process.env.HOME || os.homedir();
   const skillTemplates: string[] = [];
+  
   for (const skillId of autoLoadSkills) {
-    const skill = BUILTIN_SKILLS.find((entry) => entry.name === skillId);
-    if (!skill) {
-      console.warn(`[hive] Unknown skill id "${skillId}" for agent "${agentName}"`);
+    // 1. Try builtin skill first (builtin wins)
+    const builtinSkill = BUILTIN_SKILLS.find((entry) => entry.name === skillId);
+    if (builtinSkill) {
+      skillTemplates.push(builtinSkill.template);
       continue;
     }
-    skillTemplates.push(skill.template);
+    
+    // 2. Fallback to file-based skill
+    const fileResult = await loadFileSkill(skillId, projectRoot, homeDir);
+    if (fileResult.found && fileResult.skill) {
+      skillTemplates.push(fileResult.skill.template);
+      continue;
+    }
+    
+    // 3. Not found - warn and skip
+    console.warn(`[hive] Unknown skill id "${skillId}" for agent "${agentName}"`);
   }
 
   if (skillTemplates.length === 0) {
@@ -1454,7 +1474,7 @@ Make the requested changes, then call hive_request_review again.`;
 
       // Build auto-loaded skill content for each agent
       const hiveUserConfig = configService.getAgentConfig('hive-master');
-      const hiveAutoLoadedSkills = buildAutoLoadedSkillsContent('hive-master', configService);
+      const hiveAutoLoadedSkills = await buildAutoLoadedSkillsContent('hive-master', configService, directory);
       const hiveConfig = {
         model: hiveUserConfig.model,
         temperature: hiveUserConfig.temperature ?? 0.5,
@@ -1472,7 +1492,7 @@ Make the requested changes, then call hive_request_review again.`;
       };
 
       const architectUserConfig = configService.getAgentConfig('architect-planner');
-      const architectAutoLoadedSkills = buildAutoLoadedSkillsContent('architect-planner', configService);
+      const architectAutoLoadedSkills = await buildAutoLoadedSkillsContent('architect-planner', configService, directory);
       const architectConfig = {
         model: architectUserConfig.model,
         temperature: architectUserConfig.temperature ?? 0.7,
@@ -1493,7 +1513,7 @@ Make the requested changes, then call hive_request_review again.`;
       };
 
       const swarmUserConfig = configService.getAgentConfig('swarm-orchestrator');
-      const swarmAutoLoadedSkills = buildAutoLoadedSkillsContent('swarm-orchestrator', configService);
+      const swarmAutoLoadedSkills = await buildAutoLoadedSkillsContent('swarm-orchestrator', configService, directory);
       const swarmConfig = {
         model: swarmUserConfig.model,
         temperature: swarmUserConfig.temperature ?? 0.5,
@@ -1511,7 +1531,7 @@ Make the requested changes, then call hive_request_review again.`;
       };
 
       const scoutUserConfig = configService.getAgentConfig('scout-researcher');
-      const scoutAutoLoadedSkills = buildAutoLoadedSkillsContent('scout-researcher', configService);
+      const scoutAutoLoadedSkills = await buildAutoLoadedSkillsContent('scout-researcher', configService, directory);
       const scoutConfig = {
         model: scoutUserConfig.model,
         temperature: scoutUserConfig.temperature ?? 0.5,
@@ -1526,7 +1546,7 @@ Make the requested changes, then call hive_request_review again.`;
       };
 
       const foragerUserConfig = configService.getAgentConfig('forager-worker');
-      const foragerAutoLoadedSkills = buildAutoLoadedSkillsContent('forager-worker', configService);
+      const foragerAutoLoadedSkills = await buildAutoLoadedSkillsContent('forager-worker', configService, directory);
       const foragerConfig = {
         model: foragerUserConfig.model,
         temperature: foragerUserConfig.temperature ?? 0.3,
@@ -1539,7 +1559,7 @@ Make the requested changes, then call hive_request_review again.`;
       };
 
       const hygienicUserConfig = configService.getAgentConfig('hygienic-reviewer');
-      const hygienicAutoLoadedSkills = buildAutoLoadedSkillsContent('hygienic-reviewer', configService);
+      const hygienicAutoLoadedSkills = await buildAutoLoadedSkillsContent('hygienic-reviewer', configService, directory);
       const hygienicConfig = {
         model: hygienicUserConfig.model,
         temperature: hygienicUserConfig.temperature ?? 0.3,

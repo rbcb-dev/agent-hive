@@ -5,6 +5,25 @@ import { createOpencodeClient } from "@opencode-ai/sdk";
 import plugin from "../index";
 import { BUILTIN_SKILLS } from "../skills/registry.generated.js";
 
+/**
+ * Helper to create a file-based skill in the given location.
+ */
+function createFileSkill(
+  skillDir: string,
+  skillId: string,
+  description: string,
+  body: string,
+): void {
+  const skillPath = path.join(skillDir, skillId, "SKILL.md");
+  fs.mkdirSync(path.dirname(skillPath), { recursive: true });
+  const content = `---
+name: ${skillId}
+description: ${description}
+---
+${body}`;
+  fs.writeFileSync(skillPath, content);
+}
+
 const OPENCODE_CLIENT = createOpencodeClient({ baseUrl: "http://localhost:1" });
 
 const TEST_ROOT_BASE = "/tmp/hive-config-autoload-skills-test";
@@ -337,5 +356,350 @@ describe("config hook autoLoadSkills injection", () => {
     const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
     expect(hiveMasterPrompt).toContain(brainstormingSkill!.template);
     expect(hiveMasterPrompt).toContain(parallelExplorationSkill!.template);
+  });
+});
+
+describe("file-based skill fallback in autoLoadSkills", () => {
+  let testRoot: string;
+  let originalHome: string | undefined;
+
+  beforeEach(() => {
+    originalHome = process.env.HOME;
+    fs.rmSync(TEST_ROOT_BASE, { recursive: true, force: true });
+    fs.mkdirSync(TEST_ROOT_BASE, { recursive: true });
+    testRoot = fs.mkdtempSync(path.join(TEST_ROOT_BASE, "project-"));
+    process.env.HOME = testRoot;
+  });
+
+  afterEach(() => {
+    fs.rmSync(TEST_ROOT_BASE, { recursive: true, force: true });
+    if (originalHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = originalHome;
+    }
+  });
+
+  it("loads project OpenCode skill when not a builtin", async () => {
+    // Create a project-level OpenCode skill
+    const projectSkillDir = path.join(testRoot, ".opencode", "skills");
+    createFileSkill(
+      projectSkillDir,
+      "my-custom-skill",
+      "A custom project skill",
+      "# My Custom Skill\n\nThis is custom skill content.",
+    );
+
+    // Configure agent to auto-load this custom skill
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["my-custom-skill"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    expect(hiveMasterPrompt).toContain("# My Custom Skill");
+    expect(hiveMasterPrompt).toContain("This is custom skill content.");
+  });
+
+  it("falls back to global OpenCode skill when project skill not found", async () => {
+    // Create a global OpenCode skill (not project)
+    const globalSkillDir = path.join(testRoot, ".config", "opencode", "skills");
+    createFileSkill(
+      globalSkillDir,
+      "global-skill",
+      "A global OpenCode skill",
+      "# Global Skill\n\nThis is from global config.",
+    );
+
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["global-skill"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    expect(hiveMasterPrompt).toContain("# Global Skill");
+    expect(hiveMasterPrompt).toContain("This is from global config.");
+  });
+
+  it("falls back to project Claude skill when OpenCode skills not found", async () => {
+    // Create a project Claude skill (not OpenCode)
+    const claudeSkillDir = path.join(testRoot, ".claude", "skills");
+    createFileSkill(
+      claudeSkillDir,
+      "claude-skill",
+      "A Claude-compatible skill",
+      "# Claude Skill\n\nThis is Claude-compatible.",
+    );
+
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["claude-skill"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    expect(hiveMasterPrompt).toContain("# Claude Skill");
+    expect(hiveMasterPrompt).toContain("This is Claude-compatible.");
+  });
+
+  it("builtin skill wins over file-based skill with same ID", async () => {
+    // Create a file-based skill with same name as a builtin
+    const projectSkillDir = path.join(testRoot, ".opencode", "skills");
+    createFileSkill(
+      projectSkillDir,
+      "brainstorming", // Same as builtin
+      "Fake brainstorming",
+      "# Fake Brainstorming\n\nThis should NOT appear.",
+    );
+
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["brainstorming"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    
+    // Builtin skill template should be present
+    const builtinBrainstorming = BUILTIN_SKILLS.find(s => s.name === "brainstorming");
+    expect(builtinBrainstorming).toBeDefined();
+    expect(hiveMasterPrompt).toContain(builtinBrainstorming!.template);
+    
+    // File-based fake should NOT be present
+    expect(hiveMasterPrompt).not.toContain("# Fake Brainstorming");
+    expect(hiveMasterPrompt).not.toContain("This should NOT appear.");
+  });
+
+  it("warns and skips when file-based skill does not exist", async () => {
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["nonexistent-file-skill", "brainstorming"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    // Should not throw
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    
+    // Builtin brainstorming should still be present (other skill in list)
+    const builtinBrainstorming = BUILTIN_SKILLS.find(s => s.name === "brainstorming");
+    expect(hiveMasterPrompt).toContain(builtinBrainstorming!.template);
+  });
+
+  it("project OpenCode skill takes precedence over global OpenCode skill", async () => {
+    // Create both project and global OpenCode skills with same ID
+    const projectSkillDir = path.join(testRoot, ".opencode", "skills");
+    createFileSkill(
+      projectSkillDir,
+      "my-skill",
+      "Project version",
+      "# Project Version\n\nThis is the PROJECT version.",
+    );
+
+    const globalSkillDir = path.join(testRoot, ".config", "opencode", "skills");
+    createFileSkill(
+      globalSkillDir,
+      "my-skill",
+      "Global version",
+      "# Global Version\n\nThis is the GLOBAL version.",
+    );
+
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["my-skill"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    
+    // Project version should be present
+    expect(hiveMasterPrompt).toContain("# Project Version");
+    expect(hiveMasterPrompt).toContain("This is the PROJECT version.");
+    
+    // Global version should NOT be present
+    expect(hiveMasterPrompt).not.toContain("# Global Version");
+    expect(hiveMasterPrompt).not.toContain("This is the GLOBAL version.");
+  });
+
+  it("preserves order of skills from autoLoadSkills config", async () => {
+    // Create two custom skills
+    const projectSkillDir = path.join(testRoot, ".opencode", "skills");
+    createFileSkill(
+      projectSkillDir,
+      "skill-a",
+      "First skill",
+      "# Skill A Content",
+    );
+    createFileSkill(
+      projectSkillDir,
+      "skill-b",
+      "Second skill",
+      "# Skill B Content",
+    );
+
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        agentMode: "unified",
+        agents: {
+          "hive-master": {
+            autoLoadSkills: ["skill-a", "skill-b"],
+          },
+        },
+      }),
+    );
+
+    const ctx: any = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+    };
+
+    const hooks = await plugin(ctx);
+    const opencodeConfig: any = { agent: {} };
+    await hooks.config!(opencodeConfig);
+
+    const hiveMasterPrompt = opencodeConfig.agent["hive-master"]?.prompt as string;
+    expect(hiveMasterPrompt).toBeDefined();
+    
+    // Both skills should be present
+    expect(hiveMasterPrompt).toContain("# Skill A Content");
+    expect(hiveMasterPrompt).toContain("# Skill B Content");
+    
+    // Order should be preserved (A before B)
+    const indexA = hiveMasterPrompt.indexOf("# Skill A Content");
+    const indexB = hiveMasterPrompt.indexOf("# Skill B Content");
+    expect(indexA).toBeLessThan(indexB);
   });
 });
