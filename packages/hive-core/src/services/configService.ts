@@ -1,6 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { HiveConfig, DEFAULT_HIVE_CONFIG } from '../types.js';
+import {
+  HiveConfig,
+  DEFAULT_HIVE_CONFIG,
+  DEFAULT_REVIEW_CONFIG,
+  DEFAULT_REVIEW_NOTIFICATIONS,
+  ReviewConfig,
+  ReviewNotificationsConfig,
+} from '../types.js';
 
 /**
  * ConfigService manages user config at ~/.config/opencode/agent_hive.json
@@ -41,6 +48,15 @@ export class ConfigService {
       return {
         ...DEFAULT_HIVE_CONFIG,
         ...stored,
+        // Deep merge review config
+        review: {
+          ...DEFAULT_REVIEW_CONFIG,
+          ...stored.review,
+          notifications: {
+            ...DEFAULT_REVIEW_NOTIFICATIONS,
+            ...stored.review?.notifications,
+          },
+        },
         agents: {
           ...DEFAULT_HIVE_CONFIG.agents,
           ...stored.agents,
@@ -194,5 +210,20 @@ export class ConfigService {
    */
   isHiveBackgroundEnabled(): boolean {
     return this.getDelegateMode() === 'hive';
+  }
+
+  /**
+   * Get review panel configuration, merged with defaults.
+   */
+  getReviewConfig(): Required<ReviewConfig> & { notifications: Required<ReviewNotificationsConfig> } {
+    const config = this.get();
+    return {
+      ...DEFAULT_REVIEW_CONFIG,
+      ...config.review,
+      notifications: {
+        ...DEFAULT_REVIEW_NOTIFICATIONS,
+        ...config.review?.notifications,
+      },
+    };
   }
 }

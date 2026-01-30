@@ -230,3 +230,93 @@ describe("ConfigService disabled skills/mcps", () => {
     expect(service.getDisabledMcps()).toEqual(["websearch", "ast_grep"]);
   });
 });
+
+describe("ConfigService review configuration", () => {
+  it("returns default review config when not configured", () => {
+    const service = new ConfigService();
+    const reviewConfig = service.getReviewConfig();
+
+    expect(reviewConfig).toEqual({
+      notifications: {
+        llmQuestions: 'both',
+        newComments: true,
+        reviewComplete: true,
+      },
+      autoDelegate: true,
+      parallelReviewers: 1,
+    });
+  });
+
+  it("returns configured review notifications", () => {
+    const service = new ConfigService();
+    const configPath = service.getPath();
+
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        review: {
+          notifications: {
+            llmQuestions: 'toast',
+            newComments: false,
+          },
+        },
+      }),
+    );
+
+    const reviewConfig = service.getReviewConfig();
+    expect(reviewConfig.notifications.llmQuestions).toBe('toast');
+    expect(reviewConfig.notifications.newComments).toBe(false);
+    // default should still be present for unset value
+    expect(reviewConfig.notifications.reviewComplete).toBe(true);
+  });
+
+  it("returns configured autoDelegate and parallelReviewers", () => {
+    const service = new ConfigService();
+    const configPath = service.getPath();
+
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        review: {
+          autoDelegate: false,
+          parallelReviewers: 3,
+        },
+      }),
+    );
+
+    const reviewConfig = service.getReviewConfig();
+    expect(reviewConfig.autoDelegate).toBe(false);
+    expect(reviewConfig.parallelReviewers).toBe(3);
+    // defaults should still be present
+    expect(reviewConfig.notifications.llmQuestions).toBe('both');
+    expect(reviewConfig.notifications.newComments).toBe(true);
+  });
+
+  it("deep-merges review config with defaults via get()", () => {
+    const service = new ConfigService();
+    const configPath = service.getPath();
+
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        review: {
+          notifications: {
+            llmQuestions: 'inline',
+          },
+          parallelReviewers: 2,
+        },
+      }),
+    );
+
+    const config = service.get();
+    expect(config.review).toBeDefined();
+    expect(config.review?.notifications?.llmQuestions).toBe('inline');
+    expect(config.review?.notifications?.newComments).toBe(true);
+    expect(config.review?.notifications?.reviewComplete).toBe(true);
+    expect(config.review?.autoDelegate).toBe(true);
+    expect(config.review?.parallelReviewers).toBe(2);
+  });
+});
