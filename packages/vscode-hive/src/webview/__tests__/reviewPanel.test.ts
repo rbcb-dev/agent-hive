@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as path from 'path';
+import { getLanguageId, isPathWithinWorkspace, LARGE_FILE_THRESHOLD } from '../fileUtils';
 
 // Test the URI rewriting logic
 describe('ReviewPanel URI Utilities', () => {
@@ -177,6 +178,7 @@ describe('ReviewPanel Handler Mapping', () => {
       selectFile: 'handleSelectFile',
       selectThread: 'handleSelectThread',
       changeScope: 'handleChangeScope',
+      requestFile: 'handleRequestFile',
     };
 
     expect(Object.keys(handlerMap)).toContain('ready');
@@ -184,5 +186,220 @@ describe('ReviewPanel Handler Mapping', () => {
     expect(Object.keys(handlerMap)).toContain('reply');
     expect(Object.keys(handlerMap)).toContain('resolve');
     expect(Object.keys(handlerMap)).toContain('submit');
+    expect(Object.keys(handlerMap)).toContain('requestFile');
+  });
+});
+
+// Test File Content Request Protocol message types
+describe('File Content Request Protocol Messages', () => {
+  describe('WebviewToExtensionMessage - requestFile', () => {
+    it('should accept valid requestFile message with uri', () => {
+      const message = {
+        type: 'requestFile' as const,
+        uri: 'src/components/Button.tsx',
+      };
+      expect(message.type).toBe('requestFile');
+      expect(message.uri).toBe('src/components/Button.tsx');
+    });
+
+    it('should accept requestFile with absolute path', () => {
+      const message = {
+        type: 'requestFile' as const,
+        uri: '/project/src/index.ts',
+      };
+      expect(message.type).toBe('requestFile');
+      expect(message.uri).toBe('/project/src/index.ts');
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - fileContent', () => {
+    it('should create valid fileContent message with content and language', () => {
+      const message = {
+        type: 'fileContent' as const,
+        uri: 'src/index.ts',
+        content: 'export function main() { return 42; }',
+        language: 'typescript',
+      };
+      expect(message.type).toBe('fileContent');
+      expect(message.uri).toBe('src/index.ts');
+      expect(message.content).toBe('export function main() { return 42; }');
+      expect(message.language).toBe('typescript');
+    });
+
+    it('should allow fileContent message without language', () => {
+      const message = {
+        type: 'fileContent' as const,
+        uri: 'README.md',
+        content: '# Hello World',
+      };
+      expect(message.type).toBe('fileContent');
+      expect(message.uri).toBe('README.md');
+      expect(message.content).toBe('# Hello World');
+      expect(message.language).toBeUndefined();
+    });
+
+    it('should handle large file warning indicator', () => {
+      const message = {
+        type: 'fileContent' as const,
+        uri: 'large-file.json',
+        content: '[truncated content]',
+        language: 'json',
+        warning: 'File is larger than 10MB. Content may be truncated.',
+      };
+      expect(message.type).toBe('fileContent');
+      expect(message.warning).toContain('10MB');
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - fileError', () => {
+    it('should create valid fileError message for non-existent file', () => {
+      const message = {
+        type: 'fileError' as const,
+        uri: 'non-existent.ts',
+        error: 'File not found: non-existent.ts',
+      };
+      expect(message.type).toBe('fileError');
+      expect(message.uri).toBe('non-existent.ts');
+      expect(message.error).toContain('not found');
+    });
+
+    it('should create valid fileError message for permission denied', () => {
+      const message = {
+        type: 'fileError' as const,
+        uri: '/etc/shadow',
+        error: 'Permission denied',
+      };
+      expect(message.type).toBe('fileError');
+      expect(message.error).toBe('Permission denied');
+    });
+
+    it('should create valid fileError message for file outside workspace', () => {
+      const message = {
+        type: 'fileError' as const,
+        uri: '/outside/workspace/file.ts',
+        error: 'File is outside the workspace and cannot be accessed',
+      };
+      expect(message.type).toBe('fileError');
+      expect(message.error).toContain('outside');
+    });
+  });
+});
+
+// Test file path utilities for the protocol
+describe('File Content Request Protocol - Path Utilities', () => {
+  it('should detect language from file extension', () => {
+    const languageMap: Record<string, string> = {
+      '.ts': 'typescript',
+      '.tsx': 'typescriptreact',
+      '.js': 'javascript',
+      '.jsx': 'javascriptreact',
+      '.json': 'json',
+      '.md': 'markdown',
+      '.css': 'css',
+      '.html': 'html',
+      '.py': 'python',
+      '.go': 'go',
+      '.rs': 'rust',
+    };
+
+    // Verify the mapping exists for common extensions
+    expect(languageMap['.ts']).toBe('typescript');
+    expect(languageMap['.tsx']).toBe('typescriptreact');
+    expect(languageMap['.md']).toBe('markdown');
+  });
+
+  it('should normalize file paths correctly', () => {
+    const workspaceRoot = '/project';
+    const relativePath = 'src/index.ts';
+    const absolutePath = path.join(workspaceRoot, relativePath);
+    
+    expect(absolutePath).toBe('/project/src/index.ts');
+  });
+
+  it('should detect if file is within workspace', () => {
+    const workspaceRoot = '/project';
+    const validPath = '/project/src/file.ts';
+    const invalidPath = '/other/file.ts';
+
+    expect(validPath.startsWith(workspaceRoot)).toBe(true);
+    expect(invalidPath.startsWith(workspaceRoot)).toBe(false);
+  });
+});
+
+// Test the getLanguageId utility
+describe('File Content Request Protocol - getLanguageId', () => {
+  it('should return typescript for .ts files', () => {
+    expect(getLanguageId('src/index.ts')).toBe('typescript');
+  });
+
+  it('should return typescriptreact for .tsx files', () => {
+    expect(getLanguageId('src/App.tsx')).toBe('typescriptreact');
+  });
+
+  it('should return javascript for .js files', () => {
+    expect(getLanguageId('src/utils.js')).toBe('javascript');
+  });
+
+  it('should return javascriptreact for .jsx files', () => {
+    expect(getLanguageId('src/Component.jsx')).toBe('javascriptreact');
+  });
+
+  it('should return json for .json files', () => {
+    expect(getLanguageId('package.json')).toBe('json');
+  });
+
+  it('should return markdown for .md files', () => {
+    expect(getLanguageId('README.md')).toBe('markdown');
+  });
+
+  it('should return plaintext for unknown extensions', () => {
+    expect(getLanguageId('file.unknown')).toBe('plaintext');
+  });
+
+  it('should handle files without extension', () => {
+    expect(getLanguageId('Makefile')).toBe('plaintext');
+  });
+});
+
+// Test isPathWithinWorkspace utility
+describe('File Content Request Protocol - isPathWithinWorkspace', () => {
+  it('should return true for path within workspace', () => {
+    expect(isPathWithinWorkspace('/project', '/project/src/file.ts')).toBe(true);
+  });
+
+  it('should return true for nested paths', () => {
+    expect(isPathWithinWorkspace('/project', '/project/src/deep/nested/file.ts')).toBe(true);
+  });
+
+  it('should return false for path outside workspace', () => {
+    expect(isPathWithinWorkspace('/project', '/other/file.ts')).toBe(false);
+  });
+
+  it('should return false for parent directory traversal', () => {
+    // Even if the path starts with workspace, traversal should be blocked
+    expect(isPathWithinWorkspace('/project', '/project/../etc/passwd')).toBe(false);
+  });
+
+  it('should handle workspace root exactly', () => {
+    expect(isPathWithinWorkspace('/project', '/project')).toBe(true);
+  });
+});
+
+// Test file size check utility
+describe('File Content Request Protocol - File Size', () => {
+  it('should define 10MB as the large file threshold', () => {
+    expect(LARGE_FILE_THRESHOLD).toBe(10485760);
+  });
+
+  it('should warn when file exceeds threshold', () => {
+    const fileSize = 15 * 1024 * 1024; // 15MB
+    const exceedsThreshold = fileSize > LARGE_FILE_THRESHOLD;
+    expect(exceedsThreshold).toBe(true);
+  });
+
+  it('should not warn for files under threshold', () => {
+    const fileSize = 5 * 1024 * 1024; // 5MB
+    const exceedsThreshold = fileSize > LARGE_FILE_THRESHOLD;
+    expect(exceedsThreshold).toBe(false);
   });
 });

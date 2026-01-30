@@ -15,7 +15,8 @@ type WebviewToExtensionMessage =
   | { type: 'submit'; verdict: string; summary: string }
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
-  | { type: 'changeScope'; scope: string };
+  | { type: 'changeScope'; scope: string }
+  | { type: 'requestFile'; uri: string };
 
 /**
  * Message types sent from extension to webview
@@ -24,7 +25,14 @@ type ExtensionToWebviewMessage =
   | { type: 'sessionData'; session: ReviewSession }
   | { type: 'sessionUpdate'; session: ReviewSession }
   | { type: 'error'; message: string }
-  | { type: 'scopeChanged'; scope: string };
+  | { type: 'scopeChanged'; scope: string }
+  | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
+  | { type: 'fileError'; uri: string; error: string };
+
+/**
+ * Large file threshold in bytes (10MB)
+ */
+const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
 
 /**
  * ReviewPanel manages the webview for code review UI
@@ -200,6 +208,10 @@ export class ReviewPanel {
       case 'changeScope':
         this._postMessage({ type: 'scopeChanged', scope: message.scope });
         break;
+
+      case 'requestFile':
+        await this._handleRequestFile(message.uri);
+        break;
     }
   }
 
@@ -372,6 +384,152 @@ export class ReviewPanel {
         message: `Failed to open file: ${errorMsg}` 
       });
     }
+  }
+
+  /**
+   * Handle file content request from webview
+   * Reads file content and sends it back to the webview for inline viewing
+   */
+  private async _handleRequestFile(requestUri: string): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling requestFile:', requestUri);
+    
+    try {
+      // Resolve the file path
+      let absolutePath: string;
+      const trimmedUri = requestUri.trim();
+      
+      if (path.isAbsolute(trimmedUri)) {
+        absolutePath = trimmedUri;
+      } else {
+        // Treat as relative to workspace root
+        absolutePath = path.resolve(this._workspaceRoot, trimmedUri);
+      }
+      
+      // Normalize path to prevent directory traversal attacks
+      const normalizedPath = path.resolve(absolutePath);
+      const normalizedWorkspace = path.resolve(this._workspaceRoot);
+      
+      // Security check: ensure file is within workspace
+      if (!normalizedPath.startsWith(normalizedWorkspace + path.sep) && 
+          normalizedPath !== normalizedWorkspace) {
+        console.log('[HIVE WEBVIEW] File outside workspace:', normalizedPath);
+        this._postMessage({
+          type: 'fileError',
+          uri: requestUri,
+          error: 'File is outside the workspace and cannot be accessed',
+        });
+        return;
+      }
+      
+      // Check if file exists
+      if (!fs.existsSync(normalizedPath)) {
+        console.log('[HIVE WEBVIEW] File not found:', normalizedPath);
+        this._postMessage({
+          type: 'fileError',
+          uri: requestUri,
+          error: `File not found: ${requestUri}`,
+        });
+        return;
+      }
+      
+      // Get file stats
+      const stats = fs.statSync(normalizedPath);
+      
+      // Check file size
+      let warning: string | undefined;
+      if (stats.size > LARGE_FILE_THRESHOLD) {
+        const sizeMB = (stats.size / (1024 * 1024)).toFixed(1);
+        warning = `File is large (${sizeMB}MB). Reading may take a moment.`;
+        console.log('[HIVE WEBVIEW] Large file warning:', warning);
+      }
+      
+      // Read file content
+      const content = fs.readFileSync(normalizedPath, 'utf-8');
+      
+      // Detect language from file extension
+      const language = this._getLanguageId(normalizedPath);
+      
+      console.log('[HIVE WEBVIEW] File read successfully:', {
+        path: normalizedPath,
+        size: stats.size,
+        language,
+        hasWarning: !!warning,
+      });
+      
+      // Send content to webview
+      this._postMessage({
+        type: 'fileContent',
+        uri: requestUri,
+        content,
+        language,
+        warning,
+      });
+      
+    } catch (error) {
+      console.error('[HIVE WEBVIEW] Error reading file:', error);
+      
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this._postMessage({
+        type: 'fileError',
+        uri: requestUri,
+        error: errorMsg,
+      });
+    }
+  }
+
+  /**
+   * Get VS Code language identifier from file path
+   */
+  private _getLanguageId(filePath: string): string {
+    const ext = path.extname(filePath).toLowerCase();
+    const languageMap: Record<string, string> = {
+      '.ts': 'typescript',
+      '.tsx': 'typescriptreact',
+      '.js': 'javascript',
+      '.jsx': 'javascriptreact',
+      '.mjs': 'javascript',
+      '.cjs': 'javascript',
+      '.json': 'json',
+      '.jsonc': 'jsonc',
+      '.md': 'markdown',
+      '.mdx': 'mdx',
+      '.css': 'css',
+      '.scss': 'scss',
+      '.less': 'less',
+      '.html': 'html',
+      '.htm': 'html',
+      '.xml': 'xml',
+      '.yaml': 'yaml',
+      '.yml': 'yaml',
+      '.py': 'python',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.java': 'java',
+      '.c': 'c',
+      '.cpp': 'cpp',
+      '.h': 'c',
+      '.hpp': 'cpp',
+      '.cs': 'csharp',
+      '.rb': 'ruby',
+      '.php': 'php',
+      '.sh': 'shellscript',
+      '.bash': 'shellscript',
+      '.zsh': 'shellscript',
+      '.sql': 'sql',
+      '.graphql': 'graphql',
+      '.gql': 'graphql',
+      '.vue': 'vue',
+      '.svelte': 'svelte',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.kts': 'kotlin',
+      '.scala': 'scala',
+      '.toml': 'toml',
+      '.ini': 'ini',
+      '.env': 'dotenv',
+      '.dockerfile': 'dockerfile',
+    };
+    return languageMap[ext] || 'plaintext';
   }
 
   private _postMessage(message: ExtensionToWebviewMessage): void {
