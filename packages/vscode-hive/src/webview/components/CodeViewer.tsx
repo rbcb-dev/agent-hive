@@ -1,0 +1,235 @@
+/**
+ * CodeViewer component - Renders code with VS Code-style syntax highlighting and line numbers
+ * Uses Shiki for accurate TextMate-based highlighting with bundled themes.
+ */
+
+import React, { useMemo, useState, useEffect } from 'react';
+import { createHighlighter, type Highlighter, type BundledLanguage } from 'shiki/bundle/web';
+
+export interface CodeViewerProps {
+  /** The code to display */
+  code: string;
+  /** Programming language for syntax highlighting */
+  language: string;
+  /** Starting line number (default: 1) */
+  startLine?: number;
+  /** Whether to show line numbers (default: true) */
+  showLineNumbers?: boolean;
+  /** Lines to highlight (1-indexed) */
+  highlightLines?: number[];
+  /** Line types for diff display (1-indexed) */
+  lineTypes?: Record<number, 'add' | 'remove' | 'context'>;
+  /** Theme: 'light' or 'dark' (default: 'dark') */
+  theme?: 'light' | 'dark';
+  /** Optional CSS class name */
+  className?: string;
+}
+
+// Supported languages - subset for smaller bundle
+const SUPPORTED_LANGUAGES: BundledLanguage[] = [
+  'typescript',
+  'javascript',
+  'tsx',
+  'jsx',
+  'json',
+  'markdown',
+  'html',
+  'css',
+  'yaml',
+  'shell',
+];
+
+// Theme mapping to VS Code themes
+const THEME_MAP = {
+  light: 'github-light',
+  dark: 'github-dark',
+} as const;
+
+// Singleton highlighter instance
+let highlighterPromise: Promise<Highlighter> | null = null;
+
+function getHighlighter(): Promise<Highlighter> {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
+      themes: [THEME_MAP.light, THEME_MAP.dark],
+      langs: SUPPORTED_LANGUAGES,
+    });
+  }
+  return highlighterPromise;
+}
+
+function normalizeLanguage(lang: string): BundledLanguage {
+  const normalized = lang.toLowerCase();
+  if (SUPPORTED_LANGUAGES.includes(normalized as BundledLanguage)) {
+    return normalized as BundledLanguage;
+  }
+  // Fallback mappings
+  const mappings: Record<string, BundledLanguage> = {
+    ts: 'typescript',
+    js: 'javascript',
+    md: 'markdown',
+    yml: 'yaml',
+    sh: 'shell',
+    bash: 'shell',
+  };
+  return mappings[normalized] || 'javascript'; // Default to JS as plaintext fallback
+}
+
+interface CodeToken {
+  content: string;
+  color?: string;
+}
+
+interface CodeLine {
+  content: string;
+  lineNumber: number;
+  highlighted: boolean;
+  type: 'context' | 'add' | 'remove';
+  tokens: CodeToken[];
+}
+
+export function CodeViewer({
+  code,
+  language,
+  startLine = 1,
+  showLineNumbers = true,
+  highlightLines = [],
+  lineTypes = {},
+  theme = 'dark',
+  className,
+}: CodeViewerProps): React.ReactElement {
+  const [highlightedTokens, setHighlightedTokens] = useState<Array<Array<{ content: string; color?: string }>>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Parse code into lines
+  const lines = useMemo(() => code.split('\n'), [code]);
+
+  // Get highlighted set for O(1) lookup
+  const highlightSet = useMemo(() => new Set(highlightLines), [highlightLines]);
+
+  // Load highlighter and tokenize code
+  useEffect(() => {
+    if (!code) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function highlight() {
+      try {
+        const highlighter = await getHighlighter();
+        if (cancelled) return;
+
+        const normalizedLang = normalizeLanguage(language);
+        const shikiTheme = THEME_MAP[theme];
+
+        // Get tokens from Shiki
+        const tokens = highlighter.codeToTokens(code, {
+          lang: normalizedLang,
+          theme: shikiTheme,
+        });
+
+        if (cancelled) return;
+
+        // Transform tokens to our format
+        const lineTokens = tokens.tokens.map((lineTokens) =>
+          lineTokens.map((token) => ({
+            content: token.content,
+            color: token.color,
+          }))
+        );
+
+        setHighlightedTokens(lineTokens);
+      } catch (error) {
+        console.error('Failed to highlight code:', error);
+        // Fallback: show code without highlighting
+        setHighlightedTokens(lines.map((line) => [{ content: line }]));
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    highlight();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code, language, theme, lines]);
+
+  // Build line data with metadata
+  const codeLines: CodeLine[] = useMemo(() => {
+    return lines.map((content, index) => {
+      const lineNumber = startLine + index;
+      return {
+        content,
+        lineNumber,
+        highlighted: highlightSet.has(lineNumber),
+        type: lineTypes[lineNumber] || 'context',
+        tokens: highlightedTokens[index] || [{ content }],
+      };
+    });
+  }, [lines, startLine, highlightSet, lineTypes, highlightedTokens]);
+
+  // Empty state
+  if (!code) {
+    return (
+      <div className="code-viewer code-viewer-empty" data-testid="code-viewer">
+        <p>No code to display</p>
+      </div>
+    );
+  }
+
+  const lineNumberWidth = String(startLine + lines.length - 1).length;
+
+  return (
+    <div
+      className={`code-viewer ${className || ''}`}
+      data-testid="code-viewer"
+      data-theme={theme}
+      role="region"
+      aria-label="Code viewer"
+    >
+      <div className="code-content">
+        {codeLines.map((line) => {
+          const lineClasses = [
+            'code-line',
+            line.highlighted ? 'line-highlighted' : null,
+            line.type !== 'context' ? `line-${line.type}` : null,
+          ]
+            .filter(Boolean)
+            .join(' ');
+
+          return (
+            <div key={line.lineNumber} className={lineClasses} role="presentation">
+              {showLineNumbers ? (
+                <span
+                  className="line-number"
+                  style={{ minWidth: `${lineNumberWidth}ch` }}
+                >
+                  {line.lineNumber}
+                </span>
+              ) : null}
+              <span className="line-code">
+                {isLoading ? (
+                  line.content || '\u00A0'
+                ) : (
+                  line.tokens.map((token, i) => (
+                    <span
+                      key={i}
+                      style={token.color ? { color: token.color } : undefined}
+                    >
+                      {token.content || '\u00A0'}
+                    </span>
+                  ))
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

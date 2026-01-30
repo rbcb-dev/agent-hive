@@ -19,3 +19,6 @@ export type { ReviewSummaryProps } from './ReviewSummary';
 
 export { DiffViewer } from './DiffViewer';
 export type { DiffViewerProps } from './DiffViewer';
+
+export { CodeViewer } from './CodeViewer';
+export type { CodeViewerProps } from './CodeViewer';
