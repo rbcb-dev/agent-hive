@@ -15,6 +15,7 @@ import {
   getStatusTools
 } from './tools'
 import { initNest } from './commands/initNest'
+import { ReviewPanel } from './reviewPanel'
 
 function findHiveRoot(startPath: string): string | null {
   let current = startPath
@@ -172,6 +173,35 @@ class HiveExtension {
         if (filePath) {
           this.launcher?.openFile(filePath)
         }
+      }),
+
+      vscode.commands.registerCommand('hive.openReview', async (item?: { featureName?: string }) => {
+        if (!this.workspaceRoot) {
+          vscode.window.showErrorMessage('Hive: No .hive directory found')
+          return
+        }
+
+        let featureName = item?.featureName
+
+        // If no feature name provided, prompt for one
+        if (!featureName) {
+          const featureService = new FeatureService(this.workspaceRoot)
+          const features = featureService.list()
+          
+          if (features.length === 0) {
+            vscode.window.showWarningMessage('Hive: No features found. Create a feature first.')
+            return
+          }
+
+          featureName = await vscode.window.showQuickPick(
+            features.map(f => f.name),
+            { placeHolder: 'Select a feature to review' }
+          )
+
+          if (!featureName) return
+        }
+
+        ReviewPanel.createOrShow(this.context.extensionUri, this.workspaceRoot, featureName)
       }),
 
       vscode.commands.registerCommand('hive.approvePlan', async (item: { featureName?: string }) => {
