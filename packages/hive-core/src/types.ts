@@ -137,6 +137,40 @@ export interface TaskSpec {
   priorTasks: Array<{ folder: string; summary?: string }>;
 }
 
+/** Notification configuration for review panel */
+export interface ReviewNotificationsConfig {
+  /** How to display LLM questions: inline in panel, toast notification, or both */
+  llmQuestions?: 'inline' | 'toast' | 'both';
+  /** Whether to show notifications for new comments */
+  newComments?: boolean;
+  /** Whether to show notifications when review is complete */
+  reviewComplete?: boolean;
+}
+
+/** Review panel configuration */
+export interface ReviewConfig {
+  /** Notification settings for review events */
+  notifications?: ReviewNotificationsConfig;
+  /** Whether to auto-delegate reviews to hygienic-reviewer agent (default: true) */
+  autoDelegate?: boolean;
+  /** Maximum number of concurrent reviewer agents (default: 1) */
+  parallelReviewers?: number;
+}
+
+/** Default review notification configuration */
+export const DEFAULT_REVIEW_NOTIFICATIONS: Required<ReviewNotificationsConfig> = {
+  llmQuestions: 'both',
+  newComments: true,
+  reviewComplete: true,
+};
+
+/** Default review configuration */
+export const DEFAULT_REVIEW_CONFIG: Required<ReviewConfig> = {
+  notifications: DEFAULT_REVIEW_NOTIFICATIONS,
+  autoDelegate: true,
+  parallelReviewers: 1,
+};
+
 /** Agent model/temperature configuration */
 export interface AgentModelConfig {
   /** Model to use - format: "provider/model-id" (e.g., 'anthropic/claude-sonnet-4-20250514') */
@@ -170,6 +204,8 @@ export interface HiveConfig {
    * - 'task': Use OpenCode's built-in task() tool (default)
    */
   delegateMode?: 'hive' | 'task';
+  /** Review panel configuration */
+  review?: ReviewConfig;
   /** Agent configuration */
   agents?: {
     /** Hive Master (hybrid planner + orchestrator) */
@@ -204,6 +240,7 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
   disableMcps: [],
   agentMode: 'unified',
   delegateMode: 'task',
+  review: DEFAULT_REVIEW_CONFIG,
   agents: {
     'hive-master': {
       model: DEFAULT_AGENT_MODELS['hive-master'],

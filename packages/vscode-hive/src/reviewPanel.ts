@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ReviewService } from 'hive-core';
-import type { ReviewSession, Range, AnnotationType } from 'hive-core';
+import { ReviewService, ConfigService } from 'hive-core';
+import type { ReviewSession, Range, AnnotationType, ReviewConfig, ReviewNotificationsConfig } from 'hive-core';
 
 /**
  * Message types sent from webview to extension
@@ -19,11 +19,17 @@ type WebviewToExtensionMessage =
   | { type: 'requestFile'; uri: string };
 
 /**
+ * Resolved review config with all defaults applied
+ */
+type ResolvedReviewConfig = Required<ReviewConfig> & { notifications: Required<ReviewNotificationsConfig> };
+
+/**
  * Message types sent from extension to webview
  */
 type ExtensionToWebviewMessage =
-  | { type: 'sessionData'; session: ReviewSession }
+  | { type: 'sessionData'; session: ReviewSession; config: ResolvedReviewConfig }
   | { type: 'sessionUpdate'; session: ReviewSession }
+  | { type: 'configUpdate'; config: ResolvedReviewConfig }
   | { type: 'error'; message: string }
   | { type: 'scopeChanged'; scope: string }
   | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
@@ -46,6 +52,7 @@ export class ReviewPanel {
   private readonly _workspaceRoot: string;
   private readonly _disposables: vscode.Disposable[] = [];
   private readonly _reviewService: ReviewService;
+  private readonly _configService: ConfigService;
   private _currentSession: ReviewSession | null = null;
 
   public static createOrShow(
@@ -88,6 +95,7 @@ export class ReviewPanel {
      this._extensionUri = extensionUri;
      this._workspaceRoot = workspaceRoot;
      this._reviewService = new ReviewService(workspaceRoot);
+     this._configService = new ConfigService();
 
      console.log('[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel');
      console.log('[HIVE WEBVIEW] Extension URI:', extensionUri.toString());
@@ -159,7 +167,8 @@ export class ReviewPanel {
       }
 
       if (this._currentSession) {
-        this._postMessage({ type: 'sessionData', session: this._currentSession });
+        const config = this._configService.getReviewConfig();
+        this._postMessage({ type: 'sessionData', session: this._currentSession, config });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load session';
@@ -175,7 +184,8 @@ export class ReviewPanel {
       case 'ready':
         // Webview is ready, send current session if available
         if (this._currentSession) {
-          this._postMessage({ type: 'sessionData', session: this._currentSession });
+          const config = this._configService.getReviewConfig();
+          this._postMessage({ type: 'sessionData', session: this._currentSession, config });
         }
         break;
 
