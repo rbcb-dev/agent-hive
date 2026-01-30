@@ -368,6 +368,123 @@ describe('ReviewService', () => {
     });
   });
 
+  describe('markSuggestionApplied', () => {
+    it('marks a suggestion annotation as applied', async () => {
+      const session = await service.startSession('test-feature', 'code');
+      const range: Range = {
+        start: { line: 10, character: 0 },
+        end: { line: 15, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'file-entity',
+        'src/index.ts',
+        range,
+        {
+          type: 'suggestion',
+          body: 'Consider refactoring',
+          author: { type: 'llm', name: 'claude' },
+          suggestion: { replacement: 'refactored code' },
+        }
+      );
+
+      const annotationId = thread.annotations[0].id;
+      const updated = await service.markSuggestionApplied(thread.id, annotationId);
+
+      expect(updated.meta).toBeDefined();
+      expect(updated.meta!.applied).toBe(true);
+      expect(updated.meta!.appliedAt).toBeDefined();
+    });
+
+    it('persists the applied status to the session file', async () => {
+      const session = await service.startSession('test-feature', 'code');
+      const range: Range = {
+        start: { line: 10, character: 0 },
+        end: { line: 15, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'file-entity',
+        'src/index.ts',
+        range,
+        {
+          type: 'suggestion',
+          body: 'Refactor this',
+          author: { type: 'llm', name: 'claude' },
+          suggestion: { replacement: 'new code' },
+        }
+      );
+
+      const annotationId = thread.annotations[0].id;
+      await service.markSuggestionApplied(thread.id, annotationId);
+
+      // Reload session
+      const reloaded = await service.getSession(session.id);
+      const reloadedThread = reloaded!.threads.find(t => t.id === thread.id);
+      const reloadedAnnotation = reloadedThread!.annotations.find(a => a.id === annotationId);
+
+      expect(reloadedAnnotation!.meta?.applied).toBe(true);
+    });
+
+    it('throws error for non-existent thread', async () => {
+      await expect(
+        service.markSuggestionApplied('non-existent-thread', 'anno-id')
+      ).rejects.toThrow();
+    });
+
+    it('throws error for non-existent annotation', async () => {
+      const session = await service.startSession('test-feature', 'code');
+      const range: Range = {
+        start: { line: 0, character: 0 },
+        end: { line: 1, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'entity',
+        'file.ts',
+        range,
+        {
+          type: 'suggestion',
+          body: 'Suggestion',
+          author: { type: 'llm', name: 'claude' },
+          suggestion: { replacement: 'code' },
+        }
+      );
+
+      await expect(
+        service.markSuggestionApplied(thread.id, 'non-existent-annotation')
+      ).rejects.toThrow();
+    });
+
+    it('throws error if annotation is not a suggestion', async () => {
+      const session = await service.startSession('test-feature', 'code');
+      const range: Range = {
+        start: { line: 0, character: 0 },
+        end: { line: 1, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'entity',
+        'file.ts',
+        range,
+        {
+          type: 'comment', // Not a suggestion
+          body: 'Just a comment',
+          author: { type: 'human', name: 'user' },
+        }
+      );
+
+      const annotationId = thread.annotations[0].id;
+      await expect(
+        service.markSuggestionApplied(thread.id, annotationId)
+      ).rejects.toThrow(/not a suggestion/i);
+    });
+  });
+
   describe('schema versioning', () => {
     it('creates sessions with schemaVersion 1', async () => {
       const session = await service.startSession('test-feature', 'feature');
