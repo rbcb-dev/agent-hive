@@ -1,0 +1,35 @@
+/* Hive Review Webview Styles */
+
+:root {
+  --vscode-font-family: var(--vscode-editor-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --vscode-font-size: var(--vscode-editor-font-size, 13px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground, #cccccc);
+  background-color: var(--vscode-editor-background, #1e1e1e);
+  padding: 16px;
+}
+
+.hive-review {
+  max-width: 100%;
+}
+
+.hive-review h1 {
+  font-size: 1.5em;
+  margin-bottom: 16px;
+  color: var(--vscode-titleBar-activeForeground, #ffffff);
+}
+
+.hive-review p {
+  line-height: 1.5;
+  color: var(--vscode-descriptionForeground, #999999);
+}
