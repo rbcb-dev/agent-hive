@@ -8,14 +8,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { createReviewTools } from './review-tools.js';
-import { ReviewService } from 'hive-core';
-import type { ReviewSession, ReviewThread, ReviewAnnotation, ReviewIndex } from 'hive-core';
+import { ReviewService, DEFAULT_REVIEW_CONFIG } from 'hive-core';
+import type { ReviewSession, ReviewThread, ReviewAnnotation, ReviewIndex, ReviewConfig } from 'hive-core';
 
 describe('Review Tools', () => {
   let tempDir: string;
   let reviewService: ReviewService;
   let tools: ReturnType<typeof createReviewTools>;
   let resolveFeature: (explicit?: string) => string | null;
+  let reviewConfig: ReviewConfig;
 
   beforeEach(() => {
     // Create temp directory for tests
@@ -33,7 +34,8 @@ describe('Review Tools', () => {
     
     reviewService = new ReviewService(tempDir);
     resolveFeature = (explicit?: string) => explicit || 'test-feature';
-    tools = createReviewTools(reviewService, resolveFeature);
+    reviewConfig = { ...DEFAULT_REVIEW_CONFIG };
+    tools = createReviewTools(reviewService, resolveFeature, reviewConfig);
   });
 
   afterEach(() => {
@@ -68,12 +70,96 @@ describe('Review Tools', () => {
 
     it('returns error when feature not found', async () => {
       const noFeatureResolve = () => null;
-      const toolsNoFeature = createReviewTools(reviewService, noFeatureResolve);
+      const toolsNoFeature = createReviewTools(reviewService, noFeatureResolve, reviewConfig);
       
       const result = await toolsNoFeature.hive_review_start.execute({});
       
       expect(result).toContain('Error');
       expect(result).toContain('No feature specified');
+    });
+
+    it('creates a review session with specified reviewer agent', async () => {
+      const result = await tools.hive_review_start.execute({
+        feature: 'test-feature',
+        reviewer: 'hygienic-reviewer',
+      });
+      const parsed = JSON.parse(result);
+      
+      expect(parsed.id).toBeDefined();
+      expect(parsed.reviewers).toBeDefined();
+      expect(parsed.reviewers).toContain('hygienic-reviewer');
+    });
+
+    it('tracks multiple reviewers in session', async () => {
+      // Set limit to 2 for this test
+      reviewConfig.parallelReviewers = 2;
+      const multiTools = createReviewTools(reviewService, resolveFeature, reviewConfig);
+      
+      // First reviewer
+      const result1 = await multiTools.hive_review_start.execute({
+        feature: 'test-feature',
+        reviewer: 'hygienic-reviewer',
+      });
+      const parsed1 = JSON.parse(result1);
+      
+      // Add another reviewer to same session
+      const result2 = await multiTools.hive_review_start.execute({
+        feature: 'test-feature',
+        sessionId: parsed1.id,
+        reviewer: 'scout-researcher',
+      });
+      const parsed2 = JSON.parse(result2);
+      
+      expect(parsed2.reviewers).toContain('hygienic-reviewer');
+      expect(parsed2.reviewers).toContain('scout-researcher');
+    });
+
+    it('enforces parallelReviewers limit', async () => {
+      // Set limit to 1
+      reviewConfig.parallelReviewers = 1;
+      const limitedTools = createReviewTools(reviewService, resolveFeature, reviewConfig);
+      
+      // First reviewer
+      const result1 = await limitedTools.hive_review_start.execute({
+        feature: 'test-feature',
+        reviewer: 'hygienic-reviewer',
+      });
+      expect(result1).not.toContain('Error');
+      
+      // Second reviewer should fail
+      const parsed1 = JSON.parse(result1);
+      const result2 = await limitedTools.hive_review_start.execute({
+        feature: 'test-feature',
+        sessionId: parsed1.id,
+        reviewer: 'scout-researcher',
+      });
+      
+      expect(result2).toContain('Error');
+      expect(result2).toContain('parallel reviewers');
+    });
+
+    it('allows multiple reviewers when parallelReviewers > 1', async () => {
+      // Set limit to 3
+      reviewConfig.parallelReviewers = 3;
+      const multiTools = createReviewTools(reviewService, resolveFeature, reviewConfig);
+      
+      // First reviewer
+      const result1 = await multiTools.hive_review_start.execute({
+        feature: 'test-feature',
+        reviewer: 'hygienic-reviewer',
+      });
+      const parsed1 = JSON.parse(result1);
+      
+      // Second reviewer should succeed
+      const result2 = await multiTools.hive_review_start.execute({
+        feature: 'test-feature',
+        sessionId: parsed1.id,
+        reviewer: 'scout-researcher',
+      });
+      
+      expect(result2).not.toContain('Error');
+      const parsed2 = JSON.parse(result2);
+      expect(parsed2.reviewers).toHaveLength(2);
     });
   });
 
@@ -169,6 +255,20 @@ describe('Review Tools', () => {
       
       expect(parsed.entityId).toBe('test-feature');
     });
+
+    it('includes agentId in author when provided', async () => {
+      const result = await tools.hive_review_add_comment.execute({
+        sessionId: session.id,
+        entityId: 'test-feature',
+        range: { start: { line: 10, character: 0 }, end: { line: 10, character: 50 } },
+        type: 'comment',
+        body: 'This looks good!',
+        agentId: 'hygienic-reviewer',
+      });
+      const parsed = JSON.parse(result);
+      
+      expect(parsed.annotations[0].author.agentId).toBe('hygienic-reviewer');
+    });
   });
 
   describe('hive_review_suggest', () => {
@@ -191,6 +291,20 @@ describe('Review Tools', () => {
       expect(parsed.annotations[0].type).toBe('suggestion');
       expect(parsed.annotations[0].suggestion).toBeDefined();
       expect(parsed.annotations[0].suggestion.replacement).toBe('const result = await fetchData();');
+    });
+
+    it('includes agentId in author for suggestions', async () => {
+      const result = await tools.hive_review_suggest.execute({
+        sessionId: session.id,
+        entityId: 'test-feature',
+        range: { start: { line: 10, character: 0 }, end: { line: 10, character: 50 } },
+        body: 'Consider using async/await',
+        replacement: 'const result = await fetchData();',
+        agentId: 'hygienic-reviewer',
+      });
+      const parsed = JSON.parse(result);
+      
+      expect(parsed.annotations[0].author.agentId).toBe('hygienic-reviewer');
     });
   });
 
@@ -229,6 +343,17 @@ describe('Review Tools', () => {
       
       expect(result).toContain('Error');
       expect(result).toContain('not found');
+    });
+
+    it('includes agentId in reply author when provided', async () => {
+      const result = await tools.hive_review_reply.execute({
+        threadId: thread.id,
+        body: 'Thanks for the feedback!',
+        agentId: 'hygienic-reviewer',
+      });
+      const parsed = JSON.parse(result);
+      
+      expect(parsed.author.agentId).toBe('hygienic-reviewer');
     });
   });
 
@@ -324,7 +449,7 @@ describe('Review Tools', () => {
 
     it('returns error when session not found', async () => {
       const noFeatureResolve = () => null;
-      const toolsNoFeature = createReviewTools(reviewService, noFeatureResolve);
+      const toolsNoFeature = createReviewTools(reviewService, noFeatureResolve, reviewConfig);
       
       const result = await toolsNoFeature.hive_review_submit.execute({
         sessionId: 'nonexistent',
