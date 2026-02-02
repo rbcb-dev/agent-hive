@@ -489,3 +489,75 @@ export const NoSyntaxHighlighting: Story = {
     await expect(canvas.findByText(/interface User/)).resolves.toBeInTheDocument();
   },
 };
+
+// Code block copy button demo content
+const copyButtonDemoMarkdown = `# Copy-to-Clipboard Demo
+
+This demonstrates the copy button feature for code blocks.
+
+## Single-line Code
+
+\`\`\`javascript
+const greeting = 'Hello, World!';
+\`\`\`
+
+## Multi-line Code
+
+\`\`\`typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(\`/api/users/\${id}\`);
+  return response.json();
+}
+\`\`\`
+
+## Inline Code (no copy button)
+
+This is some \`inline code\` that should NOT have a copy button.
+
+Use \`const\` for constants and \`let\` for variables.
+`;
+
+/**
+ * Demonstrates copy-to-clipboard buttons on code blocks.
+ * Hover over code blocks to see the copy button appear.
+ * Click to copy code to clipboard - shows "Copied!" feedback for 2 seconds.
+ * Inline code (in backticks) does NOT have a copy button.
+ */
+export const CopyToClipboard: Story = {
+  args: {
+    content: copyButtonDemoMarkdown,
+    filePath: 'docs/copy-demo.md',
+    highlightCode: true,
+    theme: 'dark',
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Wait for rendering to complete
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Copy-to-Clipboard Demo');
+    
+    // Verify code blocks are rendered
+    const container = canvasElement.querySelector('.markdown-rendered');
+    await expect(container?.innerHTML).toContain('shiki');
+    
+    // Should have 2 copy buttons (for 2 fenced code blocks)
+    const copyButtons = await canvas.findAllByRole('button', { name: /copy code/i });
+    await expect(copyButtons).toHaveLength(2);
+    
+    // Verify the buttons have correct initial text
+    await expect(copyButtons[0]).toHaveTextContent('Copy');
+    
+    // Click the first copy button
+    await userEvent.click(copyButtons[0]);
+    
+    // Should show "Copied!" feedback
+    await expect(copyButtons[0]).toHaveTextContent('Copied!');
+  },
+};

@@ -254,4 +254,169 @@ const x: number = 1;
       expect(document.querySelector('.markdown-rendered-loading')).toBeInTheDocument();
     });
   });
+
+  describe('copy to clipboard for code blocks', () => {
+    beforeEach(() => {
+      // Mock navigator.clipboard
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: vi.fn().mockResolvedValue(undefined),
+        },
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it('shows copy button on code blocks', async () => {
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      // Should have a copy button for the code block
+      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      expect(copyButton).toBeInTheDocument();
+    });
+
+    it('copies code to clipboard when copy button is clicked', async () => {
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      fireEvent.click(copyButton);
+      
+      // Should have called clipboard.writeText with the code content
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1;');
+      });
+    });
+
+    it('shows copied feedback after clicking copy', async () => {
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      fireEvent.click(copyButton);
+      
+      // Should show copied state
+      await waitFor(() => {
+        expect(copyButton).toHaveTextContent('Copied!');
+      });
+    });
+
+    it('does NOT show copy button on inline code', async () => {
+      const inlineCodeContent = `This is some \`inline code\` in a paragraph.`;
+      render(<MarkdownViewer content={inlineCodeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        expect(screen.getByText(/inline code/)).toBeInTheDocument();
+      });
+      
+      // Should NOT have any copy buttons for inline code
+      expect(screen.queryByRole('button', { name: /copy code/i })).not.toBeInTheDocument();
+    });
+
+    it('shows copy buttons for multiple code blocks', async () => {
+      const multiCodeContent = `\`\`\`javascript
+const a = 1;
+\`\`\`
+
+\`\`\`python
+x = 2
+\`\`\``;
+      render(<MarkdownViewer content={multiCodeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      // Should have two copy buttons
+      const copyButtons = screen.getAllByRole('button', { name: /copy code/i });
+      expect(copyButtons).toHaveLength(2);
+    });
+
+    it('copies multi-line code correctly', async () => {
+      const multiLineCode = `\`\`\`typescript
+function hello() {
+  console.log("world");
+}
+\`\`\``;
+      render(<MarkdownViewer content={multiLineCode} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      fireEvent.click(copyButton);
+      
+      // Should have called clipboard.writeText with multi-line content
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+          'function hello() {\n  console.log("world");\n}'
+        );
+      });
+    });
+
+    it('handles clipboard API failure with fallback', async () => {
+      // Mock clipboard failure
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: vi.fn().mockRejectedValue(new Error('Clipboard not available')),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      // Mock document.execCommand as fallback
+      const execCommandMock = vi.fn().mockReturnValue(true);
+      document.execCommand = execCommandMock;
+
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} />);
+      
+      // Wait for rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+      
+      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      fireEvent.click(copyButton);
+      
+      // Should have called the fallback after clipboard fails
+      await waitFor(() => {
+        expect(execCommandMock).toHaveBeenCalledWith('copy');
+      });
+    });
+  });
 });
