@@ -48,7 +48,7 @@ const config: StorybookConfig = {
         middlewareMode: false,
       },
       build: {
-        target: 'modules',
+        target: 'esnext',
       },
     };
   },
