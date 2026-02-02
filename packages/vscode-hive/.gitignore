@@ -1,0 +1,6 @@
+
+# Storybook build output (generated, not source)
+storybook-static/
+
+# Test output
+coverage/

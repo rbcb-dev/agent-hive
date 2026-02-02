@@ -222,30 +222,33 @@ export const XssSanitization: Story = {
     filePath: 'security/xss-test.md',
     onLineClick: fn(),
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    
-    // Verify heading renders (component works)
-    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('XSS Test Document');
-    
-    // Verify normal content renders
-    await expect(canvas.getByText(/This paragraph should render normally/)).toBeInTheDocument();
-    
-    // Check that script tags are sanitized by inspecting the rendered HTML
-    const renderedContainer = canvasElement.querySelector('.markdown-rendered');
-    if (renderedContainer) {
-      // Script tag content should be stripped
-      await expect(renderedContainer.innerHTML).not.toContain('<script>');
-      await expect(renderedContainer.innerHTML).not.toContain('</script>');
-      
-      // Event handlers should be stripped
-      await expect(renderedContainer.innerHTML).not.toContain('onerror');
-      await expect(renderedContainer.innerHTML).not.toContain('onclick');
-      
-      // JavaScript URLs should be replaced
-      await expect(renderedContainer.innerHTML).not.toContain('javascript:');
-    }
-  },
+   play: async ({ canvasElement }) => {
+     const canvas = within(canvasElement);
+     
+     // Verify heading renders (component works)
+     await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('XSS Test Document');
+     
+     // Verify normal content renders
+     await expect(canvas.getByText(/This paragraph should render normally/)).toBeInTheDocument();
+     
+     // Check that script tags are sanitized by inspecting the rendered HTML
+     const renderedContainer = canvasElement.querySelector('.markdown-rendered');
+     if (renderedContainer) {
+       const html = renderedContainer.innerHTML;
+       
+       // Script tag content should be stripped
+       expect(html).not.toContain('<script>');
+       expect(html).not.toContain('</script>');
+       
+       // Event handlers should not have dangerous attributes (img without onerror handler)
+       // The img tag should not have the onerror= attribute
+       const hasUnsafeEventHandler = /on\w+\s*=/.test(html);
+       expect(hasUnsafeEventHandler).toBe(false);
+       
+       // JavaScript URLs should be replaced or removed
+       expect(html).not.toContain('javascript:');
+     }
+   },
 };
 
 /**

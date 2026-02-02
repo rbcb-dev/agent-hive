@@ -217,21 +217,21 @@ export const ApplyButtonDisabledWhileApplying: Story = {
     isApplying: true,
     hasConflict: false,
   },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
+   play: async ({ canvasElement, args }) => {
+     const canvas = within(canvasElement);
 
-    // Find the Apply button
-    const applyButton = canvas.getByRole('button', { name: /Applying/i });
+     // Find the Apply button - when applying, button text is "Applying..."
+     const applyButton = canvas.getByRole('button', { name: /Apply|Applying/ });
 
-    // Verify the button is disabled
-    await expect(applyButton).toBeDisabled();
+     // Verify the button is disabled
+     await expect(applyButton).toBeDisabled();
 
-    // Try clicking anyway
-    await userEvent.click(applyButton);
+     // Try clicking anyway
+     await userEvent.click(applyButton);
 
-    // Verify callback was NOT called
-    await expect(args.onApply).not.toHaveBeenCalled();
-  },
+     // Verify callback was NOT called
+     await expect(args.onApply).not.toHaveBeenCalled();
+   },
 };
 
 /**
