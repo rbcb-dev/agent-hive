@@ -13,3 +13,9 @@ export {
   normalizeLanguage,
   getHighlighter,
 } from './useCodeHighlighter';
+
+export {
+  useMarkdownRenderer,
+  type UseMarkdownRendererOptions,
+  type UseMarkdownRendererResult,
+} from './useMarkdownRenderer';

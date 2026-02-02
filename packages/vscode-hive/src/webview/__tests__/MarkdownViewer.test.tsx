@@ -2,11 +2,32 @@
  * Tests for MarkdownViewer component
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MarkdownViewer } from '../components/MarkdownViewer';
 
+// Mock shiki with a proper highlighter implementation for faster tests
+const mockHighlighter = {
+  codeToHtml: vi.fn((code: string, opts: { lang: string }) => {
+    return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
+  }),
+  codeToTokens: vi.fn((code: string) => ({
+    tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
+  })),
+};
+
+vi.mock('shiki/bundle/web', () => ({
+  createHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+}));
+
 describe('MarkdownViewer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockHighlighter.codeToHtml.mockImplementation((code: string, opts: { lang: string }) => {
+      return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
+    });
+  });
+
   const mockMarkdownContent = `# Hello World
 
 This is a **bold** paragraph.
@@ -40,16 +61,21 @@ const x = 1;
       expect(screen.getByRole('button', { name: /rendered/i })).toBeInTheDocument();
     });
 
-    it('shows rendered view by default', () => {
+    it('shows rendered view by default', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      // In rendered view, we expect a heading element
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+      });
     });
 
-    it('renders markdown syntax in rendered mode (bold)', () => {
+    it('renders markdown syntax in rendered mode (bold)', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      // Bold text should be rendered as <strong>
-      expect(screen.getByText('bold')).toBeInTheDocument();
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        // Bold text should be rendered as <strong>
+        expect(screen.getByText('bold')).toBeInTheDocument();
+      });
     });
 
     it('toggles to raw view when Raw button clicked', () => {
@@ -63,7 +89,7 @@ const x = 1;
       expect(screen.getByText(/\*\*bold\*\*/)).toBeInTheDocument();
     });
 
-    it('toggles back to rendered view', () => {
+    it('toggles back to rendered view', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       
       // Switch to raw
@@ -72,8 +98,10 @@ const x = 1;
       // Switch back to rendered
       fireEvent.click(screen.getByRole('button', { name: /rendered/i }));
       
-      // Should see rendered content again
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+      });
     });
 
     it('highlights active view button', () => {
@@ -116,23 +144,28 @@ const x = 1;
   });
 
   describe('rendered view', () => {
-    it('renders list items', () => {
+    it('renders list items', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      expect(screen.getByText('List item 1')).toBeInTheDocument();
-      expect(screen.getByText('List item 2')).toBeInTheDocument();
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        expect(screen.getByText('List item 1')).toBeInTheDocument();
+        expect(screen.getByText('List item 2')).toBeInTheDocument();
+      });
     });
 
-    it('does not execute scripts in markdown', () => {
+    it('does not execute scripts in markdown', async () => {
       const maliciousContent = `# XSS Test
 <script>alert("xss")</script>
 <img onerror="alert('xss')" src="invalid">
 `;
       render(<MarkdownViewer content={maliciousContent} />);
       
-      // Script tags should not be in the DOM or should be escaped
-      const container = document.querySelector('.markdown-rendered');
-      expect(container?.innerHTML).not.toContain('<script>');
-      expect(container?.innerHTML).not.toContain('onerror');
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).not.toContain('<script>');
+        expect(container?.innerHTML).not.toContain('onerror');
+      });
     });
 
     it('applies VS Code markdown styles container class', () => {
@@ -143,25 +176,29 @@ const x = 1;
   });
 
   describe('complex markdown handling', () => {
-    it('handles tables without breaking', () => {
+    it('handles tables without breaking', async () => {
       const tableContent = `| Header 1 | Header 2 |
 |----------|----------|
 | Cell 1   | Cell 2   |
 `;
       render(<MarkdownViewer content={tableContent} />);
-      // Should render without crashing
-      expect(screen.getByText('Header 1')).toBeInTheDocument();
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        expect(screen.getByText('Header 1')).toBeInTheDocument();
+      });
     });
 
-    it('handles code blocks without breaking', () => {
+    it('handles code blocks without breaking', async () => {
       const codeContent = `\`\`\`javascript
 function test() {
   return "hello";
 }
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
-      // Should render without crashing
-      expect(screen.getByText(/function test/)).toBeInTheDocument();
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        expect(screen.getByText(/function test/)).toBeInTheDocument();
+      });
     });
   });
 
@@ -181,6 +218,40 @@ function test() {
       fireEvent.click(line1);
       
       expect(handleLineClick).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('syntax highlighting', () => {
+    it('highlights code blocks by default', async () => {
+      const codeContent = `\`\`\`typescript
+const x: number = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} />);
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('shiki');
+      });
+    });
+
+    it('can disable code highlighting', async () => {
+      const codeContent = `\`\`\`typescript
+const x: number = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} highlightCode={false} />);
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container?.innerHTML).toContain('const x: number = 1;');
+        // When highlighting is disabled, we should not have called codeToHtml
+        expect(mockHighlighter.codeToHtml).not.toHaveBeenCalled();
+      });
+    });
+
+    it('shows loading state initially', () => {
+      render(<MarkdownViewer content={mockMarkdownContent} />);
+      // Should show loading initially (before async completes)
+      expect(document.querySelector('.markdown-rendered-loading')).toBeInTheDocument();
     });
   });
 });
