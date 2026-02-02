@@ -93,4 +93,63 @@ describe('DiffViewer', () => {
 
     expect(screen.getByText(/binary file/i)).toBeInTheDocument();
   });
+
+  describe('accessibility', () => {
+    it('renders diff symbols for color-blind users', () => {
+      render(
+        <DiffViewer file={mockFile} />
+      );
+
+      // Check that symbols are rendered (+ for add, - for remove, space for context)
+      const addedLine = screen.getByText('const newVar = 2;').closest('.diff-line');
+      const removedLine = screen.getByText('const oldVar = 1;').closest('.diff-line');
+      const contextLine = screen.getByText('import React from "react";').closest('.diff-line');
+
+      // Symbols should be visible in the line-prefix span
+      expect(addedLine?.querySelector('.line-prefix')?.textContent).toBe('+');
+      expect(removedLine?.querySelector('.line-prefix')?.textContent).toBe('-');
+      expect(contextLine?.querySelector('.line-prefix')?.textContent).toBe(' ');
+    });
+
+    it('provides aria-labels for screen readers on diff lines', () => {
+      render(
+        <DiffViewer file={mockFile} />
+      );
+
+      // Check that diff lines have descriptive aria-labels
+      expect(screen.getByRole('row', { name: /added line: const newVar = 2;/ })).toBeInTheDocument();
+      expect(screen.getByRole('row', { name: /removed line: const oldVar = 1;/ })).toBeInTheDocument();
+      expect(screen.getByRole('row', { name: /unchanged line: import React from "react";/ })).toBeInTheDocument();
+    });
+
+    it('hides line prefix from screen readers with aria-hidden', () => {
+      render(
+        <DiffViewer file={mockFile} />
+      );
+
+      const addedLine = screen.getByText('const newVar = 2;').closest('.diff-line');
+      const prefixSpan = addedLine?.querySelector('.line-prefix');
+
+      expect(prefixSpan).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('renders hunk regions with accessible role and label', () => {
+      render(
+        <DiffViewer file={mockFile} />
+      );
+
+      // Hunk should be a region with descriptive label
+      const hunkRegion = screen.getByRole('region', { name: /Diff hunk starting at line 1/ });
+      expect(hunkRegion).toBeInTheDocument();
+    });
+
+    it('renders hunk lines container with rowgroup role', () => {
+      render(
+        <DiffViewer file={mockFile} />
+      );
+
+      const rowgroup = screen.getByRole('rowgroup', { name: 'Diff lines' });
+      expect(rowgroup).toBeInTheDocument();
+    });
+  });
 });
