@@ -617,6 +617,32 @@ export const AccessibilityCheck: Story = {
   },
 };
 
+/**
+ * Copy button appears on hover in the top-right corner.
+ * Click to copy code to clipboard - shows "Copied!" feedback for 2 seconds.
+ */
+export const CopyToClipboard: Story = {
+  args: {
+    code: typescriptCode,
+    language: 'typescript',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Wait for component to render
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Copy button should be present
+    const copyButton = canvas.getByTestId('copy-button');
+    await expect(copyButton).toBeInTheDocument();
+    await expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
+    
+    // Click to test the interaction (will show "Copied!")
+    await userEvent.click(copyButton);
+    await expect(copyButton).toHaveTextContent('Copied!');
+  },
+};
+
 // =============================================================================
 // Edge Cases
 // =============================================================================
