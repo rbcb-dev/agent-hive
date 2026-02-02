@@ -292,6 +292,86 @@ Do it
     expect(typeof status.summary?.stuckWorkers).toBe("number");
   });
 
+  it("returns task tool call using @file prompt when delegateMode=task", async () => {
+    const configDir = path.join(testRoot, ".config", "opencode");
+    fs.writeFileSync(
+      path.join(configDir, "agent_hive.json"),
+      JSON.stringify({ delegateMode: "task" })
+    );
+
+    const ctx: PluginInput = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+      $: createStubShell(),
+    };
+
+    const hooks = await plugin(ctx);
+    const toolContext = createToolContext("sess_task_mode");
+
+    await hooks.tool!.hive_feature_create.execute(
+      { name: "task-mode-feature" },
+      toolContext
+    );
+
+    const plan = `# Task Mode Feature
+
+## Discovery
+
+**Q: Is this a test?**
+A: Yes
+
+## Overview
+
+Test
+
+## Tasks
+
+### 1. First Task
+Do it
+`;
+
+    await hooks.tool!.hive_plan_write.execute(
+      { content: plan, feature: "task-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_plan_approve.execute(
+      { feature: "task-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_tasks_sync.execute(
+      { feature: "task-mode-feature" },
+      toolContext
+    );
+
+    const execStartOutput = await hooks.tool!.hive_exec_start.execute(
+      { feature: "task-mode-feature", task: "01-first-task" },
+      toolContext
+    );
+    const execStart = JSON.parse(execStartOutput as string) as {
+      instructions?: string;
+      taskToolCall?: {
+        subagent_type?: string;
+        description?: string;
+        prompt?: string;
+        promptFile?: string;
+      };
+    };
+
+    expect(execStart.taskToolCall).toBeTruthy();
+    expect(execStart.taskToolCall?.prompt).toBe(
+      "Follow instructions in @.hive/features/task-mode-feature/tasks/01-first-task/worker-prompt.md"
+    );
+    expect(execStart.taskToolCall?.promptFile).toBeUndefined();
+    expect(execStart.instructions).toContain("task({");
+    expect(execStart.instructions).toContain(
+      "prompt: \"Follow instructions in @.hive/features/task-mode-feature/tasks/01-first-task/worker-prompt.md\""
+    );
+    expect(execStart.instructions).not.toContain("Read the prompt file");
+  });
+
   it("system prompt hook injects Hive instructions", async () => {
     const configPath = path.join(process.env.HOME || "", ".config", "opencode", "agent_hive.json");
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
