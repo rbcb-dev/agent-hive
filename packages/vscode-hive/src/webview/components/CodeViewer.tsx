@@ -4,10 +4,10 @@
  * Supports thread markers in the gutter for inline thread display.
  */
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { createHighlighter, type Highlighter, type BundledLanguage } from 'shiki/bundle/web';
+import React, { useMemo, useState, useCallback } from 'react';
 import type { ReviewThread } from 'hive-core';
 import { InlineThread } from './InlineThread';
+import { useCodeHighlighter } from '../hooks/useCodeHighlighter';
 
 export interface CodeViewerProps {
   /** The code to display */
@@ -34,56 +34,6 @@ export interface CodeViewerProps {
   onThreadReply?: (threadId: string, body: string) => void;
   /** Called when user resolves a thread */
   onThreadResolve?: (threadId: string) => void;
-}
-
-// Supported languages - subset for smaller bundle
-const SUPPORTED_LANGUAGES: BundledLanguage[] = [
-  'typescript',
-  'javascript',
-  'tsx',
-  'jsx',
-  'json',
-  'markdown',
-  'html',
-  'css',
-  'yaml',
-  'shell',
-];
-
-// Theme mapping to VS Code themes
-const THEME_MAP = {
-  light: 'github-light',
-  dark: 'github-dark',
-} as const;
-
-// Singleton highlighter instance
-let highlighterPromise: Promise<Highlighter> | null = null;
-
-function getHighlighter(): Promise<Highlighter> {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: [THEME_MAP.light, THEME_MAP.dark],
-      langs: SUPPORTED_LANGUAGES,
-    });
-  }
-  return highlighterPromise;
-}
-
-function normalizeLanguage(lang: string): BundledLanguage {
-  const normalized = lang.toLowerCase();
-  if (SUPPORTED_LANGUAGES.includes(normalized as BundledLanguage)) {
-    return normalized as BundledLanguage;
-  }
-  // Fallback mappings
-  const mappings: Record<string, BundledLanguage> = {
-    ts: 'typescript',
-    js: 'javascript',
-    md: 'markdown',
-    yml: 'yaml',
-    sh: 'shell',
-    bash: 'shell',
-  };
-  return mappings[normalized] || 'javascript'; // Default to JS as plaintext fallback
 }
 
 interface CodeToken {
@@ -128,8 +78,9 @@ export function CodeViewer({
   onThreadReply,
   onThreadResolve,
 }: CodeViewerProps): React.ReactElement {
-  const [highlightedTokens, setHighlightedTokens] = useState<Array<Array<{ content: string; color?: string }>>>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use the extracted hook for syntax highlighting
+  const { tokens: highlightedTokens, isLoading } = useCodeHighlighter({ code, language, theme });
+  
   // Track which line (0-indexed) has expanded inline thread
   const [expandedThreadLine, setExpandedThreadLine] = useState<number | null>(null);
 
@@ -138,58 +89,6 @@ export function CodeViewer({
 
   // Get highlighted set for O(1) lookup
   const highlightSet = useMemo(() => new Set(highlightLines), [highlightLines]);
-
-  // Load highlighter and tokenize code
-  useEffect(() => {
-    if (!code) {
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function highlight() {
-      try {
-        const highlighter = await getHighlighter();
-        if (cancelled) return;
-
-        const normalizedLang = normalizeLanguage(language);
-        const shikiTheme = THEME_MAP[theme];
-
-        // Get tokens from Shiki
-        const tokens = highlighter.codeToTokens(code, {
-          lang: normalizedLang,
-          theme: shikiTheme,
-        });
-
-        if (cancelled) return;
-
-        // Transform tokens to our format
-        const lineTokens = tokens.tokens.map((lineTokens) =>
-          lineTokens.map((token) => ({
-            content: token.content,
-            color: token.color,
-          }))
-        );
-
-        setHighlightedTokens(lineTokens);
-      } catch (error) {
-        console.error('Failed to highlight code:', error);
-        // Fallback: show code without highlighting
-        setHighlightedTokens(lines.map((line) => [{ content: line }]));
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    highlight();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [code, language, theme, lines]);
 
   // Build line data with metadata
   const codeLines: CodeLine[] = useMemo(() => {
