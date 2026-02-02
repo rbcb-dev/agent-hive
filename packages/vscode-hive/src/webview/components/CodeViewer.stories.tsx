@@ -691,3 +691,157 @@ const unicode = "こんにちは 🎉 emoji test";`,
     language: 'typescript',
   },
 };
+
+// =============================================================================
+// Copy to Clipboard Stories
+// =============================================================================
+
+/**
+ * Demonstrates the copy-to-clipboard functionality.
+ * Hover over the code block to reveal the copy button in the top-right corner.
+ * Click to copy the entire code content to clipboard - shows "Copied!" feedback.
+ */
+export const WithCopyButton: Story = {
+  args: {
+    code: `// Copy this code to your clipboard!
+function greet(name: string): string {
+  return \`Hello, \${name}!\`;
+}
+
+// Usage example
+const message = greet('World');
+console.log(message);`,
+    language: 'typescript',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Wait for component to render
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Find the copy button
+    const copyButton = canvas.getByTestId('copy-button');
+    await expect(copyButton).toBeInTheDocument();
+    await expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
+
+    // Verify initial state shows "Copy"
+    await expect(copyButton).toHaveTextContent('Copy');
+
+    // Click to copy
+    await userEvent.click(copyButton);
+
+    // Should show "Copied!" feedback
+    await expect(copyButton).toHaveTextContent('Copied!');
+  },
+};
+
+// =============================================================================
+// All Supported Languages
+// =============================================================================
+
+// TSX sample code
+const tsxCode = `import React, { useState } from 'react';
+
+interface ButtonProps {
+  label: string;
+  onClick?: () => void;
+}
+
+export function Button({ label, onClick }: ButtonProps) {
+  const [clicked, setClicked] = useState(false);
+  
+  return (
+    <button
+      className={clicked ? 'active' : ''}
+      onClick={() => {
+        setClicked(true);
+        onClick?.();
+      }}
+    >
+      {label}
+    </button>
+  );
+}`;
+
+// JSX sample code
+const jsxCode = `import React, { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div className="counter">
+      <span>Count: {count}</span>
+      <button onClick={() => setCount(c => c + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}`;
+
+/**
+ * Comprehensive showcase of all 10 supported languages.
+ * Each language is shown with appropriate syntax highlighting.
+ * 
+ * Supported languages:
+ * - TypeScript (ts)
+ * - JavaScript (js)
+ * - TSX
+ * - JSX
+ * - JSON
+ * - Markdown (md)
+ * - HTML
+ * - CSS
+ * - YAML (yml)
+ * - Shell (sh, bash)
+ */
+export const AllLanguages: Story = {
+  args: {
+    code: '', // Not used - render override displays multiple CodeViewers
+    language: 'typescript',
+  },
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>TypeScript</h4>
+        <CodeViewer code={multiLanguageCode.typescript} language="typescript" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JavaScript</h4>
+        <CodeViewer code={multiLanguageCode.javascript} language="javascript" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>TSX</h4>
+        <CodeViewer code={tsxCode} language="tsx" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JSX</h4>
+        <CodeViewer code={jsxCode} language="jsx" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JSON</h4>
+        <CodeViewer code={multiLanguageCode.json} language="json" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>Markdown</h4>
+        <CodeViewer code={multiLanguageCode.markdown} language="markdown" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>HTML</h4>
+        <CodeViewer code={multiLanguageCode.html} language="html" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>CSS</h4>
+        <CodeViewer code={multiLanguageCode.css} language="css" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>YAML</h4>
+        <CodeViewer code={multiLanguageCode.yaml} language="yaml" />
+      </div>
+      <div>
+        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>Shell</h4>
+        <CodeViewer code={multiLanguageCode.shell} language="shell" />
+      </div>
+    </div>
+  ),
+};
