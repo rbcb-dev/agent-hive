@@ -4,10 +4,31 @@
  * Supports thread markers in the gutter for inline thread display.
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReviewThread } from 'hive-core';
 import { InlineThread } from './InlineThread';
 import { useCodeHighlighter } from '../hooks/useCodeHighlighter';
+
+/**
+ * Copy text to clipboard with fallback for older webview contexts
+ */
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for older webview contexts
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
+  }
+};
 
 export interface CodeViewerProps {
   /** The code to display */
@@ -83,6 +104,9 @@ export function CodeViewer({
   
   // Track which line (0-indexed) has expanded inline thread
   const [expandedThreadLine, setExpandedThreadLine] = useState<number | null>(null);
+  // Track copy button state
+  const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Parse code into lines
   const lines = useMemo(() => code.split('\n'), [code]);
@@ -142,6 +166,31 @@ export function CodeViewer({
     }
   }, [onThreadResolve]);
 
+  // Handle copy to clipboard
+  const handleCopyClick = useCallback(async () => {
+    const success = await copyToClipboard(code);
+    if (success) {
+      setCopyState('copied');
+      // Clear any existing timeout
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      // Reset to idle after 2 seconds
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopyState('idle');
+      }, 2000);
+    }
+  }, [code]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Empty state
   if (!code) {
     return (
@@ -162,6 +211,15 @@ export function CodeViewer({
       role="region"
       aria-label="Code viewer"
     >
+      <button
+        className={`copy-button ${copyState === 'copied' ? 'copy-button-copied' : ''}`}
+        data-testid="copy-button"
+        onClick={handleCopyClick}
+        aria-label="Copy code to clipboard"
+        type="button"
+      >
+        {copyState === 'copied' ? 'Copied!' : 'Copy'}
+      </button>
       <div className="code-content">
         {codeLines.map((line) => {
           const lineClasses = [

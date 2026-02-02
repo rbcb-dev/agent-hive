@@ -502,4 +502,126 @@ describe('CodeViewer', () => {
       });
     });
   });
+
+  describe('copy to clipboard', () => {
+    beforeEach(() => {
+      // Mock navigator.clipboard
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: vi.fn().mockResolvedValue(undefined),
+        },
+      });
+    });
+
+    it('renders copy button in the code viewer', async () => {
+      render(
+        <CodeViewer
+          code="const x = 1;"
+          language="typescript"
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toBeInTheDocument();
+      });
+    });
+
+    it('copies code to clipboard when copy button is clicked', async () => {
+      const testCode = 'const x = 1;\nconst y = 2;';
+      render(
+        <CodeViewer
+          code={testCode}
+          language="typescript"
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('copy-button'));
+
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(testCode);
+      });
+    });
+
+    it('shows "Copied!" feedback after successful copy', async () => {
+      render(
+        <CodeViewer
+          code="const x = 1;"
+          language="typescript"
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('copy-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toHaveTextContent('Copied!');
+      });
+    });
+
+    it('has proper attributes for accessibility', async () => {
+      render(
+        <CodeViewer
+          code="const x = 1;"
+          language="typescript"
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toBeInTheDocument();
+      });
+
+      const copyButton = screen.getByTestId('copy-button');
+      expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
+      expect(copyButton).toHaveAttribute('type', 'button');
+    });
+
+    it('does not render copy button when code is empty', () => {
+      render(
+        <CodeViewer
+          code=""
+          language="typescript"
+        />
+      );
+
+      expect(screen.queryByTestId('copy-button')).not.toBeInTheDocument();
+    });
+
+    it('handles clipboard API failure with fallback', async () => {
+      // Mock clipboard failure
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: vi.fn().mockRejectedValue(new Error('Clipboard failed')),
+        },
+      });
+
+      // Mock document.execCommand as fallback
+      const execCommandMock = vi.fn().mockReturnValue(true);
+      document.execCommand = execCommandMock;
+
+      render(
+        <CodeViewer
+          code="const x = 1;"
+          language="typescript"
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('copy-button')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('copy-button'));
+
+      // Should have called the fallback after clipboard fails
+      await waitFor(() => {
+        expect(execCommandMock).toHaveBeenCalledWith('copy');
+      });
+    });
+  });
 });
