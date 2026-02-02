@@ -22,9 +22,19 @@ function DiffLine({ line }: { line: DiffHunkLine }): React.ReactElement {
     remove: '-',
   };
 
+  const ariaLabelMap = {
+    context: 'unchanged',
+    add: 'added',
+    remove: 'removed',
+  };
+
   return (
-    <div className={`diff-line ${classMap[line.type]}`}>
-      <span className="line-prefix">{prefixMap[line.type]}</span>
+    <div
+      className={`diff-line ${classMap[line.type]}`}
+      role="row"
+      aria-label={`${ariaLabelMap[line.type]} line: ${line.content}`}
+    >
+      <span className="line-prefix" aria-hidden="true">{prefixMap[line.type]}</span>
       <span className="line-content">{line.content}</span>
     </div>
   );
@@ -33,10 +43,10 @@ function DiffLine({ line }: { line: DiffHunkLine }): React.ReactElement {
 function DiffHunkView({ hunk }: { hunk: DiffHunk }): React.ReactElement {
   return (
     <div className="diff-hunk" role="region" aria-label={`Diff hunk starting at line ${hunk.newStart}`}>
-      <div className="hunk-header">
+      <div className="hunk-header" aria-label={`Hunk header: lines ${hunk.oldStart} to ${hunk.oldStart + hunk.oldLines - 1} changed to lines ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`}>
         @@ -{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@
       </div>
-      <div className="hunk-lines">
+      <div className="hunk-lines" role="rowgroup" aria-label="Diff lines">
         {hunk.lines.map((line, index) => (
           <DiffLine key={`${hunk.newStart}-${index}-${line.type}`} line={line} />
         ))}
