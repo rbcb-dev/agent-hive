@@ -19,3 +19,15 @@ export {
   type UseMarkdownRendererOptions,
   type UseMarkdownRendererResult,
 } from './useMarkdownRenderer';
+
+export {
+  useFileContentCache,
+  type FileContent,
+  type UseFileContentCacheResult,
+} from './useFileContentCache';
+
+export {
+  useReviewSession,
+  type ScopeContent,
+  type UseReviewSessionResult,
+} from './useReviewSession';

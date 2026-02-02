@@ -1,8 +1,12 @@
 /**
  * Main App component - Hive Review UI
+ * 
+ * This component now uses custom hooks for state management:
+ * - useReviewSession: Manages session state, scope, file/thread selection, and extension messaging
+ * - useFileContentCache: Manages file content caching with TTL
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { ScopeTabs } from './components/ScopeTabs';
 import { FileNavigator } from './components/FileNavigator';
 import { ThreadList } from './components/ThreadList';
@@ -11,14 +15,10 @@ import { ReviewSummary } from './components/ReviewSummary';
 import { DiffViewer } from './components/DiffViewer';
 import { CodeViewer } from './components/CodeViewer';
 import { MarkdownViewer } from './components/MarkdownViewer';
-import { notifyReady, addMessageListener, postMessage } from './vscodeApi';
-import type { 
-  ReviewSession, 
-  ReviewThread, 
-  ReviewVerdict,
-  DiffFile,
-} from 'hive-core';
-import type { ThreadSummary, ExtensionToWebviewMessage } from './types';
+import { useReviewSession, useFileContentCache } from './hooks';
+import { addMessageListener } from './vscodeApi';
+import type { ReviewThread, DiffFile } from 'hive-core';
+import type { ExtensionToWebviewMessage } from './types';
 
 const SCOPES = [
   { id: 'feature', label: 'Feature' },
@@ -27,37 +27,6 @@ const SCOPES = [
   { id: 'plan', label: 'Plan' },
   { id: 'code', label: 'Code' },
 ];
-
-/**
- * Convert session threads to thread summaries for the list view
- */
-function threadsToSummaries(threads: ReviewThread[]): ThreadSummary[] {
-  return threads.map((thread) => ({
-    id: thread.id,
-    uri: thread.uri,
-    firstLine: thread.annotations[0]?.body.slice(0, 80) || '',
-    status: thread.status,
-    commentCount: thread.annotations.length,
-    lastUpdated: thread.updatedAt,
-  }));
-}
-
-/**
- * Extract file paths from session diffs for FileNavigator
- */
-function diffsToFilePaths(
-  diffs: Record<string, { files: DiffFile[] }>
-): string[] {
-  const filePaths: string[] = [];
-  
-  for (const diffPayload of Object.values(diffs)) {
-    for (const file of diffPayload.files) {
-      filePaths.push(file.path);
-    }
-  }
-  
-  return filePaths;
-}
 
 /**
  * Check if a file path is a markdown file
@@ -87,255 +56,54 @@ function extractContentFromDiff(file: DiffFile): string {
 }
 
 export function App(): React.ReactElement {
-  const [session, setSession] = useState<ReviewSession | null>(null);
-  const [activeScope, setActiveScope] = useState('feature');
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [selectedThread, setSelectedThread] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [scopeContent, setScopeContent] = useState<{ uri: string; content: string; language: string } | undefined>(undefined);
-  
-  // File content state for inline viewing
-  const [fileContentCache, setFileContentCache] = useState<Map<string, {
-    content: string;
-    language?: string;
-    warning?: string;
-    timestamp: number;
-  }>>(new Map());
-  const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
-  const [loadingFiles, setLoadingFiles] = useState<Set<string>>(new Set());
+  // Use custom hooks for state management
+  const {
+    session,
+    activeScope,
+    scopeContent,
+    selectedFile,
+    selectedThread,
+    isSubmitting,
+    threads,
+    threadSummaries,
+    filePaths,
+    selectedThreadData,
+    selectedFileData,
+    handleScopeChange,
+    handleSelectFile,
+    handleSelectThread,
+    handleReply,
+    handleResolve,
+    handleSubmit,
+    handleAddComment,
+  } = useReviewSession();
 
-  // Handle messages from extension
-  const handleMessage = useCallback((message: ExtensionToWebviewMessage) => {
-    switch (message.type) {
-      case 'sessionData':
-      case 'sessionUpdate':
-        setSession(message.session);
-        break;
-      case 'scopeChanged':
-        setActiveScope(message.scope);
-        setScopeContent(message.scopeContent);
-        break;
-      case 'error':
-        console.error('Extension error:', message.message);
-        break;
-      case 'fileContent':
-        // Store file content in cache with timestamp
-        setFileContentCache(prev => {
-          const newCache = new Map(prev);
-          newCache.set(message.uri, {
-            content: message.content,
-            language: message.language,
-            warning: message.warning,
-            timestamp: Date.now(),
-          });
-          return newCache;
-        });
-        // Clear any previous error for this file
-        setFileErrors(prev => {
-          const newErrors = new Map(prev);
-          newErrors.delete(message.uri);
-          return newErrors;
-        });
-        // Remove from loading state
-        setLoadingFiles(prev => {
-          const newLoading = new Set(prev);
-          newLoading.delete(message.uri);
-          return newLoading;
-        });
-        break;
-      case 'fileError':
-        // Store the error
-        setFileErrors(prev => {
-          const newErrors = new Map(prev);
-          newErrors.set(message.uri, message.error);
-          return newErrors;
-        });
-        // Remove from loading state
-        setLoadingFiles(prev => {
-          const newLoading = new Set(prev);
-          newLoading.delete(message.uri);
-          return newLoading;
-        });
-        break;
-    }
-  }, []);
+  const fileContentCache = useFileContentCache();
 
-  // Set up message listener and notify ready on mount
+  // Bridge file content messages to the cache hook
   useEffect(() => {
-    const removeListener = addMessageListener(handleMessage);
-    notifyReady();
-    return removeListener;
-  }, [handleMessage]);
-
-  // Handlers
-  const handleScopeChange = (scope: string) => {
-    setActiveScope(scope);
-    postMessage({ type: 'changeScope', scope });
-  };
-
-  const handleSelectFile = (path: string) => {
-    setSelectedFile(path);
-    postMessage({ type: 'selectFile', path });
-  };
-
-  const handleSelectThread = (threadId: string) => {
-    setSelectedThread(threadId);
-    postMessage({ type: 'selectThread', threadId });
-  };
-
-  // Wrapper for CodeViewer's thread click callback
-  const handleCodeViewerThreadClick = useCallback((threads: ReviewThread[]) => {
-    if (threads.length > 0) {
-      handleSelectThread(threads[0].id);
-    }
-  }, []);
-
-  const handleReply = (threadId: string, body: string) => {
-    if (!session) return;
-    
-    const thread = session.threads.find(t => t.id === threadId);
-    if (!thread) {
-      // This is a new thread, so we need to create it with addComment
-      postMessage({
-        type: 'addComment',
-        entityId: threadId,
-        uri: scopeContent?.uri || activeScope,
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-        body,
-        annotationType: 'comment',
-      });
-    } else {
-      // This is a reply to existing thread
-      postMessage({ type: 'reply', threadId, body });
-    }
-  };
-
-  const handleAddComment = useCallback(() => {
-    if (!session) return;
-    
-    // Create a new thread on the current scope's content
-    const threadId = `thread-${Date.now()}`;
-    const now = new Date().toISOString();
-    
-    // Create a temporary thread for comment input
-    const newThread: ReviewThread = {
-      id: threadId,
-      entityId: threadId,
-      uri: scopeContent?.uri || activeScope,
-      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      annotations: [],
-      status: 'open',
-      createdAt: now,
-      updatedAt: now,
+    const handleFileMessages = (message: ExtensionToWebviewMessage) => {
+      if (message.type === 'fileContent') {
+        fileContentCache.setContent(
+          message.uri,
+          message.content,
+          message.language,
+          message.warning
+        );
+      } else if (message.type === 'fileError') {
+        fileContentCache.setError(message.uri, message.error);
+      }
     };
 
-    // Select the new thread to show the comment input
-    setSelectedThread(threadId);
-    
-    // Show the thread panel
-    setSession({
-      ...session,
-      threads: [...session.threads, newThread],
-    });
-  }, [session, activeScope, scopeContent]);
+    return addMessageListener(handleFileMessages);
+  }, [fileContentCache]);
 
-  const handleResolve = (threadId: string) => {
-    postMessage({ type: 'resolve', threadId });
-  };
-
-  const handleSubmit = (verdict: ReviewVerdict, summary: string) => {
-    setIsSubmitting(true);
-    postMessage({ type: 'submit', verdict, summary });
-    // Note: isSubmitting will be reset when we receive a session update
-  };
-
-  /**
-   * Request file content for inline viewing
-   * This does NOT open an editor tab - content is received via fileContent message
-   * @param uri - File path (relative or absolute)
-   */
-  const requestFileContent = useCallback((uri: string) => {
-    // Don't request if already loading
-    if (loadingFiles.has(uri)) {
-      return;
+  // Wrapper for CodeViewer's thread click callback
+  const handleCodeViewerThreadClick = useCallback((clickedThreads: ReviewThread[]) => {
+    if (clickedThreads.length > 0) {
+      handleSelectThread(clickedThreads[0].id);
     }
-    
-    // Mark as loading
-    setLoadingFiles(prev => {
-      const newLoading = new Set(prev);
-      newLoading.add(uri);
-      return newLoading;
-    });
-    
-    // Send request to extension
-    postMessage({ type: 'requestFile', uri });
-  }, [loadingFiles]);
-
-  /**
-   * Get cached file content, or request if not cached
-   * Cache entries expire after 5 minutes to prevent memory bloat
-   */
-  const getFileContent = useCallback((uri: string) => {
-    const cached = fileContentCache.get(uri);
-    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-    
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached;
-    }
-    
-    // Request fresh content
-    requestFileContent(uri);
-    return null;
-  }, [fileContentCache, requestFileContent]);
-
-  /**
-   * Check if a file is currently loading
-   */
-  const isFileLoading = useCallback((uri: string) => {
-    return loadingFiles.has(uri);
-  }, [loadingFiles]);
-
-  /**
-   * Get error for a file, if any
-   */
-  const getFileError = useCallback((uri: string) => {
-    return fileErrors.get(uri);
-  }, [fileErrors]);
-
-  /**
-   * Clear file content cache (useful for forced refresh)
-   */
-  const clearFileCache = useCallback((uri?: string) => {
-    if (uri) {
-      setFileContentCache(prev => {
-        const newCache = new Map(prev);
-        newCache.delete(uri);
-        return newCache;
-      });
-      setFileErrors(prev => {
-        const newErrors = new Map(prev);
-        newErrors.delete(uri);
-        return newErrors;
-      });
-    } else {
-      setFileContentCache(new Map());
-      setFileErrors(new Map());
-    }
-  }, []);
-
-  // Derived state
-  const threads = session?.threads || [];
-  const threadSummaries = threadsToSummaries(threads);
-  const filePaths = useMemo(
-    () => (session ? diffsToFilePaths(session.diffs) : []),
-    [session]
-  );
-  const selectedThreadData = threads.find((t) => t.id === selectedThread) || null;
-  const selectedFileData = selectedFile 
-    ? Object.values(session?.diffs || {})
-        .flatMap((d) => d.files)
-        .find((f) => f.path === selectedFile) || null
-    : null;
+  }, [handleSelectThread]);
 
   // Determine if selected file is markdown and extract content
   const isSelectedFileMarkdown = selectedFile ? isMarkdownFile(selectedFile) : false;
