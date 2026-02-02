@@ -907,7 +907,7 @@
     "test:local:verify": "node scripts/verify-build.mjs",
     "test:local:quick": "npm run test:webview && npm run build",
     "clean": "rm -rf dist/ vscode-hive.vsix",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "VITE_POLL=true storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test-storybook": "test-storybook",
     "test:storybook": "test-storybook --url http://127.0.0.1:6006",

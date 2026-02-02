@@ -36,6 +36,20 @@ const config: StorybookConfig = {
           'hive-core': resolve(__dirname, '../../hive-core/src'),
         },
       },
+      server: {
+        watch: {
+          // Use polling instead of file watchers to avoid ENOSPC errors
+          // in environments with limited inotify capacity
+          usePolling: true,
+          interval: 2000,
+          binaryInterval: 2000,
+          ignored: ['**/node_modules/**', '**/.git/**'],
+        },
+        middlewareMode: false,
+      },
+      build: {
+        target: 'modules',
+      },
     };
   },
 
