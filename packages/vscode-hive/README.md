@@ -152,6 +152,37 @@ You can customize this file to add your own workflows and preferences.
 
 For the full workflow, install [opencode-hive](https://www.npmjs.com/package/opencode-hive) plugin.
 
+## Development
+
+### Storybook
+
+This package uses Storybook for component development and testing. See [STORYBOOK.md](./STORYBOOK.md) for:
+
+- How to run Storybook
+- How to write new stories (TDD flow)
+- How to update visual regression snapshots
+- Component status overview
+
+Quick start:
+
+```bash
+# Start Storybook dev server
+bun run storybook
+
+# Run interaction and visual tests
+bun run test-storybook
+```
+
+### Testing
+
+```bash
+# Run webview component tests
+bun run test:webview
+
+# Full local test (build + test)
+bun run test:local
+```
+
 ## Requirements
 
 - VS Code 1.80.0 or higher
