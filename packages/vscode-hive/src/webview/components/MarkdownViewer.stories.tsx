@@ -490,6 +490,296 @@ export const NoSyntaxHighlighting: Story = {
   },
 };
 
+// =============================================================================
+// Highlighted Code Block Stories
+// =============================================================================
+
+// Content specifically for demonstrating syntax-highlighted code blocks
+const highlightedCodeMarkdown = `# Syntax-Highlighted Code Examples
+
+This document showcases code blocks with Shiki syntax highlighting.
+
+## TypeScript with Type Annotations
+
+\`\`\`typescript
+interface Person {
+  name: string;
+  age: number;
+  email?: string;
+}
+
+async function fetchPerson(id: string): Promise<Person> {
+  const response = await fetch(\`/api/person/\${id}\`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch person');
+  }
+  return response.json();
+}
+\`\`\`
+
+## React Component (TSX)
+
+\`\`\`tsx
+import React, { useState } from 'react';
+
+interface CounterProps {
+  initialValue?: number;
+}
+
+export function Counter({ initialValue = 0 }: CounterProps) {
+  const [count, setCount] = useState(initialValue);
+
+  return (
+    <div className="counter">
+      <span aria-label="Current count">{count}</span>
+      <button onClick={() => setCount(c => c + 1)}>+</button>
+      <button onClick={() => setCount(c => c - 1)}>-</button>
+    </div>
+  );
+}
+\`\`\`
+
+## Shell Script
+
+\`\`\`bash
+#!/bin/bash
+
+# Deploy script with error handling
+set -e
+
+echo "Starting deployment..."
+npm run build
+
+if [ -d "dist" ]; then
+    npm run deploy
+    echo "Deployment successful!"
+else
+    echo "Build failed - no dist directory"
+    exit 1
+fi
+\`\`\`
+
+The code blocks above demonstrate proper syntax coloring for keywords, strings, types, and functions.
+`;
+
+/**
+ * Demonstrates syntax-highlighted code blocks within markdown.
+ * 
+ * Uses Shiki for accurate TextMate-based highlighting with:
+ * - TypeScript type annotations and keywords
+ * - TSX/JSX components with JSX syntax
+ * - Shell scripts with variables and control flow
+ * 
+ * The highlighting matches VS Code's theme colors.
+ */
+export const WithHighlightedCode: Story = {
+  args: {
+    content: highlightedCodeMarkdown,
+    filePath: 'docs/highlighted-code-demo.md',
+    highlightCode: true,
+    theme: 'dark',
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Wait for rendering
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Syntax-Highlighted Code Examples');
+    
+    // Verify code blocks with highlighting are present
+    const container = canvasElement.querySelector('.markdown-rendered');
+    await expect(container?.innerHTML).toContain('shiki');
+    
+    // Verify TypeScript code is rendered
+    await expect(canvas.findByText(/interface Person/)).resolves.toBeInTheDocument();
+  },
+};
+
+// =============================================================================
+// Complex Document Stories
+// =============================================================================
+
+// Comprehensive markdown document with all element types
+const complexDocumentMarkdown = `# Complex Document Example
+
+A comprehensive markdown document demonstrating all supported elements.
+
+## Table of Contents
+
+1. [Headings](#headings)
+2. [Lists](#lists)
+3. [Tables](#tables)
+4. [Code Blocks](#code-blocks)
+5. [Formatting](#formatting)
+
+---
+
+## Headings
+
+### Third Level Heading
+
+#### Fourth Level Heading
+
+##### Fifth Level Heading
+
+## Lists
+
+### Unordered List
+
+- First item
+- Second item with **bold** and *italic* text
+  - Nested item one
+  - Nested item two
+    - Deeply nested
+- Third item with \`inline code\`
+
+### Ordered List
+
+1. First numbered item
+2. Second numbered item
+   1. Nested numbered
+   2. Another nested
+3. Third numbered item
+
+### Task List
+
+- [x] Completed task
+- [x] Another completed task
+- [ ] Pending task
+- [ ] Another pending task
+
+## Tables
+
+| Feature | Status | Priority | Assigned |
+|---------|--------|----------|----------|
+| Auth | ✅ Done | High | Alice |
+| Dashboard | 🚧 WIP | Medium | Bob |
+| Reports | ⏳ Pending | Low | Carol |
+| Settings | 📋 Planned | Low | - |
+
+### Complex Table with Alignment
+
+| Left | Center | Right |
+|:-----|:------:|------:|
+| L1 | C1 | R1 |
+| L2 | C2 | R2 |
+| L3 | C3 | R3 |
+
+## Code Blocks
+
+### Inline Code
+
+Use \`const\` for constants, \`let\` for variables, and \`function\` for declarations.
+
+### TypeScript
+
+\`\`\`typescript
+interface Config {
+  theme: 'light' | 'dark';
+  language: string;
+  features: string[];
+}
+
+const config: Config = {
+  theme: 'dark',
+  language: 'en',
+  features: ['syntax-highlighting', 'line-numbers']
+};
+\`\`\`
+
+### JSON Configuration
+
+\`\`\`json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "strict": true
+  }
+}
+\`\`\`
+
+## Formatting
+
+### Text Styles
+
+- **Bold text** for emphasis
+- *Italic text* for subtle emphasis  
+- ***Bold and italic*** combined
+- ~~Strikethrough~~ for deleted content
+- \`inline code\` for code snippets
+
+### Blockquotes
+
+> This is a blockquote. It can contain **formatted** text.
+>
+> Multiple paragraphs are supported.
+>
+> > Nested blockquotes work too.
+
+### Links and Images
+
+Visit the [documentation](https://example.com/docs) for more info.
+
+External link: [GitHub](https://github.com)
+
+---
+
+## Summary
+
+This document demonstrates the rendering capabilities of the MarkdownViewer component, including proper handling of:
+
+1. Multiple heading levels
+2. Various list types
+3. Complex tables
+4. Syntax-highlighted code blocks
+5. Rich text formatting
+6. Blockquotes and horizontal rules
+`;
+
+/**
+ * Complex document with headings, lists, tables, and code blocks.
+ * 
+ * Demonstrates the full rendering capability including:
+ * - Multiple heading levels (h1-h5)
+ * - Unordered, ordered, and task lists with nesting
+ * - Tables with alignment and emoji
+ * - Fenced code blocks with syntax highlighting
+ * - Text formatting (bold, italic, strikethrough, inline code)
+ * - Blockquotes with nesting
+ * - Horizontal rules
+ * - Links
+ */
+export const ComplexDocument: Story = {
+  args: {
+    content: complexDocumentMarkdown,
+    filePath: 'docs/complete-example.md',
+    highlightCode: true,
+    theme: 'dark',
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Verify heading renders
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Complex Document Example');
+    
+    // Verify table is rendered
+    await expect(canvas.findByText('Feature')).resolves.toBeInTheDocument();
+    await expect(canvas.findByText('Status')).resolves.toBeInTheDocument();
+    
+    // Verify code block is present
+    await expect(canvas.findByText(/interface Config/)).resolves.toBeInTheDocument();
+    
+    // Verify task list items
+    await expect(canvas.findByText('Completed task')).resolves.toBeInTheDocument();
+  },
+};
+
+// =============================================================================
+// Copy-to-Clipboard Story
+// =============================================================================
+
 // Code block copy button demo content
 const copyButtonDemoMarkdown = `# Copy-to-Clipboard Demo
 
@@ -559,5 +849,6 @@ export const CopyToClipboard: Story = {
     
     // Should show "Copied!" feedback
     await expect(copyButtons[0]).toHaveTextContent('Copied!');
+    await expect(canvas.findByText('Pending task')).resolves.toBeInTheDocument();
   },
 };

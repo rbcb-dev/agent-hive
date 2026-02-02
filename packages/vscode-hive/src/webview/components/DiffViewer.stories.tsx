@@ -193,3 +193,106 @@ export const Mixed: Story = {
     }),
   },
 };
+
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Demonstrates accessible diff viewing with symbols alongside colors.
+ * 
+ * The diff uses:
+ * - `+` prefix for additions (green)
+ * - `-` prefix for deletions (red)
+ * - ` ` prefix for context lines
+ * 
+ * This ensures the diff is understandable even without color perception,
+ * meeting WCAG accessibility guidelines.
+ */
+export const AccessibleDiff: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/utils/accessibility-example.ts',
+      status: 'M',
+      hunks: [
+        {
+          oldStart: 1,
+          oldLines: 6,
+          newStart: 1,
+          newLines: 8,
+          lines: [
+            { type: 'context', content: '// Accessibility improvements' },
+            { type: 'context', content: '' },
+            { type: 'remove', content: 'function oldFunction() {' },
+            { type: 'remove', content: '  // No accessibility support' },
+            { type: 'add', content: 'function newFunction() {' },
+            { type: 'add', content: '  // Uses ARIA labels' },
+            { type: 'add', content: '  // Screen reader friendly' },
+            { type: 'add', content: '  // Color-blind safe with symbols' },
+            { type: 'context', content: '  return true;' },
+            { type: 'context', content: '}' },
+          ],
+        },
+      ],
+    }),
+  },
+};
+
+// =============================================================================
+// Large Diff Stories
+// =============================================================================
+
+/**
+ * Helper to generate a large hunk with many lines
+ */
+function createLargeHunk(hunkIndex: number, linesPerHunk: number = 30): DiffHunk {
+  const startLine = hunkIndex * 50 + 1;
+  const lines: DiffHunk['lines'] = [];
+  
+  for (let i = 0; i < linesPerHunk; i++) {
+    const lineType = i % 5 === 0 ? 'remove' as const : 
+                     i % 5 === 1 ? 'add' as const : 
+                     'context' as const;
+    lines.push({
+      type: lineType,
+      content: `${lineType === 'context' ? '//' : ''} Line ${startLine + i}: ${lineType === 'remove' ? 'Old code removed here' : lineType === 'add' ? 'New code added here' : 'Unchanged context line'}`,
+    });
+  }
+  
+  const adds = lines.filter(l => l.type === 'add').length;
+  const removes = lines.filter(l => l.type === 'remove').length;
+  
+  return {
+    oldStart: startLine,
+    oldLines: linesPerHunk - adds,
+    newStart: startLine,
+    newLines: linesPerHunk - removes,
+    lines,
+  };
+}
+
+/**
+ * Large diff with many hunks to demonstrate scrolling and performance.
+ * 
+ * Real-world refactors often produce diffs with:
+ * - Multiple hunks across the file
+ * - Many added/removed lines
+ * - Need for efficient rendering
+ * 
+ * This story shows 5 hunks with 30 lines each (150 total lines).
+ */
+export const LargeDiff: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/components/LargeRefactor.tsx',
+      status: 'M',
+      hunks: [
+        createLargeHunk(0),
+        createLargeHunk(1),
+        createLargeHunk(2),
+        createLargeHunk(3),
+        createLargeHunk(4),
+      ],
+    }),
+  },
+};
