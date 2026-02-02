@@ -1,8 +1,12 @@
 import type { TestRunnerConfig } from '@storybook/test-runner';
 import { waitForPageReady, getStoryContext } from '@storybook/test-runner';
 import { toMatchImageSnapshot } from 'jest-image-snapshot';
+import { join } from 'path';
 
-const customSnapshotsDir = `${process.cwd()}/__snapshots__`;
+// Store image snapshots in __image_snapshots__ directory
+const customSnapshotsDir = join(process.cwd(), '__image_snapshots__');
+// Store diff output in the same directory
+const customDiffDir = join(process.cwd(), '__image_snapshots__', '__diff_output__');
 
 const config: TestRunnerConfig = {
   setup() {
@@ -11,7 +15,7 @@ const config: TestRunnerConfig = {
 
   async preVisit(page) {
     // Set a consistent viewport size for snapshots
-    await page.setViewportSize({ width: 800, height: 600 });
+    await page.setViewportSize({ width: 1024, height: 768 });
   },
 
   async postVisit(page, context) {
@@ -30,8 +34,10 @@ const config: TestRunnerConfig = {
     const image = await page.screenshot();
     expect(image).toMatchImageSnapshot({
       customSnapshotsDir,
+      customDiffDir,
       customSnapshotIdentifier: context.id,
       // Allow a small threshold for differences (1% by default)
+      // This accounts for minor anti-aliasing differences across platforms
       failureThreshold: 0.01,
       failureThresholdType: 'percent',
     });
