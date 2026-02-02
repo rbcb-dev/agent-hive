@@ -8,8 +8,29 @@
  * - XSS sanitization for security
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useMarkdownRenderer } from '../hooks/useMarkdownRenderer';
+
+/**
+ * Copy text to clipboard with fallback for older webview contexts
+ */
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for older webview contexts
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
+  }
+};
 
 export interface MarkdownViewerProps {
   /** Markdown content to display */
@@ -97,6 +118,56 @@ function RenderedView({
     theme,
     highlightCode,
   });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Inject copy buttons into code blocks after HTML is rendered
+  useEffect(() => {
+    if (isLoading || !containerRef.current) return;
+
+    const container = containerRef.current;
+    // Find all <pre> elements (fenced code blocks) - these contain <code> elements
+    const preElements = container.querySelectorAll('pre');
+
+    preElements.forEach((pre) => {
+      // Skip if already has a copy button
+      if (pre.querySelector('.markdown-copy-button')) return;
+
+      // Make pre position relative for button positioning
+      pre.style.position = 'relative';
+
+      // Get the code content (from the <code> element inside <pre>)
+      const codeElement = pre.querySelector('code');
+      const codeContent = codeElement?.textContent || pre.textContent || '';
+
+      // Create copy button
+      const button = document.createElement('button');
+      button.className = 'markdown-copy-button copy-button';
+      button.type = 'button';
+      button.setAttribute('aria-label', 'Copy code to clipboard');
+      button.textContent = 'Copy';
+
+      // Handle click
+      button.addEventListener('click', async () => {
+        const success = await copyToClipboard(codeContent);
+        if (success) {
+          button.textContent = 'Copied!';
+          button.classList.add('copy-button-copied');
+          setTimeout(() => {
+            button.textContent = 'Copy';
+            button.classList.remove('copy-button-copied');
+          }, 2000);
+        }
+      });
+
+      pre.appendChild(button);
+    });
+
+    // Cleanup function to remove buttons when component unmounts or html changes
+    return () => {
+      const buttons = container.querySelectorAll('.markdown-copy-button');
+      buttons.forEach((btn) => btn.remove());
+    };
+  }, [html, isLoading]);
 
   if (isLoading) {
     return (
@@ -112,6 +183,7 @@ function RenderedView({
 
   return (
     <div 
+      ref={containerRef}
       className="markdown-rendered"
       dangerouslySetInnerHTML={{ __html: html }}
     />

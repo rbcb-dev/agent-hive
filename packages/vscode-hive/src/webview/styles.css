@@ -1090,6 +1090,7 @@ body {
 
 /* Code blocks */
 .markdown-rendered pre {
+  position: relative;
   padding: 1rem;
   border-radius: 6px;
   background: var(--vscode-textCodeBlock-background, #2a2a2a);
@@ -1103,6 +1104,45 @@ body {
   background: transparent;
   border-radius: 0;
   font-size: inherit;
+}
+
+/* Copy button for markdown code blocks */
+.markdown-rendered pre .markdown-copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  background: var(--vscode-button-secondaryBackground, #3a3d41);
+  color: var(--vscode-button-secondaryForeground, #ffffff);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  z-index: 10;
+}
+
+.markdown-rendered pre:hover .markdown-copy-button,
+.markdown-rendered pre:focus-within .markdown-copy-button,
+.markdown-rendered pre .markdown-copy-button:focus {
+  opacity: 1;
+}
+
+.markdown-rendered pre .markdown-copy-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #45494e);
+}
+
+.markdown-rendered pre .markdown-copy-button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, #007fd4);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.markdown-rendered pre .markdown-copy-button.copy-button-copied {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #ffffff);
 }
 
 /* Inline code */
