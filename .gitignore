@@ -5,6 +5,10 @@ node_modules/
 dist/
 *.vsix
 
+# Storybook
+storybook-static/
+__snapshots__/
+
 # IDE
 .vscode/
 .idea/
