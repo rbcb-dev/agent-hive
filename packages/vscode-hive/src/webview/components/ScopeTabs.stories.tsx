@@ -13,8 +13,12 @@ const meta = {
   argTypes: {
     activeScope: {
       control: 'select',
-      options: ['feature', 'task', 'context'],
+      options: ['feature', 'task', 'context', 'plan', 'code'],
       description: 'The currently active tab',
+    },
+    onScopeChange: {
+      action: 'onScopeChange',
+      description: 'Callback fired when a tab is selected',
     },
   },
 } satisfies Meta<typeof ScopeTabs>;
@@ -29,7 +33,8 @@ const defaultScopes = [
 ];
 
 /**
- * Default state with the feature tab active
+ * Default state with the feature tab active.
+ * Shows basic tab rendering with icons.
  */
 export const Default: Story = {
   args: {
@@ -40,9 +45,10 @@ export const Default: Story = {
 };
 
 /**
- * With task tab active
+ * With a different tab selected to show active state styling.
+ * Demonstrates the active tab visual indicator.
  */
-export const TaskActive: Story = {
+export const WithSelection: Story = {
   args: {
     scopes: defaultScopes,
     activeScope: 'task',
@@ -51,24 +57,32 @@ export const TaskActive: Story = {
 };
 
 /**
- * Tabs without icons
+ * Multiple scopes with different configurations.
+ * Shows tabs can work with varying numbers of items and without icons.
  */
-export const WithoutIcons: Story = {
+export const MultipleScopes: Story = {
   args: {
     scopes: [
       { id: 'plan', label: 'Plan' },
       { id: 'code', label: 'Code' },
       { id: 'review', label: 'Review' },
+      { id: 'tests', label: 'Tests' },
+      { id: 'docs', label: 'Docs' },
     ],
-    activeScope: 'plan',
+    activeScope: 'code',
     onScopeChange: fn(),
   },
 };
 
 /**
- * Interactive test - clicking a tab triggers onScopeChange
+ * Interactive test: Tab switching triggers onScopeChange callback.
+ * 
+ * Play function verifies:
+ * 1. Clicking an inactive tab fires the callback
+ * 2. Callback receives the correct scope ID
+ * 3. Multiple tab switches work correctly
  */
-export const ClickToSwitch: Story = {
+export const TabSwitchingInteraction: Story = {
   args: {
     scopes: defaultScopes,
     activeScope: 'feature',
@@ -77,19 +91,29 @@ export const ClickToSwitch: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    // Find the task tab and click it
+    // Click the task tab
     const taskTab = canvas.getByRole('tab', { name: /Task/i });
     await userEvent.click(taskTab);
 
-    // Verify the callback was called with the correct scope
+    // Verify callback fired with correct scope ID
     await expect(args.onScopeChange).toHaveBeenCalledWith('task');
+    await expect(args.onScopeChange).toHaveBeenCalledTimes(1);
+
+    // Click the context tab
+    const contextTab = canvas.getByRole('tab', { name: /Context/i });
+    await userEvent.click(contextTab);
+
+    // Verify callback fired again with different scope
+    await expect(args.onScopeChange).toHaveBeenCalledWith('context');
+    await expect(args.onScopeChange).toHaveBeenCalledTimes(2);
   },
 };
 
 /**
- * Test that clicking the active tab doesn't trigger a change
+ * Test that clicking the already-active tab does NOT trigger the callback.
+ * This verifies the component avoids unnecessary state updates.
  */
-export const ClickActiveTabs: Story = {
+export const ActiveTabNoCallback: Story = {
   args: {
     scopes: defaultScopes,
     activeScope: 'feature',
@@ -98,11 +122,42 @@ export const ClickActiveTabs: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    // Find the active (feature) tab and click it
+    // Click the already-active feature tab
     const featureTab = canvas.getByRole('tab', { name: /Feature/i });
     await userEvent.click(featureTab);
 
-    // Verify the callback was NOT called (clicking active tab does nothing)
+    // Verify callback was NOT called
     await expect(args.onScopeChange).not.toHaveBeenCalled();
+  },
+};
+
+/**
+ * Accessibility test: Verify ARIA attributes are correct.
+ * Uses play function to validate accessible markup.
+ */
+export const AccessibilityValidation: Story = {
+  args: {
+    scopes: defaultScopes,
+    activeScope: 'task',
+    onScopeChange: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Check the tablist role exists
+    const tablist = canvas.getByRole('tablist');
+    await expect(tablist).toBeInTheDocument();
+
+    // Check all tabs have correct role
+    const tabs = canvas.getAllByRole('tab');
+    await expect(tabs).toHaveLength(3);
+
+    // Check active tab has aria-selected="true"
+    const activeTab = canvas.getByRole('tab', { name: /Task/i });
+    await expect(activeTab).toHaveAttribute('aria-selected', 'true');
+
+    // Check inactive tabs have aria-selected="false"
+    const inactiveTab = canvas.getByRole('tab', { name: /Feature/i });
+    await expect(inactiveTab).toHaveAttribute('aria-selected', 'false');
   },
 };
