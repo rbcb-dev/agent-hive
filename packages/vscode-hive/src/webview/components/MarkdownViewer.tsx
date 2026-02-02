@@ -2,13 +2,14 @@
  * MarkdownViewer component - Display markdown with raw/rendered toggle
  * 
  * Supports:
- * - Rendered markdown preview with sanitized output
+ * - Rendered markdown preview with syntax-highlighted code blocks (via Shiki)
  * - Raw markdown with line numbers for thread anchoring
  * - Toggle between views while preserving anchoring
+ * - XSS sanitization for security
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { marked } from 'marked';
+import React, { useState, useCallback } from 'react';
+import { useMarkdownRenderer } from '../hooks/useMarkdownRenderer';
 
 export interface MarkdownViewerProps {
   /** Markdown content to display */
@@ -17,27 +18,13 @@ export interface MarkdownViewerProps {
   filePath?: string;
   /** Callback when a line is clicked in raw view (for thread anchoring) */
   onLineClick?: (lineNumber: number) => void;
+  /** Theme for syntax highlighting (default: 'dark') */
+  theme?: 'light' | 'dark';
+  /** Whether to enable code block highlighting (default: true) */
+  highlightCode?: boolean;
 }
 
 type ViewMode = 'raw' | 'rendered';
-
-/**
- * Sanitize HTML to prevent XSS attacks
- * Removes script tags, event handlers, and dangerous attributes
- */
-function sanitizeHtml(html: string): string {
-  // Remove script tags and their content
-  let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handlers (onclick, onerror, etc.)
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
-  
-  // Remove javascript: URLs
-  sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
-  
-  return sanitized;
-}
 
 /**
  * Raw line component with line number and click handler for anchoring
@@ -94,25 +81,39 @@ function RawView({
 }
 
 /**
- * Rendered view showing parsed markdown as HTML
+ * Rendered view showing parsed markdown as HTML with syntax-highlighted code blocks
  */
-function RenderedView({ content }: { content: string }): React.ReactElement {
-  const renderedHtml = useMemo(() => {
-    // Configure marked for safety
-    marked.setOptions({
-      gfm: true, // GitHub Flavored Markdown
-      breaks: true, // Convert \n to <br>
-    });
+function RenderedView({ 
+  content,
+  theme = 'dark',
+  highlightCode = true,
+}: { 
+  content: string;
+  theme?: 'light' | 'dark';
+  highlightCode?: boolean;
+}): React.ReactElement {
+  const { html, isLoading } = useMarkdownRenderer({
+    markdown: content,
+    theme,
+    highlightCode,
+  });
 
-    // Parse markdown and sanitize output
-    const rawHtml = marked.parse(content, { async: false }) as string;
-    return sanitizeHtml(rawHtml);
-  }, [content]);
+  if (isLoading) {
+    return (
+      <div 
+        className="markdown-rendered markdown-rendered-loading"
+        aria-busy="true"
+        aria-label="Loading markdown"
+      >
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div 
       className="markdown-rendered"
-      dangerouslySetInnerHTML={{ __html: renderedHtml }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }
@@ -153,6 +154,8 @@ export function MarkdownViewer({
   content, 
   filePath,
   onLineClick,
+  theme = 'dark',
+  highlightCode = true,
 }: MarkdownViewerProps): React.ReactElement {
   const [viewMode, setViewMode] = useState<ViewMode>('rendered');
 
@@ -173,7 +176,7 @@ export function MarkdownViewer({
       </div>
       <div className="markdown-content">
         {viewMode === 'rendered' ? (
-          <RenderedView content={content} />
+          <RenderedView content={content} theme={theme} highlightCode={highlightCode} />
         ) : (
           <RawView content={content} onLineClick={onLineClick} />
         )}

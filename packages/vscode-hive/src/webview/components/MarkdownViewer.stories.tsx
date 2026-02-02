@@ -23,6 +23,15 @@ const meta = {
       action: 'lineClicked',
       description: 'Callback when a line is clicked in raw view',
     },
+    theme: {
+      control: 'radio',
+      options: ['light', 'dark'],
+      description: 'Theme for syntax highlighting',
+    },
+    highlightCode: {
+      control: 'boolean',
+      description: 'Whether to enable code block syntax highlighting',
+    },
   },
 } satisfies Meta<typeof MarkdownViewer>;
 
@@ -361,5 +370,122 @@ export const MinimalContent: Story = {
   args: {
     content: 'Just a simple line of text.',
     onLineClick: fn(),
+  },
+};
+
+// Syntax highlighting demo content
+const syntaxHighlightingMarkdown = `# Code Block Highlighting Demo
+
+This demonstrates Shiki syntax highlighting for fenced code blocks.
+
+## TypeScript Example
+
+\`\`\`typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(\`/api/users/\${id}\`);
+  return response.json();
+}
+
+const user: User = await fetchUser('123');
+console.log(user.name);
+\`\`\`
+
+## JavaScript Example
+
+\`\`\`javascript
+const greeting = 'Hello, World!';
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(n => n * 2);
+console.log(greeting, doubled);
+\`\`\`
+
+## JSON Configuration
+
+\`\`\`json
+{
+  "name": "my-project",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+\`\`\`
+
+## Shell Commands
+
+\`\`\`shell
+npm install
+npm run build
+npm run test
+\`\`\`
+
+## Inline code like \`const x = 1\` is not highlighted.
+`;
+
+/**
+ * Demonstrates syntax highlighting for code blocks using Shiki.
+ * Code blocks with language specifiers are highlighted with appropriate colors.
+ */
+export const SyntaxHighlighting: Story = {
+  args: {
+    content: syntaxHighlightingMarkdown,
+    filePath: 'docs/syntax-demo.md',
+    highlightCode: true,
+    theme: 'dark',
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Wait for rendering to complete (check for heading)
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Code Block Highlighting Demo');
+    
+    // Verify that code blocks are rendered (Shiki adds pre.shiki elements)
+    const container = canvasElement.querySelector('.markdown-rendered');
+    await expect(container?.innerHTML).toContain('shiki');
+    
+    // Verify TypeScript code is present
+    await expect(canvas.findByText(/interface User/)).resolves.toBeInTheDocument();
+  },
+};
+
+/**
+ * Light theme syntax highlighting
+ */
+export const SyntaxHighlightingLight: Story = {
+  args: {
+    content: syntaxHighlightingMarkdown,
+    filePath: 'docs/syntax-demo.md',
+    highlightCode: true,
+    theme: 'light',
+    onLineClick: fn(),
+  },
+};
+
+/**
+ * With syntax highlighting disabled - falls back to plain code blocks
+ */
+export const NoSyntaxHighlighting: Story = {
+  args: {
+    content: syntaxHighlightingMarkdown,
+    filePath: 'docs/no-highlight.md',
+    highlightCode: false,
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Wait for rendering to complete
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Code Block Highlighting Demo');
+    
+    // Verify code is still rendered (but without shiki classes)
+    await expect(canvas.findByText(/interface User/)).resolves.toBeInTheDocument();
   },
 };
