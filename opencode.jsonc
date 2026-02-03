@@ -95,6 +95,13 @@
       // - Execution phase: balanced & deterministic (0.4-0.5)
       // Override only if you find plans too creative or too rigid
       // "temperature": 0.5
+      //
+      // Auto-loaded skills for story creation and component documentation
+      "autoLoadSkills": [
+        "storybook-stories-expert", // Load when working on component stories
+        "vercel-react-best-practices", // React/Next.js optimization
+        "vercel-composition-patterns" // Component composition patterns
+      ]
     },
 
     // ARCHITECT-PLANNER: Pure planning agent (never executes code)
@@ -118,6 +125,11 @@
     "architect-planner": {
       "model": "github-copilot/gpt-5.2-codex",
       // "temperature": 0.6  // Optional: slightly creative for plan diversity
+      //
+      // Auto-loaded skills for planning component stories
+      "autoLoadSkills": [
+        "storybook-stories-expert" // Plan story structure and testing strategy
+      ]
     },
 
     // SWARM-ORCHESTRATOR: Pure orchestrator (RECOMMENDED FOR STRICT CONTEXT SEPARATION)
@@ -168,6 +180,11 @@
     "scout-researcher": {
       "model": "github-copilot/gpt-5.2-codex",
       // "temperature": 0.5  // Optional: balanced for thorough analysis
+      //
+      // Auto-loaded skills for analyzing existing stories
+      "autoLoadSkills": [
+        "storybook-stories-expert" // Analyze story patterns and coverage
+      ]
     },
 
     // FORAGER-WORKER: Direct execution specialist
@@ -192,6 +209,13 @@
     "forager-worker": {
       "model": "github-copilot/claude-opus-4.5",
       // "temperature": 0.3  // Optional: very focused for precise code execution
+      //
+      // Auto-loaded skills for story implementation and testing
+      "autoLoadSkills": [
+        "storybook-stories-expert",          // Create stories with tests & interactions
+        "test-driven-development",            // TDD approach for story creation
+        "verification-before-completion"     // Verify stories work before completing
+      ]
     },
 
     // HYGIENIC-REVIEWER: Quality validation specialist
@@ -215,6 +239,11 @@
     "hygienic-reviewer": {
       "model": "github-copilot/gpt-5.2-codex",
       // "temperature": 0.2  // Optional: very strict for quality assurance
+      //
+      // Auto-loaded skills for validating story quality
+      "autoLoadSkills": [
+        "storybook-stories-expert" // Validate story quality & best practices
+      ]
     },
 
     // ========================================================================
