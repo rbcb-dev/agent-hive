@@ -925,7 +925,7 @@ var DEFAULT_HIVE_CONFIG = {
       model: DEFAULT_AGENT_MODELS["scout-researcher"],
       temperature: 0.5,
       skills: [],
-      autoLoadSkills: ["parallel-exploration"]
+      autoLoadSkills: []
     },
     "forager-worker": {
       model: DEFAULT_AGENT_MODELS["forager-worker"],
@@ -1401,7 +1401,7 @@ var TaskService = class {
     }
     for (const planTask of planTasks) {
       if (!existingByName.has(planTask.folder)) {
-        this.createFromPlan(featureName, planTask, planTasks);
+        this.createFromPlan(featureName, planTask, planTasks, planContent);
         result.created.push(planTask.folder);
       }
     }
@@ -1422,7 +1422,7 @@ var TaskService = class {
     writeJson(getTaskStatusPath(this.projectRoot, featureName, folder), status);
     return folder;
   }
-  createFromPlan(featureName, task, allTasks) {
+  createFromPlan(featureName, task, allTasks, planContent) {
     const taskPath = getTaskPath(this.projectRoot, featureName, task.folder);
     ensureDir(taskPath);
     const dependsOn = this.resolveDependencies(task, allTasks);
@@ -1433,18 +1433,26 @@ var TaskService = class {
       dependsOn
     };
     writeJson(getTaskStatusPath(this.projectRoot, featureName, task.folder), status);
+    const specContent = this.buildSpecContent({
+      featureName,
+      task,
+      dependsOn,
+      allTasks,
+      planContent
+    });
+    writeText(getTaskSpecPath(this.projectRoot, featureName, task.folder), specContent);
+  }
+  buildSpecContent(params) {
+    const { featureName, task, dependsOn, allTasks, planContent, contextFiles = [], completedTasks = [] } = params;
     const specLines = [
-      `# Task ${task.order}: ${task.name}`,
+      `# Task: ${task.folder}`,
       "",
-      `**Feature:** ${featureName}`,
-      `**Folder:** ${task.folder}`,
-      `**Status:** pending`,
+      `## Feature: ${featureName}`,
       "",
-      "---",
+      "## Dependencies",
       ""
     ];
     if (dependsOn.length > 0) {
-      specLines.push("## Dependencies", "");
       for (const dep of dependsOn) {
         const depTask = allTasks.find((t) => t.folder === dep);
         if (depTask) {
@@ -1453,30 +1461,45 @@ var TaskService = class {
           specLines.push(`- ${dep}`);
         }
       }
-      specLines.push("", "---", "");
+    } else {
+      specLines.push("_None_");
     }
-    specLines.push("## Description", "");
-    specLines.push(task.description || "_No description provided in plan_", "");
-    if (task.order > 1) {
-      const priorTasks = allTasks.filter((t) => t.order < task.order);
-      if (priorTasks.length > 0) {
-        specLines.push("---", "", "## Prior Tasks", "");
-        for (const prior of priorTasks) {
-          specLines.push(`- **${prior.order}. ${prior.name}** (${prior.folder})`);
-        }
-        specLines.push("");
-      }
+    specLines.push("", "## Plan Section", "");
+    const planSection = this.extractPlanSection(planContent ?? null, task);
+    if (planSection) {
+      specLines.push(planSection.trim());
+    } else {
+      specLines.push("_No plan section available._");
     }
-    const nextTasks = allTasks.filter((t) => t.order > task.order);
-    if (nextTasks.length > 0) {
-      specLines.push("---", "", "## Upcoming Tasks", "");
-      for (const next of nextTasks) {
-        specLines.push(`- **${next.order}. ${next.name}** (${next.folder})`);
-      }
-      specLines.push("");
+    specLines.push("");
+    if (contextFiles.length > 0) {
+      const contextCompiled = contextFiles.map((f) => `## ${f.name}
+
+${f.content}`).join(`
+
+---
+
+`);
+      specLines.push("## Context", "", contextCompiled, "");
     }
-    writeText(getTaskSpecPath(this.projectRoot, featureName, task.folder), specLines.join(`
-`));
+    if (completedTasks.length > 0) {
+      const completedLines = completedTasks.map((t) => `- ${t.name}: ${t.summary}`);
+      specLines.push("## Completed Tasks", "", ...completedLines, "");
+    }
+    return specLines.join(`
+`);
+  }
+  extractPlanSection(planContent, task) {
+    if (!planContent)
+      return null;
+    const escapedTitle = task.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const titleRegex = new RegExp(`###\\s*\\d+\\.\\s*${escapedTitle}[\\s\\S]*?(?=###|$)`, "i");
+    let taskMatch = planContent.match(titleRegex);
+    if (!taskMatch && task.order > 0) {
+      const orderRegex = new RegExp(`###\\s*${task.order}\\.\\s*[^\\n]+[\\s\\S]*?(?=###|$)`, "i");
+      taskMatch = planContent.match(orderRegex);
+    }
+    return taskMatch ? taskMatch[0].trim() : null;
   }
   resolveDependencies(task, allTasks) {
     if (task.dependsOnNumbers !== null && task.dependsOnNumbers.length === 0) {
@@ -6371,11 +6394,12 @@ function computeRunnableAndBlocked(tasks) {
   }
   const runnable = [];
   const blocked = {};
+  const effectiveDepsByFolder = buildEffectiveDependencies(tasks);
   for (const task of tasks) {
     if (task.status !== "pending") {
       continue;
     }
-    const deps = task.dependsOn ?? [];
+    const deps = effectiveDepsByFolder.get(task.folder) ?? [];
     const unmetDeps = deps.filter((dep) => {
       const depStatus = statusByFolder.get(dep);
       return depStatus !== "done";
@@ -6387,6 +6411,37 @@ function computeRunnableAndBlocked(tasks) {
     }
   }
   return { runnable, blocked };
+}
+function buildEffectiveDependencies(tasks) {
+  const orderByFolder = /* @__PURE__ */ new Map();
+  const folderByOrder = /* @__PURE__ */ new Map();
+  for (const task of tasks) {
+    const match = task.folder.match(/^(\d+)-/);
+    if (!match) {
+      orderByFolder.set(task.folder, null);
+      continue;
+    }
+    const order = parseInt(match[1], 10);
+    orderByFolder.set(task.folder, order);
+    if (!folderByOrder.has(order)) {
+      folderByOrder.set(order, task.folder);
+    }
+  }
+  const effectiveDeps = /* @__PURE__ */ new Map();
+  for (const task of tasks) {
+    if (task.dependsOn !== void 0) {
+      effectiveDeps.set(task.folder, task.dependsOn);
+      continue;
+    }
+    const order = orderByFolder.get(task.folder);
+    if (!order || order <= 1) {
+      effectiveDeps.set(task.folder, []);
+      continue;
+    }
+    const previousFolder = folderByOrder.get(order - 1);
+    effectiveDeps.set(task.folder, previousFolder ? [previousFolder] : []);
+  }
+  return effectiveDeps;
 }
 
 // src/services/watcher.ts
@@ -7329,14 +7384,24 @@ Reminder: run hive_exec_start to work in its worktree, and ensure any subagents 
 var path7 = __toESM(require("path"));
 function checkDependencies(taskService, feature, taskFolder) {
   const taskStatus = taskService.getRawStatus(feature, taskFolder);
-  if (!taskStatus || taskStatus.dependsOn === void 0) {
+  if (!taskStatus) {
     return { allowed: true };
   }
-  if (taskStatus.dependsOn.length === 0) {
+  const tasks = taskService.list(feature).map((task) => {
+    const status = taskService.getRawStatus(feature, task.folder);
+    return {
+      folder: task.folder,
+      status: task.status,
+      dependsOn: status?.dependsOn
+    };
+  });
+  const effectiveDeps = buildEffectiveDependencies(tasks);
+  const deps = effectiveDeps.get(taskFolder) ?? [];
+  if (deps.length === 0) {
     return { allowed: true };
   }
   const unmetDeps = [];
-  for (const depFolder of taskStatus.dependsOn) {
+  for (const depFolder of deps) {
     const depStatus = taskService.getRawStatus(feature, depFolder);
     if (!depStatus || depStatus.status !== "done") {
       unmetDeps.push({
@@ -7590,7 +7655,12 @@ function getStatusTools(workspaceRoot) {
       status: t.status,
       dependsOn: t.dependsOn ?? void 0
     }));
-    const { runnable, blocked } = computeRunnableAndBlocked(tasksWithDeps);
+    const effectiveDeps = buildEffectiveDependencies(tasksWithDeps);
+    const normalizedTasks = tasksWithDeps.map((task) => ({
+      ...task,
+      dependsOn: effectiveDeps.get(task.folder)
+    }));
+    const { runnable, blocked } = computeRunnableAndBlocked(normalizedTasks);
     const contextSummary = contextFiles.map((c) => ({
       name: c.name,
       chars: c.content.length,
