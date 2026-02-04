@@ -784,8 +784,19 @@ body {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 12px;
   background: var(--vscode-editor-background, #1e1e1e);
-  border-radius: 4px;
+  border-radius: var(--ant-border-radius, 4px);
   overflow: hidden;
+}
+
+/* Theme-specific CodeViewer styles for antd integration */
+.code-viewer[data-theme="light"] {
+  background: var(--ant-color-fill-quaternary, var(--vscode-editor-background, #f5f5f5));
+  border: 1px solid var(--ant-color-border, var(--border-color, #d9d9d9));
+}
+
+.code-viewer[data-theme="dark"] {
+  background: var(--ant-color-fill-quaternary, var(--vscode-editor-background, #1e1e1e));
+  border: 1px solid var(--ant-color-border, var(--border-color, #424242));
 }
 
 .code-viewer-empty {
@@ -823,6 +834,15 @@ body {
   flex-shrink: 0;
 }
 
+/* Theme-specific line number colors */
+.code-viewer[data-theme="light"] .line-number {
+  color: var(--ant-color-text-tertiary, var(--vscode-editorLineNumber-foreground, #8c8c8c));
+}
+
+.code-viewer[data-theme="dark"] .line-number {
+  color: var(--ant-color-text-tertiary, var(--vscode-editorLineNumber-foreground, #858585));
+}
+
 .line-code {
   flex: 1;
   white-space: pre;
@@ -833,6 +853,15 @@ body {
   background: var(--vscode-editor-selectionBackground, rgba(38, 79, 120, 0.5));
 }
 
+/* Theme-specific highlighted line colors */
+.code-viewer[data-theme="light"] .line-highlighted {
+  background: var(--ant-color-primary-bg, var(--vscode-editor-selectionBackground, rgba(24, 144, 255, 0.15)));
+}
+
+.code-viewer[data-theme="dark"] .line-highlighted {
+  background: var(--ant-color-primary-bg, var(--vscode-editor-selectionBackground, rgba(24, 144, 255, 0.2)));
+}
+
 .code-line.line-add {
   background: var(--vscode-diffEditor-insertedTextBackground, rgba(155, 185, 85, 0.2));
 }
@@ -841,13 +870,30 @@ body {
   background: var(--vscode-diffEditor-removedTextBackground, rgba(255, 0, 0, 0.2));
 }
 
+/* Theme-specific diff line colors */
+.code-viewer[data-theme="light"] .code-line.line-add {
+  background: var(--ant-color-success-bg, var(--vscode-diffEditor-insertedTextBackground, rgba(82, 196, 26, 0.1)));
+}
+
+.code-viewer[data-theme="light"] .code-line.line-remove {
+  background: var(--ant-color-error-bg, var(--vscode-diffEditor-removedTextBackground, rgba(255, 77, 79, 0.1)));
+}
+
+.code-viewer[data-theme="dark"] .code-line.line-add {
+  background: var(--ant-color-success-bg, var(--vscode-diffEditor-insertedTextBackground, rgba(82, 196, 26, 0.15)));
+}
+
+.code-viewer[data-theme="dark"] .code-line.line-remove {
+  background: var(--ant-color-error-bg, var(--vscode-diffEditor-removedTextBackground, rgba(255, 77, 79, 0.15)));
+}
+
 /* Thread Markers in CodeViewer */
 .thread-marker {
   width: 20px;
   height: 20px;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--ant-border-radius-sm, 4px);
   background: transparent;
   color: var(--vscode-foreground);
   cursor: pointer;
@@ -855,30 +901,31 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  transition: background 0.15s ease-in-out;
 }
 
 .thread-marker:hover {
-  background: var(--hover-bg);
+  background: var(--ant-color-bg-text-hover, var(--hover-bg));
 }
 
 .thread-marker:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder, #007fd4);
+  outline: 2px solid var(--ant-color-primary, var(--vscode-focusBorder, #007fd4));
   outline-offset: -2px;
 }
 
 .thread-marker-open {
-  color: var(--vscode-editorWarning-foreground, #cca700);
+  color: var(--ant-color-warning, var(--vscode-editorWarning-foreground, #cca700));
 }
 
 .thread-marker-resolved {
-  color: var(--vscode-editorInfo-foreground, #3794ff);
+  color: var(--ant-color-info, var(--vscode-editorInfo-foreground, #3794ff));
   opacity: 0.6;
 }
 
 /* Inline Thread Container */
 .inline-thread-container {
   margin: 8px 12px 8px 36px;
-  border-left: 2px solid var(--vscode-editorWarning-foreground, #cca700);
+  border-left: 2px solid var(--ant-color-warning, var(--vscode-editorWarning-foreground, #cca700));
 }
 
 /* Copy Button */
@@ -887,15 +934,15 @@ body {
   top: 8px;
   right: 8px;
   padding: 4px 10px;
-  background: var(--vscode-button-secondaryBackground, #3a3d41);
-  color: var(--vscode-button-secondaryForeground, #ffffff);
-  border: none;
-  border-radius: 4px;
+  background: var(--ant-color-bg-elevated, var(--vscode-button-secondaryBackground, #3a3d41));
+  color: var(--ant-color-text, var(--vscode-button-secondaryForeground, #ffffff));
+  border: 1px solid var(--ant-color-border, transparent);
+  border-radius: var(--ant-border-radius, 4px);
   cursor: pointer;
   font-size: 12px;
   font-family: inherit;
   opacity: 0;
-  transition: opacity 0.15s ease-in-out;
+  transition: opacity 0.15s ease-in-out, background 0.15s ease-in-out;
   z-index: 10;
 }
 
@@ -906,18 +953,18 @@ body {
 }
 
 .copy-button:hover {
-  background: var(--vscode-button-secondaryHoverBackground, #45494e);
+  background: var(--ant-color-bg-text-hover, var(--vscode-button-secondaryHoverBackground, #45494e));
 }
 
 .copy-button:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder, #007fd4);
+  outline: 2px solid var(--ant-color-primary, var(--vscode-focusBorder, #007fd4));
   outline-offset: 2px;
   opacity: 1;
 }
 
 .copy-button-copied {
-  background: var(--vscode-button-background, #0e639c);
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--ant-color-primary, var(--vscode-button-background, #0e639c));
+  color: var(--ant-color-text-light-solid, var(--vscode-button-foreground, #ffffff));
 }
 
 /* MarkdownViewer Component */
