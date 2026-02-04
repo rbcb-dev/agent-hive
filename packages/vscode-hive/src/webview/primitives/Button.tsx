@@ -33,6 +33,8 @@ export interface ButtonProps {
   danger?: boolean;
   /** HTML button type */
   htmlType?: 'button' | 'submit' | 'reset';
+  /** Aria label for accessibility */
+  'aria-label'?: string;
 }
 
 export function Button({
@@ -48,6 +50,7 @@ export function Button({
   block,
   danger,
   htmlType,
+  'aria-label': ariaLabel,
 }: ButtonProps): React.ReactElement {
   return (
     <AntdButton
@@ -62,6 +65,7 @@ export function Button({
       block={block}
       danger={danger}
       htmlType={htmlType}
+      aria-label={ariaLabel}
     >
       {children}
     </AntdButton>
