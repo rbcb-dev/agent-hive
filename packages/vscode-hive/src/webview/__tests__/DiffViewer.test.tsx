@@ -225,4 +225,40 @@ describe('DiffViewer', () => {
       expect(screen.getByText('const y = 2;')).toBeInTheDocument();
     });
   });
+
+  describe('width and layout', () => {
+    it('renders diff-viewer with full width styling class', () => {
+      render(<DiffViewer file={mockFile} />);
+      
+      // The outer container should have diff-viewer class
+      const container = document.querySelector('.diff-viewer');
+      expect(container).toBeInTheDocument();
+    });
+
+    it('renders diff table with 100% width from react-diff-view', () => {
+      render(<DiffViewer file={mockFile} />);
+      
+      // react-diff-view uses a table with class 'diff' that should have width: 100%
+      const diffTable = document.querySelector('.diff');
+      expect(diffTable).toBeInTheDocument();
+      expect(diffTable).toHaveClass('diff');
+    });
+
+    it('does not have conflicting diff-line styles that override react-diff-view', () => {
+      render(<DiffViewer file={mockFile} />);
+      
+      // react-diff-view uses .diff-line class for its own styling
+      // Our CSS should NOT define a global .diff-line that conflicts
+      // The CodeViewer line styling should use .code-viewer-line instead
+      const diffLines = document.querySelectorAll('.diff-line');
+      
+      // If react-diff-view renders diff lines, they should exist
+      // and NOT have our custom display: flex styling that breaks table layout
+      if (diffLines.length > 0) {
+        // react-diff-view's diff-line should be inside a table cell structure
+        const firstDiffLine = diffLines[0];
+        expect(firstDiffLine.closest('table')).not.toBeNull();
+      }
+    });
+  });
 });

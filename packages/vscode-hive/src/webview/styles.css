@@ -318,6 +318,24 @@ body {
 .diff-viewer {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 12px;
+  width: 100%;
+}
+
+/* React-diff-view table should have full width and proper layout */
+.diff-viewer .diff {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* React-diff-view theming overrides for dark mode */
+.diff-viewer {
+  --diff-background-color: var(--vscode-editor-background, #1e1e1e);
+  --diff-text-color: var(--vscode-foreground, #cccccc);
+  --diff-gutter-insert-background-color: var(--vscode-diffEditor-insertedLineBackground, rgba(155, 185, 85, 0.15));
+  --diff-gutter-delete-background-color: var(--vscode-diffEditor-removedLineBackground, rgba(255, 0, 0, 0.15));
+  --diff-code-insert-background-color: var(--vscode-diffEditor-insertedTextBackground, rgba(155, 185, 85, 0.2));
+  --diff-code-delete-background-color: var(--vscode-diffEditor-removedTextBackground, rgba(255, 0, 0, 0.2));
+  --diff-selection-background-color: var(--vscode-editor-selectionBackground, #264f78);
 }
 
 .diff-viewer-empty,
@@ -376,33 +394,16 @@ body {
   border-left: 3px solid var(--border-color);
 }
 
-.diff-line {
-  display: flex;
-  white-space: pre;
-  padding: 0 12px;
-}
-
-.line-context {
-  background: transparent;
-}
-
-.line-add {
-  background: var(--vscode-diffEditor-insertedTextBackground, rgba(155, 185, 85, 0.2));
-}
-
-.line-remove {
-  background: var(--vscode-diffEditor-removedTextBackground, rgba(255, 0, 0, 0.2));
-}
-
-.line-prefix {
-  width: 20px;
-  color: var(--vscode-descriptionForeground);
-  flex-shrink: 0;
-}
-
-.line-content {
-  flex: 1;
-}
+/* 
+ * Legacy .diff-line, .line-prefix, .line-content classes have been REMOVED.
+ * 
+ * They conflicted with react-diff-view's built-in .diff-line styling which 
+ * expects table-cell layout. Our display: flex was breaking the table layout,
+ * causing the diff to render at 20px width.
+ * 
+ * CodeViewer uses .code-line and .code-viewer .line-add/.line-remove instead.
+ * SuggestionPreview uses .suggestion-line-* classes.
+ */
 
 /* Thread Panel Sidebar */
 .thread-sidebar {
