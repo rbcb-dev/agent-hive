@@ -4,11 +4,16 @@
  * Displays a hierarchical folder structure with files from the review scope.
  * Shows thread count badges per file and supports click-to-load inline viewing.
  * 
- * @deprecated FileTree.tsx - Use FileNavigator instead
+ * Uses antd Tree with virtual scrolling for large file trees.
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
 import type { ReviewThread } from 'hive-core';
+import type { Key } from 'react';
+import { Tree, Typography } from '../primitives';
+import type { TreeDataNode } from '../primitives';
+
+const { Text } = Typography;
 
 export interface FileNavigatorProps {
   /** List of file paths in the review scope */
@@ -21,62 +26,13 @@ export interface FileNavigatorProps {
   onSelectFile: (path: string) => void;
 }
 
-interface TreeNode {
-  name: string;
-  path: string;
-  isFolder: boolean;
-  children: TreeNode[];
-  threadCount: number;
-}
-
-/**
- * Build a tree structure from a flat list of file paths
- */
-function buildTree(files: string[], threadCounts: Map<string, number>): TreeNode[] {
-  const root: TreeNode[] = [];
-
-  for (const filePath of files) {
-    const parts = filePath.split('/');
-    let currentLevel = root;
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      const isFile = i === parts.length - 1;
-      const partPath = parts.slice(0, i + 1).join('/');
-
-      let existing = currentLevel.find((node) => node.name === part);
-
-      if (!existing) {
-        existing = {
-          name: part,
-          path: partPath,
-          isFolder: !isFile,
-          children: [],
-          threadCount: isFile ? (threadCounts.get(partPath) || 0) : 0,
-        };
-        currentLevel.push(existing);
-      }
-
-      if (!isFile) {
-        currentLevel = existing.children;
-      }
-    }
-  }
-
-  // Sort: folders first, then alphabetically
-  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
-    return nodes.sort((a, b) => {
-      if (a.isFolder !== b.isFolder) {
-        return a.isFolder ? -1 : 1;
-      }
-      return a.name.localeCompare(b.name);
-    }).map((node) => ({
-      ...node,
-      children: sortNodes(node.children),
-    }));
-  };
-
-  return sortNodes(root);
+interface ExtendedTreeNode extends TreeDataNode {
+  /** Thread count for file nodes */
+  threadCount?: number;
+  /** Whether this node is a file (leaf) or folder */
+  isFile?: boolean;
+  /** Full file path (same as key) */
+  path?: string;
 }
 
 /**
@@ -92,113 +48,87 @@ function countThreadsPerFile(threads: ReviewThread[]): Map<string, number> {
   return counts;
 }
 
-interface FolderNodeProps {
-  node: TreeNode;
-  selectedFile: string | null;
-  expandedFolders: Set<string>;
-  onToggleFolder: (path: string) => void;
-  onSelectFile: (path: string) => void;
-}
+/**
+ * Build a tree structure from a flat list of file paths for antd Tree
+ */
+function buildTreeData(files: string[], threadCounts: Map<string, number>): ExtendedTreeNode[] {
+  const root: ExtendedTreeNode = { key: 'root', title: '', children: [] };
 
-function FolderNode({
-  node,
-  selectedFile,
-  expandedFolders,
-  onToggleFolder,
-  onSelectFile,
-}: FolderNodeProps): React.ReactElement {
-  const isExpanded = expandedFolders.has(node.path);
+  for (const filePath of files) {
+    const parts = filePath.split('/');
+    let current = root;
 
-  const handleToggle = useCallback(() => {
-    onToggleFolder(node.path);
-  }, [node.path, onToggleFolder]);
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isFile = i === parts.length - 1;
+      const key = parts.slice(0, i + 1).join('/');
 
-  return (
-    <div className="tree-folder">
-      <div
-        data-testid="folder-node"
-        className={`tree-node folder-node ${isExpanded ? 'expanded' : 'collapsed'}`}
-        onClick={handleToggle}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && handleToggle()}
-      >
-        <span className="folder-icon">{isExpanded ? '▼' : '▶'}</span>
-        <span className="folder-name">{node.name}</span>
-      </div>
-      {isExpanded && (
-        <div className="tree-children">
-          {node.children.map((child) =>
-            child.isFolder ? (
-              <FolderNode
-                key={child.path}
-                node={child}
-                selectedFile={selectedFile}
-                expandedFolders={expandedFolders}
-                onToggleFolder={onToggleFolder}
-                onSelectFile={onSelectFile}
-              />
-            ) : (
-              <FileNode
-                key={child.path}
-                node={child}
-                isSelected={selectedFile === child.path}
-                onSelectFile={onSelectFile}
-              />
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+      let child = current.children?.find((c) => c.key === key) as ExtendedTreeNode | undefined;
 
-interface FileNodeProps {
-  node: TreeNode;
-  isSelected: boolean;
-  onSelectFile: (path: string) => void;
-}
+      if (!child) {
+        child = {
+          key,
+          title: part,
+          isLeaf: isFile,
+          isFile,
+          path: key,
+          threadCount: isFile ? threadCounts.get(filePath) : undefined,
+          children: isFile ? undefined : [],
+        };
+        current.children = current.children || [];
+        current.children.push(child);
+      }
+      current = child;
+    }
+  }
 
-function FileNode({ node, isSelected, onSelectFile }: FileNodeProps): React.ReactElement {
-  const handleClick = useCallback(() => {
-    onSelectFile(node.path);
-  }, [node.path, onSelectFile]);
+  // Sort: folders first, then alphabetically
+  const sortNodes = (nodes: ExtendedTreeNode[]): ExtendedTreeNode[] => {
+    return nodes
+      .sort((a, b) => {
+        if (a.isFile !== b.isFile) {
+          return a.isFile ? 1 : -1;
+        }
+        return String(a.title).localeCompare(String(b.title));
+      })
+      .map((node) => ({
+        ...node,
+        children: node.children ? sortNodes(node.children as ExtendedTreeNode[]) : undefined,
+      }));
+  };
 
-  return (
-    <div
-      data-testid="file-item"
-      className={`tree-node file-node ${isSelected ? 'selected' : ''}`}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-    >
-      <span className="file-icon">📄</span>
-      <span className="file-name">{node.name}</span>
-      {node.threadCount > 0 && (
-        <span data-testid="thread-count" className="thread-count-badge">
-          {node.threadCount}
-        </span>
-      )}
-    </div>
-  );
+  return sortNodes((root.children as ExtendedTreeNode[]) || []);
 }
 
 /**
  * Get all folder paths from tree nodes (for initial expansion)
  */
-function getAllFolderPaths(nodes: TreeNode[]): string[] {
+function getAllFolderPaths(nodes: ExtendedTreeNode[]): string[] {
   const paths: string[] = [];
-  const traverse = (nodeList: TreeNode[]) => {
+  const traverse = (nodeList: ExtendedTreeNode[]) => {
     for (const node of nodeList) {
-      if (node.isFolder) {
-        paths.push(node.path);
-        traverse(node.children);
+      if (!node.isFile && node.children) {
+        paths.push(node.key as string);
+        traverse(node.children as ExtendedTreeNode[]);
       }
     }
   };
   traverse(nodes);
   return paths;
+}
+
+/**
+ * Find a node in the tree by key
+ */
+function findNode(nodes: ExtendedTreeNode[], key: string): ExtendedTreeNode | undefined {
+  for (const node of nodes) {
+    if (node.key === key) return node;
+    if (node.children) {
+      const found = findNode(node.children as ExtendedTreeNode[], key);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }
 
 export function FileNavigator({
@@ -211,51 +141,94 @@ export function FileNavigator({
   const threadCounts = useMemo(() => countThreadsPerFile(threads), [threads]);
 
   // Build tree structure
-  const tree = useMemo(() => buildTree(files, threadCounts), [files, threadCounts]);
+  const treeData = useMemo(() => buildTreeData(files, threadCounts), [files, threadCounts]);
 
   // Track which files we've seen to detect new folders
   const prevFilesRef = React.useRef<string[]>([]);
 
   // Track expanded folders - initialize with all folders expanded
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => {
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>(() => {
     prevFilesRef.current = files;
-    return new Set(getAllFolderPaths(tree));
+    return getAllFolderPaths(treeData);
   });
 
   // Only add new folder paths when new files are actually added
   React.useEffect(() => {
     const prevFiles = new Set(prevFilesRef.current);
     const newFiles = files.filter((f) => !prevFiles.has(f));
-    
+
     if (newFiles.length > 0) {
       // Build tree for just the new files to find new folders
-      const newTree = buildTree(newFiles, new Map());
+      const newTree = buildTreeData(newFiles, new Map());
       const newFolderPaths = getAllFolderPaths(newTree);
-      
-      setExpandedFolders((prev) => {
-        const next = new Set(prev);
+
+      setExpandedKeys((prev) => {
+        const next = new Set(prev.map(String));
         for (const p of newFolderPaths) {
           next.add(p);
         }
-        return next;
+        return Array.from(next);
       });
     }
-    
+
     prevFilesRef.current = files;
   }, [files]);
 
-  const handleToggleFolder = useCallback((path: string) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
+  // Handle selection - only trigger callback for files
+  const handleSelect = useCallback(
+    (keys: Key[]) => {
+      const key = keys[0] as string;
+      if (!key) return;
+
+      const node = findNode(treeData, key);
+      if (node?.isFile) {
+        onSelectFile(key);
       }
-      return next;
-    });
+    },
+    [treeData, onSelectFile]
+  );
+
+  // Handle expansion
+  const handleExpand = useCallback((keys: Key[]) => {
+    setExpandedKeys(keys);
   }, []);
 
+  // Custom title render with thread count badges
+  const renderTitle = useCallback(
+    (node: ExtendedTreeNode): React.ReactNode => {
+      const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && node.isFile && node.path) {
+          e.stopPropagation();
+          onSelectFile(node.path);
+        }
+      };
+
+      return (
+        <span
+          className={node.isFile ? 'file-node' : 'folder-node'}
+          data-testid={node.isFile ? 'file-item' : 'folder-node'}
+          onKeyDown={handleKeyDown}
+          tabIndex={node.isFile ? 0 : -1}
+          role={node.isFile ? 'button' : undefined}
+        >
+          <Text>{node.title as string}</Text>
+          {node.threadCount && node.threadCount > 0 && (
+            <Text
+              type="secondary"
+              className="thread-badge"
+              data-testid="thread-count"
+              style={{ marginLeft: 8, fontSize: 11 }}
+            >
+              ({node.threadCount})
+            </Text>
+          )}
+        </span>
+      );
+    },
+    [onSelectFile]
+  );
+
+  // Empty state
   if (files.length === 0) {
     return (
       <div className="file-navigator file-navigator-empty">
@@ -266,25 +239,17 @@ export function FileNavigator({
 
   return (
     <div className="file-navigator">
-      {tree.map((node) =>
-        node.isFolder ? (
-          <FolderNode
-            key={node.path}
-            node={node}
-            selectedFile={selectedFile}
-            expandedFolders={expandedFolders}
-            onToggleFolder={handleToggleFolder}
-            onSelectFile={onSelectFile}
-          />
-        ) : (
-          <FileNode
-            key={node.path}
-            node={node}
-            isSelected={selectedFile === node.path}
-            onSelectFile={onSelectFile}
-          />
-        )
-      )}
+      <Tree
+        treeData={treeData}
+        selectedKeys={selectedFile ? [selectedFile] : []}
+        expandedKeys={expandedKeys}
+        onExpand={handleExpand}
+        onSelect={handleSelect}
+        showLine={{ showLeafIcon: false }}
+        virtual
+        height={300}
+        titleRender={renderTitle}
+      />
     </div>
   );
 }
