@@ -1,10 +1,12 @@
 /**
  * InlineThread component - Displays a thread inline below a code line
  * with annotations, reply input, and resolve functionality.
+ * Uses the shared ThreadView component with compact mode.
  */
 
-import React, { useState } from 'react';
-import type { ReviewThread, ReviewAnnotation } from 'hive-core';
+import React from 'react';
+import type { ReviewThread } from 'hive-core';
+import { ThreadView } from './ThreadView';
 
 export interface InlineThreadProps {
   /** The thread to display */
@@ -17,50 +19,12 @@ export interface InlineThreadProps {
   onClose: () => void;
 }
 
-function AnnotationItem({ annotation }: { annotation: ReviewAnnotation }): React.ReactElement {
-  const isLLM = annotation.author.type === 'llm';
-
-  return (
-    <div className={`inline-annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}>
-      <div className="annotation-header">
-        <span className="annotation-author">{annotation.author.name}</span>
-        {isLLM ? <span className="annotation-badge">AI</span> : null}
-        <span className="annotation-time">
-          {new Date(annotation.createdAt).toLocaleString()}
-        </span>
-      </div>
-      <div className="annotation-body">{annotation.body}</div>
-      {annotation.suggestion ? (
-        <div className="annotation-suggestion">
-          <span className="suggestion-label">Suggestion:</span>
-          <pre className="suggestion-code">{annotation.suggestion.replacement}</pre>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function InlineThread({
   thread,
   onReply,
   onResolve,
   onClose,
 }: InlineThreadProps): React.ReactElement {
-  const [replyText, setReplyText] = useState('');
-
-  const handleReply = () => {
-    if (replyText.trim()) {
-      onReply(thread.id, replyText.trim());
-      setReplyText('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.metaKey) {
-      handleReply();
-    }
-  };
-
   const isResolved = thread.status === 'resolved';
 
   return (
@@ -73,15 +37,6 @@ export function InlineThread({
           {isResolved ? 'Resolved' : 'Open'}
         </span>
         <div className="inline-thread-actions">
-          {!isResolved ? (
-            <button
-              className="btn-resolve"
-              onClick={() => onResolve(thread.id)}
-              aria-label="Mark thread as resolved"
-            >
-              Resolve
-            </button>
-          ) : null}
           <button
             className="btn-close"
             onClick={onClose}
@@ -92,38 +47,12 @@ export function InlineThread({
         </div>
       </div>
 
-      <div className="inline-thread-annotations">
-        {thread.annotations.map((annotation) => (
-          <AnnotationItem key={annotation.id} annotation={annotation} />
-        ))}
-      </div>
-
-      <div className="inline-thread-reply">
-        <label htmlFor={`reply-input-${thread.id}`} className="visually-hidden">
-          Reply to thread
-        </label>
-        <textarea
-          id={`reply-input-${thread.id}`}
-          className="reply-input"
-          placeholder="Reply…"
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={2}
-          aria-describedby={`reply-hint-${thread.id}`}
-        />
-        <span id={`reply-hint-${thread.id}`} className="visually-hidden">
-          Press Cmd+Enter to submit
-        </span>
-        <button
-          className="btn-reply"
-          onClick={handleReply}
-          disabled={!replyText.trim()}
-          aria-label="Reply"
-        >
-          Reply
-        </button>
-      </div>
+      <ThreadView
+        thread={thread}
+        onReply={(body) => onReply(thread.id, body)}
+        onResolve={() => onResolve(thread.id)}
+        compact
+      />
     </div>
   );
 }

@@ -25,3 +25,6 @@ export type { CodeViewerProps } from './CodeViewer';
 
 export { InlineThread } from './InlineThread';
 export type { InlineThreadProps } from './InlineThread';
+
+export { ThreadView } from './ThreadView';
+export type { ThreadViewProps } from './ThreadView';
