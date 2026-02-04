@@ -1,61 +1,82 @@
 /**
- * DiffViewer component - Basic diff display
+ * DiffViewer component - Professional diff display using react-diff-view
+ * 
+ * Maintains backward compatibility with existing DiffFile-based API while
+ * internally using react-diff-view for better rendering and features.
  */
 
-import React from 'react';
-import type { DiffFile, DiffHunk, DiffHunkLine } from 'hive-core';
+import React, { useMemo } from 'react';
+import { Diff, Hunk, parseDiff } from 'react-diff-view';
+import type { HunkData, ChangeData, ChangeEventArgs, EventMap } from 'react-diff-view';
+import type { DiffFile } from 'hive-core';
+import 'react-diff-view/style/index.css';
 
 export interface DiffViewerProps {
   file: DiffFile | null;
+  viewType?: 'unified' | 'split';
+  onLineClick?: (path: string, lineNumber: number) => void;
 }
 
-function DiffLine({ line }: { line: DiffHunkLine }): React.ReactElement {
-  const classMap = {
-    context: 'line-context',
-    add: 'line-add',
-    remove: 'line-remove',
-  };
-
-  const prefixMap = {
-    context: ' ',
-    add: '+',
-    remove: '-',
-  };
-
-  const ariaLabelMap = {
-    context: 'unchanged',
-    add: 'added',
-    remove: 'removed',
-  };
-
-  return (
-    <div
-      className={`diff-line ${classMap[line.type]}`}
-      role="row"
-      aria-label={`${ariaLabelMap[line.type]} line: ${line.content}`}
-    >
-      <span className="line-prefix" aria-hidden="true">{prefixMap[line.type]}</span>
-      <span className="line-content">{line.content}</span>
-    </div>
-  );
+/**
+ * Convert our internal DiffFile format to a unified diff string
+ * that react-diff-view can parse
+ */
+function convertToUnifiedDiff(file: DiffFile): string {
+  const lines: string[] = [];
+  
+  // Add the file header
+  lines.push(`diff --git a/${file.path} b/${file.path}`);
+  lines.push(`--- a/${file.path}`);
+  lines.push(`+++ b/${file.path}`);
+  
+  // Add each hunk
+  for (const hunk of file.hunks) {
+    // Hunk header: @@ -oldStart,oldLines +newStart,newLines @@
+    lines.push(`@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`);
+    
+    // Add hunk lines with proper prefixes
+    for (const line of hunk.lines) {
+      const prefix = line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' ';
+      lines.push(`${prefix}${line.content}`);
+    }
+  }
+  
+  return lines.join('\n');
 }
 
-function DiffHunkView({ hunk }: { hunk: DiffHunk }): React.ReactElement {
-  return (
-    <div className="diff-hunk" role="region" aria-label={`Diff hunk starting at line ${hunk.newStart}`}>
-      <div className="hunk-header" aria-label={`Hunk header: lines ${hunk.oldStart} to ${hunk.oldStart + hunk.oldLines - 1} changed to lines ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`}>
-        @@ -{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@
-      </div>
-      <div className="hunk-lines" role="rowgroup" aria-label="Diff lines">
-        {hunk.lines.map((line, index) => (
-          <DiffLine key={`${hunk.newStart}-${index}-${line.type}`} line={line} />
-        ))}
-      </div>
-    </div>
-  );
+/**
+ * Map file status to diff type
+ */
+function getDiffType(status: DiffFile['status']): 'add' | 'delete' | 'modify' | 'rename' | 'copy' {
+  switch (status) {
+    case 'A': return 'add';
+    case 'D': return 'delete';
+    case 'R': return 'rename';
+    case 'C': return 'copy';
+    case 'M':
+    case 'U':
+    case 'B':
+    default:
+      return 'modify';
+  }
 }
 
-export function DiffViewer({ file }: DiffViewerProps): React.ReactElement {
+export function DiffViewer({ file, viewType = 'unified', onLineClick }: DiffViewerProps): React.ReactElement {
+  // Parse the diff using react-diff-view
+  const parsedFiles = useMemo(() => {
+    if (!file || file.isBinary || file.hunks.length === 0) {
+      return [];
+    }
+    
+    try {
+      const unifiedDiff = convertToUnifiedDiff(file);
+      return parseDiff(unifiedDiff);
+    } catch (error) {
+      console.error('Failed to parse diff:', error);
+      return [];
+    }
+  }, [file]);
+
   if (!file) {
     return (
       <div className="diff-viewer diff-viewer-empty">
@@ -75,6 +96,30 @@ export function DiffViewer({ file }: DiffViewerProps): React.ReactElement {
     );
   }
 
+  const diffType = getDiffType(file.status);
+  const parsedFile = parsedFiles[0];
+
+  // Handle gutter click events for line selection
+  const gutterEvents: EventMap | undefined = onLineClick ? {
+    onClick: (args: ChangeEventArgs) => {
+      const { change } = args;
+      if (change) {
+        // Get line number from the change - handle different change types
+        let lineNumber: number | undefined;
+        if (change.type === 'insert') {
+          lineNumber = change.lineNumber;
+        } else if (change.type === 'delete') {
+          lineNumber = change.lineNumber;
+        } else if (change.type === 'normal') {
+          lineNumber = change.newLineNumber;
+        }
+        if (lineNumber !== undefined) {
+          onLineClick(file.path, lineNumber);
+        }
+      }
+    }
+  } : undefined;
+
   return (
     <div className="diff-viewer">
       <div className="diff-header">
@@ -85,9 +130,25 @@ export function DiffViewer({ file }: DiffViewerProps): React.ReactElement {
         </span>
       </div>
       <div className="diff-content">
-        {file.hunks.map((hunk, index) => (
-          <DiffHunkView key={index} hunk={hunk} />
-        ))}
+        {parsedFile && parsedFile.hunks.length > 0 ? (
+          <Diff
+            viewType={viewType}
+            diffType={diffType}
+            hunks={parsedFile.hunks}
+            gutterEvents={gutterEvents}
+          >
+            {(hunks: HunkData[]) =>
+              hunks.map((hunk) => (
+                <Hunk key={`${hunk.oldStart}-${hunk.newStart}`} hunk={hunk} />
+              ))
+            }
+          </Diff>
+        ) : (
+          // Fallback for empty or unparseable diffs
+          <div className="diff-empty">
+            <p>No changes to display</p>
+          </div>
+        )}
       </div>
     </div>
   );
