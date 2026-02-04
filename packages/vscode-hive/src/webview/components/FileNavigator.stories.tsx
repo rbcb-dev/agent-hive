@@ -234,3 +234,57 @@ export const CommentBadgeInteraction: Story = {
     await expect(inputBadge).toBeNull();
   },
 };
+
+/**
+ * File icons - shows different icons for different file types
+ */
+export const FileIcons: Story = {
+  args: {
+    files: [
+      'src/components/Button.tsx',     // .tsx -> file-code
+      'src/utils/helpers.ts',          // .ts -> file-code
+      'src/index.js',                  // .js -> file-code
+      'src/main.py',                   // .py -> file-code
+      'package.json',                  // .json -> file-text
+      'config.yaml',                   // .yaml -> file-text
+      'README.md',                     // .md -> markdown
+      'bun.lock',                      // .lock -> lock
+      '.env',                          // .env -> gear
+      'data.csv',                      // .csv -> file-text
+      'styles.css',                    // .css -> file-code
+      'template.html',                 // .html -> file-code
+      'unknown.xyz',                   // unknown -> file (default)
+    ],
+    threads: [],
+    selectedFile: null,
+    onSelectFile: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify different file types have icons
+    // TypeScript file should have file-code icon
+    const tsxFile = canvas.getByText('Button.tsx').closest('[data-testid="file-item"]');
+    await expect(tsxFile?.querySelector('.codicon-file-code')).toBeInTheDocument();
+
+    // JSON file should have file-text icon
+    const jsonFile = canvas.getByText('package.json').closest('[data-testid="file-item"]');
+    await expect(jsonFile?.querySelector('.codicon-file-text')).toBeInTheDocument();
+
+    // Markdown file should have markdown icon
+    const mdFile = canvas.getByText('README.md').closest('[data-testid="file-item"]');
+    await expect(mdFile?.querySelector('.codicon-markdown')).toBeInTheDocument();
+
+    // Lock file should have lock icon
+    const lockFile = canvas.getByText('bun.lock').closest('[data-testid="file-item"]');
+    await expect(lockFile?.querySelector('.codicon-lock')).toBeInTheDocument();
+
+    // Env file should have gear icon
+    const envFile = canvas.getByText('.env').closest('[data-testid="file-item"]');
+    await expect(envFile?.querySelector('.codicon-gear')).toBeInTheDocument();
+
+    // Folder should have folder icon
+    const folder = canvas.getByText('src').closest('[data-testid="folder-node"]');
+    await expect(folder?.querySelector('.codicon-folder')).toBeInTheDocument();
+  },
+};
