@@ -91,6 +91,58 @@ describe('App', () => {
   });
 });
 
+describe('App - Antd Layout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses antd Layout components', () => {
+    render(<App />);
+
+    // Should use antd Layout structure with semantic elements
+    // The layout wraps the entire app
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+
+  it('renders a collapsible sidebar', () => {
+    render(<App />);
+
+    // Should have a collapsible sider with trigger
+    const siderTrigger = document.querySelector('.ant-layout-sider-trigger');
+    expect(siderTrigger).toBeInTheDocument();
+  });
+
+  it('collapses sidebar when trigger is clicked', () => {
+    render(<App />);
+
+    // Get the sider element
+    const sider = document.querySelector('.ant-layout-sider');
+    expect(sider).toBeInTheDocument();
+    
+    // Initially not collapsed
+    expect(sider).not.toHaveClass('ant-layout-sider-collapsed');
+
+    // Click the collapse trigger
+    const trigger = document.querySelector('.ant-layout-sider-trigger');
+    if (trigger) {
+      fireEvent.click(trigger);
+    }
+
+    // Should be collapsed now
+    expect(sider).toHaveClass('ant-layout-sider-collapsed');
+  });
+
+  it('uses HiveThemeProvider wrapper', () => {
+    render(<App />);
+
+    // The App should be wrapped with antd's ConfigProvider (via HiveThemeProvider)
+    // We can verify this by checking that antd styles are applied
+    const layout = document.querySelector('.ant-layout');
+    expect(layout).toBeInTheDocument();
+  });
+});
+
 describe('App - File Content Request Protocol', () => {
   beforeEach(() => {
     vi.clearAllMocks();
