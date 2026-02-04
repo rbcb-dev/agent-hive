@@ -4,7 +4,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from './test-utils';
+import { render as rawRender } from '@testing-library/react';
 import { CodeViewer } from '../components/CodeViewer';
+import { HiveThemeProvider } from '../theme/Provider';
 import type { ReviewThread } from 'hive-core';
 
 // Mock the shiki-bundle module (used by useCodeHighlighter)
@@ -210,12 +212,30 @@ describe('CodeViewer', () => {
   });
 
   describe('theme support', () => {
-    it('renders with dark theme by default', async () => {
+    it('renders with light theme from context by default', async () => {
+      // test-utils wrapper uses light mode by default
       render(
         <CodeViewer
           code="const x = 1;"
           language="typescript"
         />
+      );
+
+      await waitFor(() => {
+        const viewer = screen.getByTestId('code-viewer');
+        expect(viewer).toHaveAttribute('data-theme', 'light');
+      });
+    });
+
+    it('renders with dark theme when provider is in dark mode', async () => {
+      // Use rawRender to provide custom wrapper with dark mode
+      rawRender(
+        <HiveThemeProvider mode="dark">
+          <CodeViewer
+            code="const x = 1;"
+            language="typescript"
+          />
+        </HiveThemeProvider>
       );
 
       await waitFor(() => {
@@ -224,19 +244,21 @@ describe('CodeViewer', () => {
       });
     });
 
-    it('renders with light theme when specified', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-          theme="light"
-        />
-      );
-
-      await waitFor(() => {
-        const viewer = screen.getByTestId('code-viewer');
-        expect(viewer).toHaveAttribute('data-theme', 'light');
-      });
+    it('throws error when used outside HiveThemeProvider', async () => {
+      // Suppress console.error for this test since we expect an error
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Render without wrapper - should throw
+      expect(() => {
+        rawRender(
+          <CodeViewer
+            code="const x = 1;"
+            language="typescript"
+          />
+        );
+      }).toThrow(/useTheme must be used within a HiveThemeProvider/);
+      
+      consoleSpy.mockRestore();
     });
   });
 

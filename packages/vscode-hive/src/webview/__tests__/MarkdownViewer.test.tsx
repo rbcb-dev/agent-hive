@@ -4,7 +4,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from './test-utils';
+import { render as rawRender } from '@testing-library/react';
 import { MarkdownViewer } from '../components/MarkdownViewer';
+import { HiveThemeProvider } from '../theme/Provider';
 
 // Mock the shiki-bundle module (which useCodeHighlighter imports from)
 const mockHighlighter = {
@@ -251,11 +253,12 @@ const x: number = 1;
       });
     });
 
-    it('renders code blocks with theme-aware container class', async () => {
+    it('renders code blocks with light theme class from context', async () => {
       const codeContent = `\`\`\`typescript
 const x = 1;
 \`\`\``;
-      render(<MarkdownViewer content={codeContent} theme="light" />);
+      // test-utils wrapper uses light mode by default
+      render(<MarkdownViewer content={codeContent} />);
       // Wait for async rendering to complete
       await waitFor(() => {
         const container = document.querySelector('.markdown-rendered');
@@ -263,11 +266,16 @@ const x = 1;
       });
     });
 
-    it('applies dark theme class when theme is dark', async () => {
+    it('renders code blocks with dark theme class when provider is dark', async () => {
       const codeContent = `\`\`\`typescript
 const x = 1;
 \`\`\``;
-      render(<MarkdownViewer content={codeContent} theme="dark" />);
+      // Use rawRender to provide custom wrapper with dark mode
+      rawRender(
+        <HiveThemeProvider mode="dark">
+          <MarkdownViewer content={codeContent} />
+        </HiveThemeProvider>
+      );
       // Wait for async rendering to complete
       await waitFor(() => {
         const container = document.querySelector('.markdown-rendered');
@@ -297,6 +305,18 @@ const x: number = 1;
       await waitFor(() => {
         expect(document.querySelector('.markdown-rendered-loading')).not.toBeInTheDocument();
       });
+    });
+
+    it('throws error when used outside HiveThemeProvider', () => {
+      // Suppress console.error for this test since we expect an error
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Render without wrapper - should throw
+      expect(() => {
+        rawRender(<MarkdownViewer content="# Hello" />);
+      }).toThrow(/useTheme must be used within a HiveThemeProvider/);
+      
+      consoleSpy.mockRestore();
     });
   });
 

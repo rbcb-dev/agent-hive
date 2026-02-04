@@ -23,15 +23,12 @@ const meta = {
       action: 'lineClicked',
       description: 'Callback when a line is clicked in raw view',
     },
-    theme: {
-      control: 'radio',
-      options: ['light', 'dark'],
-      description: 'Theme for syntax highlighting',
-    },
     highlightCode: {
       control: 'boolean',
       description: 'Whether to enable code block syntax highlighting',
     },
+    // Note: theme is no longer a prop - it comes from HiveThemeProvider context.
+    // Use the Storybook toolbar theme switcher to toggle between light and dark themes.
   },
 } satisfies Meta<typeof MarkdownViewer>;
 
@@ -432,13 +429,15 @@ npm run test
 /**
  * Demonstrates syntax highlighting for code blocks using Shiki.
  * Code blocks with language specifiers are highlighted with appropriate colors.
+ * 
+ * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
+ * to switch between light/dark themes.
  */
 export const SyntaxHighlighting: Story = {
   args: {
     content: syntaxHighlightingMarkdown,
     filePath: 'docs/syntax-demo.md',
     highlightCode: true,
-    theme: 'dark',
     onLineClick: fn(),
   },
   play: async ({ canvasElement }) => {
@@ -457,15 +456,22 @@ export const SyntaxHighlighting: Story = {
 };
 
 /**
- * Light theme syntax highlighting
+ * Light theme syntax highlighting.
+ * 
+ * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
+ * to switch between light/dark themes.
  */
 export const SyntaxHighlightingLight: Story = {
   args: {
     content: syntaxHighlightingMarkdown,
     filePath: 'docs/syntax-demo.md',
     highlightCode: true,
-    theme: 'light',
     onLineClick: fn(),
+  },
+  parameters: {
+    backgrounds: { default: 'vscode-light' },
+    // Hint to Storybook decorators that this should use light theme
+    theme: 'light',
   },
 };
 
@@ -571,13 +577,15 @@ The code blocks above demonstrate proper syntax coloring for keywords, strings, 
  * - Shell scripts with variables and control flow
  * 
  * The highlighting matches VS Code's theme colors.
+ * 
+ * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
+ * to switch between light/dark themes.
  */
 export const WithHighlightedCode: Story = {
   args: {
     content: highlightedCodeMarkdown,
     filePath: 'docs/highlighted-code-demo.md',
     highlightCode: true,
-    theme: 'dark',
     onLineClick: fn(),
   },
   play: async ({ canvasElement }) => {
@@ -755,7 +763,6 @@ export const ComplexDocument: Story = {
     content: complexDocumentMarkdown,
     filePath: 'docs/complete-example.md',
     highlightCode: true,
-    theme: 'dark',
     onLineClick: fn(),
   },
   play: async ({ canvasElement }) => {
@@ -824,7 +831,6 @@ export const CopyToClipboard: Story = {
     content: copyButtonDemoMarkdown,
     filePath: 'docs/copy-demo.md',
     highlightCode: true,
-    theme: 'dark',
     onLineClick: fn(),
   },
   play: async ({ canvasElement }) => {

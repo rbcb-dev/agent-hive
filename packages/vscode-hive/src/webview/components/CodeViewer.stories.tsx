@@ -28,9 +28,13 @@ import { createMockReviewThread, createMockAnnotation } from '../__stories__/moc
  * - Configurable line numbers (show/hide, custom start)
  * - Line highlighting for emphasis
  * - Diff line types (add/remove/context) for code changes
- * - Dark/light theme support
+ * - Dark/light theme support (via HiveThemeProvider context)
  * - Thread markers in gutter for code review
  * - Inline thread expansion with reply/resolve
+ * 
+ * ## Breaking Change
+ * Theme is now obtained from HiveThemeProvider context. Use the Storybook toolbar
+ * theme switcher to toggle between light and dark themes.
  */
 const meta = {
   title: 'Components/CodeViewer',
@@ -55,11 +59,6 @@ const meta = {
         'shell',
       ],
       description: 'Programming language for syntax highlighting',
-    },
-    theme: {
-      control: 'radio',
-      options: ['dark', 'light'],
-      description: 'Color theme (dark or light)',
     },
     showLineNumbers: {
       control: 'boolean',
@@ -283,27 +282,37 @@ function NewComponent() {
 // =============================================================================
 
 /**
- * Dark theme (default)
+ * Dark theme - uses HiveThemeProvider context.
+ * Use the Storybook toolbar theme switcher to toggle between light and dark themes.
+ * 
+ * Note: Theme is no longer a component prop. It's obtained from HiveThemeProvider context.
  */
 export const DarkTheme: Story = {
   args: {
     code: typescriptCode,
     language: 'typescript',
+  },
+  parameters: {
+    // Hint to Storybook decorators that this should use dark theme
     theme: 'dark',
   },
 };
 
 /**
- * Light theme for bright environments
+ * Light theme - uses HiveThemeProvider context.
+ * Use the Storybook toolbar theme switcher to toggle between light and dark themes.
+ * 
+ * Note: Theme is no longer a component prop. It's obtained from HiveThemeProvider context.
  */
 export const LightTheme: Story = {
   args: {
     code: typescriptCode,
     language: 'typescript',
-    theme: 'light',
   },
   parameters: {
     backgrounds: { default: 'vscode-light' },
+    // Hint to Storybook decorators that this should use light theme
+    theme: 'light',
   },
 };
 
