@@ -1,9 +1,11 @@
 /**
  * Tests for FileNavigator component
+ * 
+ * Uses antd Tree with virtual scrolling and custom title rendering.
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { FileNavigator } from '../components/FileNavigator';
 import type { ReviewThread } from 'hive-core';
 
@@ -82,21 +84,20 @@ describe('FileNavigator', () => {
       />
     );
 
-    // Button.tsx has 2 threads
-    const buttonItem = screen.getByText('Button.tsx').closest('[data-testid="file-item"]');
-    expect(buttonItem).toBeInTheDocument();
-    const buttonBadge = buttonItem?.querySelector('[data-testid="thread-count"]');
-    expect(buttonBadge).toHaveTextContent('2');
+    // Button.tsx has 2 threads - look for badge text in same node
+    const buttonNode = screen.getByText('Button.tsx').closest('.file-node');
+    expect(buttonNode).toBeInTheDocument();
+    const buttonBadge = within(buttonNode as HTMLElement).getByTestId('thread-count');
+    expect(buttonBadge).toHaveTextContent('(2)');
 
     // helpers.ts has 1 thread
-    const helpersItem = screen.getByText('helpers.ts').closest('[data-testid="file-item"]');
-    const helpersBadge = helpersItem?.querySelector('[data-testid="thread-count"]');
-    expect(helpersBadge).toHaveTextContent('1');
+    const helpersNode = screen.getByText('helpers.ts').closest('.file-node');
+    const helpersBadge = within(helpersNode as HTMLElement).getByTestId('thread-count');
+    expect(helpersBadge).toHaveTextContent('(1)');
 
     // Input.tsx has no threads - no badge
-    const inputItem = screen.getByText('Input.tsx').closest('[data-testid="file-item"]');
-    const inputBadge = inputItem?.querySelector('[data-testid="thread-count"]');
-    expect(inputBadge).not.toBeInTheDocument();
+    const inputNode = screen.getByText('Input.tsx').closest('.file-node');
+    expect(within(inputNode as HTMLElement).queryByTestId('thread-count')).not.toBeInTheDocument();
   });
 
   it('calls onSelectFile with full path when file is clicked', () => {
@@ -110,11 +111,12 @@ describe('FileNavigator', () => {
       />
     );
 
+    // Click on the file name text
     fireEvent.click(screen.getByText('Button.tsx'));
     expect(onSelectFile).toHaveBeenCalledWith('src/components/Button.tsx');
   });
 
-  it('highlights currently selected file', () => {
+  it('highlights currently selected file via antd Tree selectedKeys', () => {
     render(
       <FileNavigator
         files={mockFiles}
@@ -124,8 +126,10 @@ describe('FileNavigator', () => {
       />
     );
 
-    const buttonItem = screen.getByText('Button.tsx').closest('[data-testid="file-item"]');
-    expect(buttonItem).toHaveClass('selected');
+    // antd Tree marks selected nodes with ant-tree-treenode-selected class
+    const buttonText = screen.getByText('Button.tsx');
+    const treeNode = buttonText.closest('.ant-tree-treenode');
+    expect(treeNode).toHaveClass('ant-tree-treenode-selected');
   });
 
   it('does not highlight non-selected files', () => {
@@ -138,8 +142,9 @@ describe('FileNavigator', () => {
       />
     );
 
-    const inputItem = screen.getByText('Input.tsx').closest('[data-testid="file-item"]');
-    expect(inputItem).not.toHaveClass('selected');
+    const inputText = screen.getByText('Input.tsx');
+    const treeNode = inputText.closest('.ant-tree-treenode');
+    expect(treeNode).not.toHaveClass('ant-tree-treenode-selected');
   });
 
   it('renders empty state when no files', () => {
@@ -155,7 +160,7 @@ describe('FileNavigator', () => {
     expect(screen.getByText('No files in review scope')).toBeInTheDocument();
   });
 
-  it('supports keyboard navigation with Enter key', () => {
+  it('supports keyboard navigation with Enter key on files', () => {
     const onSelectFile = vi.fn();
     render(
       <FileNavigator
@@ -166,12 +171,14 @@ describe('FileNavigator', () => {
       />
     );
 
-    const buttonItem = screen.getByText('Button.tsx').closest('[data-testid="file-item"]');
-    fireEvent.keyDown(buttonItem!, { key: 'Enter' });
+    // Find the file node and trigger keyboard event on it
+    const buttonText = screen.getByText('Button.tsx');
+    const fileNode = buttonText.closest('.file-node');
+    fireEvent.keyDown(fileNode!, { key: 'Enter' });
     expect(onSelectFile).toHaveBeenCalledWith('src/components/Button.tsx');
   });
 
-  it('expands and collapses folders', () => {
+  it('expands and collapses folders', async () => {
     render(
       <FileNavigator
         files={mockFiles}
@@ -182,18 +189,34 @@ describe('FileNavigator', () => {
     );
 
     // Initially all folders should be expanded (showing files)
-    expect(screen.getByText('Button.tsx')).toBeVisible();
+    expect(screen.getByText('Button.tsx')).toBeInTheDocument();
 
-    // Click on the folder to collapse
-    const componentsFolder = screen.getByText('components').closest('[data-testid="folder-node"]');
-    fireEvent.click(componentsFolder!);
+    // Find the components folder's switcher (expand/collapse icon)
+    const componentsText = screen.getByText('components');
+    const componentsTreeNode = componentsText.closest('.ant-tree-treenode');
+    const switcherIcon = componentsTreeNode?.querySelector('.ant-tree-switcher');
+    
+    // Click to collapse
+    fireEvent.click(switcherIcon!);
 
-    // Files should be hidden after collapse
-    expect(screen.queryByText('Button.tsx')).not.toBeInTheDocument();
+    // Files inside components should be hidden after collapse
+    await waitFor(() => {
+      expect(screen.queryByText('Button.tsx')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('Input.tsx')).not.toBeInTheDocument();
 
-    // Click again to expand
-    fireEvent.click(componentsFolder!);
-    expect(screen.getByText('Button.tsx')).toBeVisible();
+    // The folder node should now have collapsed state
+    expect(componentsTreeNode).toHaveClass('ant-tree-treenode-switcher-close');
+
+    // Click again to expand - need to re-query since DOM has changed
+    const expandedComponentsText = screen.getByText('components');
+    const expandedTreeNode = expandedComponentsText.closest('.ant-tree-treenode');
+    const expandSwitcher = expandedTreeNode?.querySelector('.ant-tree-switcher');
+    fireEvent.click(expandSwitcher!);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
+    });
   });
 
   it('maintains folder expansion state when switching files', () => {
@@ -207,8 +230,10 @@ describe('FileNavigator', () => {
     );
 
     // Collapse the components folder
-    const componentsFolder = screen.getByText('components').closest('[data-testid="folder-node"]');
-    fireEvent.click(componentsFolder!);
+    const componentsText = screen.getByText('components');
+    const componentsTreeNode = componentsText.closest('.ant-tree-treenode');
+    const switcherIcon = componentsTreeNode?.querySelector('.ant-tree-switcher');
+    fireEvent.click(switcherIcon!);
 
     // Change selected file
     rerender(
@@ -224,5 +249,51 @@ describe('FileNavigator', () => {
     expect(screen.queryByText('Button.tsx')).not.toBeInTheDocument();
     // helpers.ts should still be visible
     expect(screen.getByText('helpers.ts')).toBeInTheDocument();
+  });
+
+  describe('antd Tree features', () => {
+    it('uses antd Tree component', () => {
+      const { container } = render(
+        <FileNavigator
+          files={mockFiles}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={() => {}}
+        />
+      );
+
+      // Should have antd tree class
+      expect(container.querySelector('.ant-tree')).toBeInTheDocument();
+    });
+
+    it('shows tree lines (showLine enabled)', () => {
+      const { container } = render(
+        <FileNavigator
+          files={mockFiles}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={() => {}}
+        />
+      );
+
+      // showLine adds ant-tree-show-line class
+      expect(container.querySelector('.ant-tree-show-line')).toBeInTheDocument();
+    });
+
+    it('does not call onSelectFile when clicking on folders', () => {
+      const onSelectFile = vi.fn();
+      render(
+        <FileNavigator
+          files={mockFiles}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={onSelectFile}
+        />
+      );
+
+      // Click on a folder name
+      fireEvent.click(screen.getByText('components'));
+      expect(onSelectFile).not.toHaveBeenCalled();
+    });
   });
 });
