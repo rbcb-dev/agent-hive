@@ -6,9 +6,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as renderWithTheme, screen, fireEvent } from './test-utils';
 import { describe, it, expect, vi } from 'vitest';
-import { HiveThemeProvider } from '../theme/Provider';
 import {
   Button,
   Card,
@@ -42,13 +41,6 @@ import type {
   TypographyProps,
   VirtualListProps,
 } from '../primitives';
-
-/**
- * Helper to render components within HiveThemeProvider
- */
-function renderWithTheme(ui: React.ReactElement) {
-  return render(<HiveThemeProvider>{ui}</HiveThemeProvider>);
-}
 
 describe('Primitives Layer', () => {
   describe('Button', () => {

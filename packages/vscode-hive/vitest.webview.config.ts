@@ -9,6 +9,7 @@ export default defineConfig({
     include: ['src/webview/**/*.test.ts', 'src/webview/**/*.test.tsx'],
     globals: true,
     setupFiles: ['./src/webview/__tests__/setup.ts'],
+    testTimeout: 15000, // Increase timeout for antd component first-render overhead
     deps: {
       // Include shiki in optimization so it can be properly resolved
       optimizer: {

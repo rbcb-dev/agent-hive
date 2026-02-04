@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from './test-utils';
 import { FileNavigator } from '../components/FileNavigator';
 import type { ReviewThread } from 'hive-core';
 
