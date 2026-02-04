@@ -196,3 +196,41 @@ export const KeyboardNavigation: Story = {
     await expect(args.onSelectThread).toHaveBeenCalledWith('thread-1');
   },
 };
+
+// Generate many threads for VirtualList testing
+const manyThreads: ThreadSummary[] = Array.from({ length: 100 }, (_, i) => createMockThreadSummary({
+  id: `thread-${i}`,
+  uri: `src/file-${i}.ts`,
+  firstLine: `Comment ${i}: This is a sample comment for testing virtual scrolling performance with large lists`,
+  status: i % 3 === 0 ? 'resolved' : i % 5 === 0 ? 'outdated' : 'open',
+  commentCount: (i % 10) + 1,
+}));
+
+/**
+ * Large list using VirtualList (>50 items) for performance
+ */
+export const LargeList: Story = {
+  args: {
+    threads: manyThreads,
+    selectedThread: null,
+    onSelectThread: fn(),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Lists with more than 50 items automatically use VirtualList for performance. Only visible items are rendered.',
+      },
+    },
+  },
+};
+
+/**
+ * Large list with selection
+ */
+export const LargeListWithSelection: Story = {
+  args: {
+    threads: manyThreads,
+    selectedThread: 'thread-42',
+    onSelectThread: fn(),
+  },
+};
