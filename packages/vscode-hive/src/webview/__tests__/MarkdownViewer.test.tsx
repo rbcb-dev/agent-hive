@@ -320,6 +320,30 @@ const x: number = 1;
     });
   });
 
+  describe('maxHeight prop', () => {
+    it('applies maxHeight and overflow styles when provided as number', async () => {
+      render(<MarkdownViewer content="# Test" maxHeight={400} />);
+      
+      const viewer = document.querySelector('.markdown-viewer');
+      expect(viewer).toHaveStyle({ maxHeight: '400px', overflow: 'auto' });
+    });
+
+    it('applies maxHeight and overflow styles when provided as string', async () => {
+      render(<MarkdownViewer content="# Test" maxHeight="50vh" />);
+      
+      const viewer = document.querySelector('.markdown-viewer');
+      expect(viewer).toHaveStyle({ maxHeight: '50vh', overflow: 'auto' });
+    });
+
+    it('does not apply maxHeight styles when not provided', async () => {
+      render(<MarkdownViewer content="# Test" />);
+      
+      const viewer = document.querySelector('.markdown-viewer');
+      expect(viewer).not.toHaveStyle({ maxHeight: '400px' });
+      expect(viewer).not.toHaveStyle({ overflow: 'auto' });
+    });
+  });
+
   describe('copy to clipboard for code blocks', () => {
     beforeEach(() => {
       // Mock navigator.clipboard

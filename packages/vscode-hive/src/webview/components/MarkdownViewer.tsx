@@ -46,6 +46,8 @@ export interface MarkdownViewerProps {
   onLineClick?: (lineNumber: number) => void;
   /** Whether to enable code block highlighting (default: true) */
   highlightCode?: boolean;
+  /** Maximum height for the viewer container. When set, enables scrolling for long content. */
+  maxHeight?: number | string;
 }
 
 type ViewMode = 'raw' | 'rendered';
@@ -233,23 +235,29 @@ export function MarkdownViewer({
   filePath,
   onLineClick,
   highlightCode = true,
+  maxHeight,
 }: MarkdownViewerProps): React.ReactElement {
   // Get theme from context (requires HiveThemeProvider wrapper)
   const theme = useTheme();
   
   const [viewMode, setViewMode] = useState<ViewMode>('rendered');
 
+  // Compute container styles for maxHeight scrolling
+  const containerStyle: React.CSSProperties | undefined = maxHeight
+    ? { maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight, overflow: 'auto' }
+    : undefined;
+
   // Empty state
   if (!content) {
     return (
-      <div className="markdown-viewer markdown-viewer-empty">
+      <div className="markdown-viewer markdown-viewer-empty" style={containerStyle}>
         <p>Select a file to view markdown</p>
       </div>
     );
   }
 
   return (
-    <div className="markdown-viewer">
+    <div className="markdown-viewer" style={containerStyle}>
       <div className="markdown-header">
         {filePath && <span className="file-path">{filePath}</span>}
         <ViewToggle mode={viewMode} onChange={setViewMode} />
