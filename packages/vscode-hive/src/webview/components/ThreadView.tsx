@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import type { ReviewThread, ReviewAnnotation } from 'hive-core';
+import { Button } from '../primitives';
 
 export interface ThreadViewProps {
   /** The thread to display */
@@ -79,13 +80,15 @@ export function ThreadView({
     >
       <div className="thread-view-header">
         {!isResolved ? (
-          <button
-            className="btn-resolve"
-            onClick={onResolve}
+          <Button
+            type="text"
+            size="small"
+            icon={<span className="codicon codicon-check" />}
             aria-label="Mark thread as resolved"
+            onClick={onResolve}
           >
             Resolve
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -112,14 +115,16 @@ export function ThreadView({
         <span id={hintId} className="visually-hidden">
           Press Cmd+Enter to submit
         </span>
-        <button
-          className="btn-reply"
+        <Button
+          type="text"
+          size="small"
+          icon={<span className="codicon codicon-reply" />}
           onClick={handleReply}
           disabled={!replyText.trim()}
           aria-label="Reply"
         >
           Reply
-        </button>
+        </Button>
       </div>
     </div>
   );

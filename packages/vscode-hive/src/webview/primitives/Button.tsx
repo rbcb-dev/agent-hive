@@ -19,8 +19,8 @@ export interface ButtonProps {
   disabled?: boolean;
   /** Click handler */
   onClick?: () => void;
-  /** Button content */
-  children: ReactNode;
+  /** Button content (optional for icon-only buttons) */
+  children?: ReactNode;
   /** Additional CSS class */
   className?: string;
   /** Inline styles */

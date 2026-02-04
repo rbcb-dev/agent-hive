@@ -7,6 +7,7 @@
 import React from 'react';
 import type { ReviewThread } from 'hive-core';
 import { ThreadView } from './ThreadView';
+import { Button } from '../primitives';
 
 export interface InlineThreadProps {
   /** The thread to display */
@@ -37,13 +38,13 @@ export function InlineThread({
           {isResolved ? 'Resolved' : 'Open'}
         </span>
         <div className="inline-thread-actions">
-          <button
-            className="btn-close"
-            onClick={onClose}
+          <Button
+            type="text"
+            size="small"
+            icon={<span className="codicon codicon-close" />}
             aria-label="Close thread"
-          >
-            ×
-          </button>
+            onClick={onClose}
+          />
         </div>
       </div>
 
