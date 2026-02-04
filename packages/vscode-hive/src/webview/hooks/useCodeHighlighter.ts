@@ -1,60 +1,20 @@
 /**
  * useCodeHighlighter hook - Extracts Shiki highlighting logic for reusability
  * Provides async syntax highlighting with loading state and error handling.
+ * 
+ * Uses fine-grained Shiki bundle from lib/shiki-bundle.ts for smaller bundle size.
+ * To add new languages/themes, update shiki-bundle.ts.
  */
 
 import { useState, useEffect } from 'react';
-import { createHighlighter, type Highlighter, type BundledLanguage } from 'shiki/bundle/web';
-
-// Supported languages - subset for smaller bundle
-const SUPPORTED_LANGUAGES: BundledLanguage[] = [
-  'typescript',
-  'javascript',
-  'tsx',
-  'jsx',
-  'json',
-  'markdown',
-  'html',
-  'css',
-  'yaml',
-  'shell',
-];
-
-// Theme mapping to VS Code themes
-const THEME_MAP = {
-  light: 'github-light',
-  dark: 'github-dark',
-} as const;
-
-// Singleton highlighter instance
-let highlighterPromise: Promise<Highlighter> | null = null;
-
-function getHighlighter(): Promise<Highlighter> {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: [THEME_MAP.light, THEME_MAP.dark],
-      langs: SUPPORTED_LANGUAGES,
-    });
-  }
-  return highlighterPromise;
-}
-
-function normalizeLanguage(lang: string): BundledLanguage {
-  const normalized = lang.toLowerCase();
-  if (SUPPORTED_LANGUAGES.includes(normalized as BundledLanguage)) {
-    return normalized as BundledLanguage;
-  }
-  // Fallback mappings
-  const mappings: Record<string, BundledLanguage> = {
-    ts: 'typescript',
-    js: 'javascript',
-    md: 'markdown',
-    yml: 'yaml',
-    sh: 'shell',
-    bash: 'shell',
-  };
-  return mappings[normalized] || 'javascript'; // Default to JS as plaintext fallback
-}
+import {
+  getHighlighter,
+  normalizeLanguage,
+  SUPPORTED_LANGUAGES,
+  THEME_MAP,
+  type SupportedLanguage,
+  type ThemeMode,
+} from '../lib/shiki-bundle';
 
 export interface CodeToken {
   content: string;
@@ -64,7 +24,7 @@ export interface CodeToken {
 export interface UseCodeHighlighterOptions {
   code: string;
   language: string;
-  theme?: 'light' | 'dark';
+  theme?: ThemeMode;
 }
 
 export interface UseCodeHighlighterResult {
@@ -154,4 +114,13 @@ export function useCodeHighlighter({
 }
 
 // Export utilities for use in CodeViewer
-export { SUPPORTED_LANGUAGES, THEME_MAP, normalizeLanguage, getHighlighter };
+export {
+  SUPPORTED_LANGUAGES,
+  THEME_MAP,
+  normalizeLanguage,
+  getHighlighter,
+  isLanguageSupported,
+  resetHighlighter,
+  type SupportedLanguage,
+  type ThemeMode,
+} from '../lib/shiki-bundle';

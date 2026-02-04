@@ -1,0 +1,12 @@
+{
+  "ignore_dirs": [
+    ".git",
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
+    ".storybook/cache"
+  ],
+  "watch_project_root": true
+}

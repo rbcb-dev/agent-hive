@@ -7,15 +7,20 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { CodeViewer } from '../components/CodeViewer';
 import type { ReviewThread } from 'hive-core';
 
-// Mock shiki with a proper highlighter implementation
+// Mock the shiki-bundle module (used by useCodeHighlighter)
 const mockHighlighter = {
   codeToTokens: vi.fn((code: string) => ({
     tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
   })),
 };
 
-vi.mock('shiki/bundle/web', () => ({
-  createHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+vi.mock('../lib/shiki-bundle', () => ({
+  getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+  normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
+  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  THEME_MAP: { light: 'github-light', dark: 'github-dark' },
+  isLanguageSupported: vi.fn(() => true),
+  resetHighlighter: vi.fn(),
 }));
 
 describe('CodeViewer', () => {

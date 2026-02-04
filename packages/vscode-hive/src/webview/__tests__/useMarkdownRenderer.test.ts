@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useMarkdownRenderer } from '../hooks/useMarkdownRenderer';
 
-// Mock shiki with a proper highlighter implementation
+// Mock the shiki-bundle module (which useCodeHighlighter imports from)
 const mockHighlighter = {
   codeToHtml: vi.fn((code: string, opts: { lang: string; theme: string }) => {
     // Return HTML with shiki-like structure for code blocks
@@ -17,8 +17,13 @@ const mockHighlighter = {
   })),
 };
 
-vi.mock('shiki/bundle/web', () => ({
-  createHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+vi.mock('../lib/shiki-bundle', () => ({
+  getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+  normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
+  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  THEME_MAP: { light: 'github-light', dark: 'github-dark' },
+  isLanguageSupported: vi.fn(() => true),
+  resetHighlighter: vi.fn(),
 }));
 
 describe('useMarkdownRenderer', () => {
@@ -318,14 +323,20 @@ x = 2
   });
 
   describe('loading state', () => {
-    it('starts with isLoading true', () => {
+    it('starts with isLoading true', async () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '# Hello',
         })
       );
 
+      // Initial state should have isLoading true
       expect(result.current.isLoading).toBe(true);
+      
+      // Wait for async rendering to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
     });
 
     it('sets isLoading to false after processing', async () => {

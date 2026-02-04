@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MarkdownViewer } from '../components/MarkdownViewer';
 
-// Mock shiki with a proper highlighter implementation for faster tests
+// Mock the shiki-bundle module (which useCodeHighlighter imports from)
 const mockHighlighter = {
   codeToHtml: vi.fn((code: string, opts: { lang: string }) => {
     return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
@@ -16,8 +16,13 @@ const mockHighlighter = {
   })),
 };
 
-vi.mock('shiki/bundle/web', () => ({
-  createHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+vi.mock('../lib/shiki-bundle', () => ({
+  getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+  normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
+  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  THEME_MAP: { light: 'github-light', dark: 'github-dark' },
+  isLanguageSupported: vi.fn(() => true),
+  resetHighlighter: vi.fn(),
 }));
 
 describe('MarkdownViewer', () => {
@@ -50,15 +55,23 @@ const x = 1;
   });
 
   describe('when content is provided', () => {
-    it('renders file path in header', () => {
+    it('renders file path in header', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} filePath="docs/README.md" />);
       expect(screen.getByText('docs/README.md')).toBeInTheDocument();
+      // Wait for async rendering to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
     });
 
-    it('renders view toggle buttons', () => {
+    it('renders view toggle buttons', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       expect(screen.getByRole('button', { name: /raw/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /rendered/i })).toBeInTheDocument();
+      // Wait for async rendering to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
     });
 
     it('shows rendered view by default', async () => {
@@ -168,10 +181,14 @@ const x = 1;
       });
     });
 
-    it('applies VS Code markdown styles container class', () => {
+    it('applies VS Code markdown styles container class', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       expect(document.querySelector('.markdown-viewer')).toBeInTheDocument();
       expect(document.querySelector('.markdown-rendered')).toBeInTheDocument();
+      // Wait for async rendering to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -248,10 +265,14 @@ const x: number = 1;
       });
     });
 
-    it('shows loading state initially', () => {
+    it('shows loading state initially', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       // Should show loading initially (before async completes)
       expect(document.querySelector('.markdown-rendered-loading')).toBeInTheDocument();
+      // Wait for async rendering to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(document.querySelector('.markdown-rendered-loading')).not.toBeInTheDocument();
+      });
     });
   });
 

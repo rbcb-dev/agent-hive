@@ -1,6 +1,10 @@
 import type { Preview } from '@storybook/react-vite';
 import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
+// CRITICAL: Ensure React is properly initialized for Storybook 10 + React 19
+// This prevents "resolveDispatcher() is null" errors
+import React from 'react';
+
 import '../src/webview/styles.css';
 
 // VS Code webview-specific viewports
@@ -78,22 +82,24 @@ const preview: Preview = {
     },
   },
 
-  // Global decorators
+  // Global decorators - CRITICAL: Wrap in StrictMode for React 19 hook support
   decorators: [
-    // Decorator to wrap stories in VS Code-like styling context
+    // Wrap all stories in StrictMode to ensure React Dispatcher is initialized
     (Story) => (
-      <div
-        style={{
-          fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
-          fontSize: 'var(--vscode-font-size, 13px)',
-          color: 'var(--vscode-foreground, #cccccc)',
-          backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
-          padding: '16px',
-          minHeight: '100vh',
-        }}
-      >
-        <Story />
-      </div>
+      <React.StrictMode>
+        <div
+          style={{
+            fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+            fontSize: 'var(--vscode-font-size, 13px)',
+            color: 'var(--vscode-foreground, #cccccc)',
+            backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
+            padding: '16px',
+            minHeight: '100vh',
+          }}
+        >
+          <Story />
+        </div>
+      </React.StrictMode>
     ),
   ],
 

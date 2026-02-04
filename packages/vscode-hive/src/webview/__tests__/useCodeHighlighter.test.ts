@@ -6,15 +6,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useCodeHighlighter } from '../hooks/useCodeHighlighter';
 
-// Mock shiki with a proper highlighter implementation
+// Mock the shiki-bundle module directly (which is what useCodeHighlighter imports)
 const mockHighlighter = {
   codeToTokens: vi.fn((code: string) => ({
     tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
   })),
 };
 
-vi.mock('shiki/bundle/web', () => ({
-  createHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+vi.mock('../lib/shiki-bundle', () => ({
+  getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
+  normalizeLanguage: vi.fn((lang: string) => {
+    const aliases: Record<string, string> = {
+      ts: 'typescript',
+      js: 'javascript',
+      md: 'markdown',
+      yml: 'yaml',
+      sh: 'shell',
+      bash: 'shell',
+    };
+    const normalized = lang.toLowerCase();
+    return aliases[normalized] || (normalized.match(/^(typescript|javascript|tsx|jsx|json|markdown|html|css|yaml|shell|python|rust|go)$/) ? normalized : 'typescript');
+  }),
+  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  THEME_MAP: { light: 'github-light', dark: 'github-dark' },
+  isLanguageSupported: vi.fn(() => true),
+  resetHighlighter: vi.fn(),
 }));
 
 describe('useCodeHighlighter', () => {
@@ -175,7 +191,7 @@ describe('useCodeHighlighter', () => {
       );
     });
 
-    it('falls back to javascript for unknown languages', async () => {
+    it('falls back to typescript for unknown languages', async () => {
       const { result } = renderHook(() =>
         useCodeHighlighter({
           code: 'some text',
@@ -189,7 +205,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'some text',
-        expect.objectContaining({ lang: 'javascript' })
+        expect.objectContaining({ lang: 'typescript' })
       );
     });
   });

@@ -17,6 +17,20 @@ export default defineConfig({
         },
       },
     },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        '.storybook/',
+        '**/*.stories.tsx',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        'dist/',
+        'scripts/',
+      ],
+      reportsDirectory: './coverage',
+    },
   },
   resolve: {
     alias: {
