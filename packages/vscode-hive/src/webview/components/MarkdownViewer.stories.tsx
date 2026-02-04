@@ -7,8 +7,15 @@ const meta = {
   title: 'Components/MarkdownViewer',
   component: MarkdownViewer,
   parameters: {
-    layout: 'padded',
+    layout: 'fullscreen',
   },
+  decorators: [
+    (Story) => (
+      <div style={{ height: 400 }}>
+        <Story />
+      </div>
+    ),
+  ],
   tags: ['autodocs'],
   argTypes: {
     content: {
@@ -26,6 +33,10 @@ const meta = {
     highlightCode: {
       control: 'boolean',
       description: 'Whether to enable code block syntax highlighting',
+    },
+    maxHeight: {
+      control: 'text',
+      description: 'Maximum height for the viewer (enables scrolling). Can be number (px) or CSS string.',
     },
     // Note: theme is no longer a prop - it comes from HiveThemeProvider context.
     // Use the Storybook toolbar theme switcher to toggle between light and dark themes.
@@ -857,4 +868,137 @@ export const CopyToClipboard: Story = {
     await expect(copyButtons[0]).toHaveTextContent('Copied!');
     await expect(canvas.findByText('Pending task')).resolves.toBeInTheDocument();
   },
+};
+
+// =============================================================================
+// Scrolling Stories
+// =============================================================================
+
+// Long content for scrolling demo
+const longScrollingMarkdown = `# Long Document for Scrolling Demo
+
+This document demonstrates scrolling behavior with the maxHeight prop.
+
+## Section 1: Introduction
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+
+## Section 2: Code Examples
+
+\`\`\`typescript
+interface ScrollableContent {
+  id: string;
+  title: string;
+  content: string;
+  sections: Section[];
+}
+
+function processContent(data: ScrollableContent): void {
+  console.log('Processing:', data.title);
+  data.sections.forEach(section => {
+    console.log('Section:', section.name);
+  });
+}
+\`\`\`
+
+## Section 3: More Content
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.
+
+### Subsection 3.1
+
+- Item one with some longer text to demonstrate line wrapping
+- Item two with additional details
+- Item three with even more content
+
+### Subsection 3.2
+
+| Column A | Column B | Column C |
+|----------|----------|----------|
+| Row 1    | Data     | Value    |
+| Row 2    | Data     | Value    |
+| Row 3    | Data     | Value    |
+
+## Section 4: Blockquotes
+
+> This is a blockquote that spans multiple lines to demonstrate how longer content is handled within the scrollable container.
+>
+> Second paragraph in the blockquote.
+
+## Section 5: Final Section
+
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.
+
+## Section 6: Even More Content
+
+At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores.
+
+## Section 7: Conclusion
+
+This concludes the long document demonstration. The content should be scrollable when maxHeight is applied.
+`;
+
+/**
+ * Demonstrates scrolling with maxHeight prop.
+ * The content exceeds the container height, enabling vertical scrolling.
+ */
+export const WithMaxHeight: Story = {
+  args: {
+    content: longScrollingMarkdown,
+    filePath: 'docs/long-document.md',
+    maxHeight: 300,
+    highlightCode: true,
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // Verify heading renders
+    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Long Document for Scrolling Demo');
+    
+    // Verify the container has scrollable styles
+    const viewer = canvasElement.querySelector('.markdown-viewer');
+    expect(viewer).toHaveStyle({ maxHeight: '300px', overflow: 'auto' });
+    
+    // Verify content is scrollable (scrollHeight > clientHeight)
+    if (viewer) {
+      expect(viewer.scrollHeight).toBeGreaterThan(viewer.clientHeight);
+    }
+  },
+};
+
+/**
+ * Demonstrates scrolling with string-based maxHeight (viewport units).
+ */
+export const WithMaxHeightViewportUnits: Story = {
+  args: {
+    content: longScrollingMarkdown,
+    filePath: 'docs/viewport-scroll.md',
+    maxHeight: '50vh',
+    highlightCode: true,
+    onLineClick: fn(),
+  },
+};
+
+/**
+ * Without maxHeight - content expands naturally (no scrolling).
+ */
+export const WithoutMaxHeight: Story = {
+  args: {
+    content: longScrollingMarkdown,
+    filePath: 'docs/no-scroll.md',
+    highlightCode: true,
+    onLineClick: fn(),
+  },
+  parameters: {
+    // Override the decorator to show full height behavior
+    layout: 'padded',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ height: 'auto' }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
