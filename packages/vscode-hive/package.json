@@ -952,6 +952,7 @@
     "hive-core": "workspace:*",
     "marked": "^17.0.1",
     "react": "^19.2.4",
+    "react-diff-view": "^3.3.2",
     "react-dom": "^19.2.4",
     "shiki": "^3.21.0"
   }
