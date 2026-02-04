@@ -32,10 +32,18 @@ export default defineConfig({
       ],
       reportsDirectory: './coverage',
     },
+    // Mock CSS imports to avoid resolution errors in tests
+    css: {
+      modules: {
+        classNameStrategy: 'non-scoped',
+      },
+    },
   },
   resolve: {
     alias: {
       'hive-core': resolve(__dirname, '../hive-core/src'),
+      // Mock @vscode/codicons CSS import for tests
+      '@vscode/codicons/dist/codicon.css': resolve(__dirname, 'src/webview/__tests__/__mocks__/codicon.css'),
     },
   },
   // Ensure shiki can be properly resolved
