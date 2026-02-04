@@ -8,3 +8,21 @@ tsconfig.json
 **/*.map
 ../../**
 ../**
+# Storybook image snapshots (dev/test only, not needed in extension)
+__image_snapshots__/**
+# Storybook static build output (not needed in extension)
+storybook-static/**
+# Test coverage reports (not needed in extension)
+coverage/**
+# Storybook config (not needed in extension)
+.storybook/**
+# Storybook test runner config (not needed in extension)
+test-runner-jest.config.js
+# Storybook documentation (not needed in extension)
+STORYBOOK.md
+STORYBOOK_DX_GUIDE.md
+# Source test files (not needed in extension, only built dist)
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
