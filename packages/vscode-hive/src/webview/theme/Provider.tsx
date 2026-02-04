@@ -6,12 +6,18 @@
  * - Centralized theming with design tokens
  * - Dark/light mode switching
  * - App wrapper for message/notification/modal APIs
+ * - ThemeContext for child components to access current theme mode
  * 
  * Usage:
  * ```tsx
  * <HiveThemeProvider mode="dark">
  *   <YourApp />
  * </HiveThemeProvider>
+ * ```
+ * 
+ * Components can access the theme via useTheme():
+ * ```tsx
+ * const theme = useTheme(); // 'light' | 'dark'
  * ```
  * 
  * IMPORTANT: This is the ONLY file that should import ConfigProvider/StyleProvider.
@@ -22,6 +28,7 @@ import { StyleProvider } from '@ant-design/cssinjs';
 import { ConfigProvider, App, theme } from 'antd';
 import type { ThemeConfig } from 'antd';
 import type { ReactNode } from 'react';
+import { ThemeContext } from './useTheme';
 
 export interface HiveThemeProviderProps {
   /**
@@ -62,9 +69,10 @@ const darkTheme: ThemeConfig = {
  * HiveThemeProvider wraps children with Ant Design's theme context
  * 
  * The provider hierarchy is:
- * 1. StyleProvider (layer) - CSS isolation using @layer
- * 2. ConfigProvider - Theme configuration
- * 3. App - Message/notification/modal context
+ * 1. ThemeContext.Provider - Theme mode for components using useTheme()
+ * 2. StyleProvider (layer) - CSS isolation using @layer
+ * 3. ConfigProvider - Theme configuration
+ * 4. App - Message/notification/modal context
  * 
  * @param props - Provider props
  * @returns Wrapped children with theme context
@@ -74,10 +82,12 @@ export function HiveThemeProvider({
   children 
 }: HiveThemeProviderProps): React.ReactElement {
   return (
-    <StyleProvider layer>
-      <ConfigProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
-        <App>{children}</App>
-      </ConfigProvider>
-    </StyleProvider>
+    <ThemeContext.Provider value={mode}>
+      <StyleProvider layer>
+        <ConfigProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
+          <App>{children}</App>
+        </ConfigProvider>
+      </StyleProvider>
+    </ThemeContext.Provider>
   );
 }

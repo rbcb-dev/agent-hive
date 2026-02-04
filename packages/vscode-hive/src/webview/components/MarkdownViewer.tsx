@@ -6,10 +6,15 @@
  * - Raw markdown with line numbers for thread anchoring
  * - Toggle between views while preserving anchoring
  * - XSS sanitization for security
+ * 
+ * BREAKING CHANGE: theme prop has been removed. Theme is now obtained from
+ * HiveThemeProvider context via useTheme() hook. Components using MarkdownViewer
+ * must be wrapped in HiveThemeProvider.
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useMarkdownRenderer } from '../hooks/useMarkdownRenderer';
+import { useTheme } from '../theme';
 
 /**
  * Copy text to clipboard with fallback for older webview contexts
@@ -39,8 +44,6 @@ export interface MarkdownViewerProps {
   filePath?: string;
   /** Callback when a line is clicked in raw view (for thread anchoring) */
   onLineClick?: (lineNumber: number) => void;
-  /** Theme for syntax highlighting (default: 'dark') */
-  theme?: 'light' | 'dark';
   /** Whether to enable code block highlighting (default: true) */
   highlightCode?: boolean;
 }
@@ -229,9 +232,11 @@ export function MarkdownViewer({
   content, 
   filePath,
   onLineClick,
-  theme = 'dark',
   highlightCode = true,
 }: MarkdownViewerProps): React.ReactElement {
+  // Get theme from context (requires HiveThemeProvider wrapper)
+  const theme = useTheme();
+  
   const [viewMode, setViewMode] = useState<ViewMode>('rendered');
 
   // Empty state

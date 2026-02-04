@@ -2,12 +2,17 @@
  * CodeViewer component - Renders code with VS Code-style syntax highlighting and line numbers
  * Uses Shiki for accurate TextMate-based highlighting with bundled themes.
  * Supports thread markers in the gutter for inline thread display.
+ * 
+ * BREAKING CHANGE: theme prop has been removed. Theme is now obtained from
+ * HiveThemeProvider context via useTheme() hook. Components using CodeViewer
+ * must be wrapped in HiveThemeProvider.
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReviewThread } from 'hive-core';
 import { InlineThread } from './InlineThread';
 import { useCodeHighlighter } from '../hooks/useCodeHighlighter';
+import { useTheme } from '../theme';
 
 /**
  * Copy text to clipboard with fallback for older webview contexts
@@ -43,8 +48,6 @@ export interface CodeViewerProps {
   highlightLines?: number[];
   /** Line types for diff display (1-indexed) */
   lineTypes?: Record<number, 'add' | 'remove' | 'context'>;
-  /** Theme: 'light' or 'dark' (default: 'dark') */
-  theme?: 'light' | 'dark';
   /** Optional CSS class name */
   className?: string;
   /** Review threads anchored to lines in this file (0-indexed line numbers in range.start.line) */
@@ -92,13 +95,15 @@ export function CodeViewer({
   showLineNumbers = true,
   highlightLines = [],
   lineTypes = {},
-  theme = 'dark',
   className,
   threads = [],
   onThreadClick,
   onThreadReply,
   onThreadResolve,
 }: CodeViewerProps): React.ReactElement {
+  // Get theme from context (requires HiveThemeProvider wrapper)
+  const theme = useTheme();
+  
   // Use the extracted hook for syntax highlighting
   const { tokens: highlightedTokens, isLoading } = useCodeHighlighter({ code, language, theme });
   
