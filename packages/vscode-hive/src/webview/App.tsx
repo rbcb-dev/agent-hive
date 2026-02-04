@@ -15,7 +15,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Layout } from './primitives';
+import { Layout, Button } from './primitives';
 import { HiveThemeProvider } from './theme/Provider';
 import { ScopeTabs } from './components/ScopeTabs';
 import { FileNavigator } from './components/FileNavigator';
@@ -179,13 +179,15 @@ export function App(): React.ReactElement {
                 {activeScope !== 'code' && scopeContent && (
                   <>
                     <div className="scope-toolbar">
-                      <button 
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<span className="codicon codicon-comment" />}
                         onClick={handleAddComment}
-                        className="btn btn-primary"
-                        title="Add a comment on this content"
+                        aria-label="Add a comment on this content"
                       >
-                        + Add Comment
-                      </button>
+                        Add Comment
+                      </Button>
                     </div>
                     {scopeContent.language === 'markdown' ? (
                       <MarkdownViewer 

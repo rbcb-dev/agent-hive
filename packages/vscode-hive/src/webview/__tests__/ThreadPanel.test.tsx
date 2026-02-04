@@ -127,7 +127,7 @@ describe('ThreadPanel', () => {
       />
     );
 
-    const replyButton = screen.getByText('Reply');
+    const replyButton = screen.getByRole('button', { name: /^reply$/i });
     expect(replyButton).toBeDisabled();
   });
 
