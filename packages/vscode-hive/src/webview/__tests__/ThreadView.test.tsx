@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from './test-utils';
 import { ThreadView } from '../components/ThreadView';
 import type { ReviewThread } from 'hive-core';
 

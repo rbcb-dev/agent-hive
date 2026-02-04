@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from './test-utils';
 import { ThreadList } from '../components/ThreadList';
 import type { ThreadSummary } from '../types';
 
