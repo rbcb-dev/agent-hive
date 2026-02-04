@@ -47,7 +47,7 @@ describe('SuggestionPreview', () => {
       expect(screen.getByText(mockAnnotation.suggestion!.replacement)).toBeInTheDocument();
     });
 
-    it('shows diff markers for old and new code', () => {
+    it('shows diff in split view by default with before/after code viewers', () => {
       render(
         <SuggestionPreview
           annotation={mockAnnotation}
@@ -59,12 +59,13 @@ describe('SuggestionPreview', () => {
         />
       );
 
-      // Should have removal and addition indicators
-      const oldLine = screen.getByText(mockOldCode).closest('.suggestion-line');
-      expect(oldLine).toHaveClass('suggestion-line-remove');
-
-      const newLine = screen.getByText(mockAnnotation.suggestion!.replacement).closest('.suggestion-line');
-      expect(newLine).toHaveClass('suggestion-line-add');
+      // In split view, we should see "Before:" and "After:" labels
+      expect(screen.getByText('Before:')).toBeInTheDocument();
+      expect(screen.getByText('After:')).toBeInTheDocument();
+      
+      // Code viewers should be rendered with code content
+      expect(screen.getByText(mockOldCode)).toBeInTheDocument();
+      expect(screen.getByText(mockAnnotation.suggestion!.replacement)).toBeInTheDocument();
     });
 
     it('displays file location information', () => {
@@ -83,7 +84,7 @@ describe('SuggestionPreview', () => {
       expect(screen.getByText(/line 11/i)).toBeInTheDocument(); // 0-based to 1-based
     });
 
-    it('renders suggestion body/description', () => {
+    it('renders suggestion body in markdown viewer', async () => {
       render(
         <SuggestionPreview
           annotation={mockAnnotation}
@@ -95,7 +96,9 @@ describe('SuggestionPreview', () => {
         />
       );
 
-      expect(screen.getByText(mockAnnotation.body)).toBeInTheDocument();
+      // The body should be rendered through MarkdownViewer
+      // The content appears in the rendered markdown (may need to wait for async rendering)
+      expect(await screen.findByText(/Consider using a more descriptive variable name/)).toBeInTheDocument();
     });
 
     it('renders nothing when annotation has no suggestion', () => {
@@ -242,6 +245,109 @@ describe('SuggestionPreview', () => {
 
       const preview = screen.getByRole('region', { name: /suggestion preview/i });
       expect(preview).toBeInTheDocument();
+    });
+  });
+
+  describe('diff view toggle', () => {
+    it('renders diff mode toggle with Split and Unified options', () => {
+      render(
+        <SuggestionPreview
+          annotation={mockAnnotation}
+          oldCode={mockOldCode}
+          uri="src/utils.ts"
+          range={mockRange}
+          onApply={vi.fn()}
+          isApplied={false}
+        />
+      );
+
+      // Should show the toggle options
+      expect(screen.getByText('Split')).toBeInTheDocument();
+      expect(screen.getByText('Unified')).toBeInTheDocument();
+    });
+
+    it('defaults to split view mode', () => {
+      render(
+        <SuggestionPreview
+          annotation={mockAnnotation}
+          oldCode={mockOldCode}
+          uri="src/utils.ts"
+          range={mockRange}
+          onApply={vi.fn()}
+          isApplied={false}
+        />
+      );
+
+      // In split view mode, should show "Before:" and "After:" labels
+      expect(screen.getByText('Before:')).toBeInTheDocument();
+      expect(screen.getByText('After:')).toBeInTheDocument();
+    });
+
+    it('switches to unified view when Unified is clicked', () => {
+      render(
+        <SuggestionPreview
+          annotation={mockAnnotation}
+          oldCode={mockOldCode}
+          uri="src/utils.ts"
+          range={mockRange}
+          onApply={vi.fn()}
+          isApplied={false}
+        />
+      );
+
+      // Click on Unified option
+      const unifiedOption = screen.getByText('Unified');
+      fireEvent.click(unifiedOption);
+
+      // Before/After labels should no longer be visible in unified mode
+      expect(screen.queryByText('Before:')).not.toBeInTheDocument();
+      expect(screen.queryByText('After:')).not.toBeInTheDocument();
+    });
+
+    it('can switch back to split view from unified', () => {
+      render(
+        <SuggestionPreview
+          annotation={mockAnnotation}
+          oldCode={mockOldCode}
+          uri="src/utils.ts"
+          range={mockRange}
+          onApply={vi.fn()}
+          isApplied={false}
+        />
+      );
+
+      // Switch to unified
+      fireEvent.click(screen.getByText('Unified'));
+      expect(screen.queryByText('Before:')).not.toBeInTheDocument();
+
+      // Switch back to split
+      fireEvent.click(screen.getByText('Split'));
+      expect(screen.getByText('Before:')).toBeInTheDocument();
+      expect(screen.getByText('After:')).toBeInTheDocument();
+    });
+  });
+
+  describe('markdown rendering', () => {
+    it('renders annotation body as markdown', async () => {
+      const annotationWithMarkdown: ReviewAnnotation = {
+        ...mockAnnotation,
+        body: 'Consider using **bold** and `code`',
+      };
+
+      render(
+        <SuggestionPreview
+          annotation={annotationWithMarkdown}
+          oldCode={mockOldCode}
+          uri="src/utils.ts"
+          range={mockRange}
+          onApply={vi.fn()}
+          isApplied={false}
+        />
+      );
+
+      // Should have markdown viewer that renders the content (may need to wait for async)
+      // MarkdownViewer might show "Loading..." first, then rendered content
+      expect(await screen.findByText(/Consider using/)).toBeInTheDocument();
     });
   });
 });

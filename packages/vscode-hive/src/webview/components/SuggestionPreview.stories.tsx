@@ -275,7 +275,7 @@ export const ApplyButtonDisabledWithConflict: Story = {
 };
 
 /**
- * Verify diff display shows old code with minus prefix and new code with plus prefix
+ * Verify diff display shows old and new code in split view by default
  */
 export const DiffDisplayVerification: Story = {
   args: {
@@ -294,16 +294,75 @@ export const DiffDisplayVerification: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
+    // Verify split view labels are present (default mode)
+    await expect(canvas.getByText('Before:')).toBeInTheDocument();
+    await expect(canvas.getByText('After:')).toBeInTheDocument();
+
     // Verify old code is displayed
     await expect(canvas.getByText('const oldValue = 0;')).toBeInTheDocument();
 
     // Verify new code is displayed
     await expect(canvas.getByText('const newValue = 42;')).toBeInTheDocument();
+  },
+};
 
-    // Verify diff prefixes are present
-    const minusPrefix = canvas.getByText('-');
-    const plusPrefix = canvas.getByText('+');
-    await expect(minusPrefix).toBeInTheDocument();
-    await expect(plusPrefix).toBeInTheDocument();
+/**
+ * Test toggling between split and unified diff views
+ */
+export const ToggleDiffView: Story = {
+  args: {
+    annotation: createMockAnnotation({
+      id: 'suggestion-toggle-diff',
+      type: 'suggestion',
+      body: 'Toggle between split and unified diff views.',
+      suggestion: { replacement: 'const updated = "new";' },
+    }),
+    oldCode: 'const original = "old";',
+    uri: 'src/toggle.ts',
+    range: defaultRange,
+    onApply: fn(),
+    isApplied: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Initially in split view
+    await expect(canvas.getByText('Before:')).toBeInTheDocument();
+    await expect(canvas.getByText('After:')).toBeInTheDocument();
+
+    // Click on Unified to switch to unified diff view
+    const unifiedButton = canvas.getByText('Unified');
+    await userEvent.click(unifiedButton);
+
+    // Split view labels should be gone
+    await expect(canvas.queryByText('Before:')).not.toBeInTheDocument();
+    await expect(canvas.queryByText('After:')).not.toBeInTheDocument();
+
+    // Switch back to split view
+    const splitButton = canvas.getByText('Split');
+    await userEvent.click(splitButton);
+
+    // Split view labels should be back
+    await expect(canvas.getByText('Before:')).toBeInTheDocument();
+    await expect(canvas.getByText('After:')).toBeInTheDocument();
+  },
+};
+
+/**
+ * Suggestion with markdown formatting in the body
+ */
+export const WithMarkdownBody: Story = {
+  args: {
+    annotation: createMockAnnotation({
+      id: 'suggestion-markdown',
+      type: 'suggestion',
+      body: 'Consider using **async/await** instead of `.then()` chains.\n\n```typescript\nawait fetchData();\n```\n\nSee [MDN docs](https://mdn.io) for more info.',
+      suggestion: { replacement: 'const data = await fetchData();' },
+    }),
+    oldCode: 'fetchData().then(data => setData(data));',
+    uri: 'src/api/fetch.ts',
+    range: defaultRange,
+    onApply: fn(),
+    isApplied: false,
   },
 };
