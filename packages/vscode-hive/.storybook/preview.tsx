@@ -5,6 +5,7 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 // This prevents "resolveDispatcher() is null" errors
 import React from 'react';
 
+import { HiveThemeProvider } from '../src/webview/theme/Provider';
 import '../src/webview/styles.css';
 
 // VS Code webview-specific viewports
@@ -84,41 +85,51 @@ const preview: Preview = {
 
   // Global decorators - CRITICAL: Wrap in StrictMode for React 19 hook support
   decorators: [
-    // Wrap all stories in StrictMode to ensure React Dispatcher is initialized
-    (Story) => (
-      <React.StrictMode>
-        <div
-          style={{
-            fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
-            fontSize: 'var(--vscode-font-size, 13px)',
-            color: 'var(--vscode-foreground, #cccccc)',
-            backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
-            padding: '16px',
-            minHeight: '100vh',
-          }}
-        >
-          <Story />
-        </div>
-      </React.StrictMode>
-    ),
+    // Wrap all stories in HiveThemeProvider for antd styling with CSS isolation
+    (Story, context) => {
+      // Map global theme to HiveThemeProvider mode
+      const themeMode = context.globals.theme === 'light' ? 'light' : 'dark';
+      
+      return (
+        <React.StrictMode>
+          <HiveThemeProvider mode={themeMode}>
+            <div
+              style={{
+                fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+                fontSize: 'var(--vscode-font-size, 13px)',
+                color: 'var(--vscode-foreground, #cccccc)',
+                backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
+                padding: '16px',
+                minHeight: '100vh',
+              }}
+            >
+              <Story />
+            </div>
+          </HiveThemeProvider>
+        </React.StrictMode>
+      );
+    },
   ],
 
-  // Global args that can be overridden per-story
+  // Global theme control in toolbar
   globalTypes: {
     theme: {
-      description: 'VS Code color theme',
-      defaultValue: 'dark',
+      description: 'Theme mode',
       toolbar: {
         title: 'Theme',
         icon: 'paintbrush',
         items: [
-          { value: 'dark', title: 'Dark (Default)' },
           { value: 'light', title: 'Light' },
-          { value: 'high-contrast', title: 'High Contrast' },
+          { value: 'dark', title: 'Dark' },
         ],
         dynamicTitle: true,
       },
     },
+  },
+
+  // Default theme
+  initialGlobals: {
+    theme: 'light',
   },
 };
 

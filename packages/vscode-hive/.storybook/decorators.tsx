@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ReactElement } from 'react';
+import { HiveThemeProvider } from '../src/webview/theme/Provider';
 
 /**
  * Wrapper decorator for stories that use React hooks
@@ -19,4 +20,19 @@ export function withReactProvider(Story: () => ReactElement): ReactElement {
       <Story />
     </React.StrictMode>
   );
+}
+
+/**
+ * Decorator that wraps stories with HiveThemeProvider
+ * This is already applied globally in preview.tsx, but can be used
+ * for story-specific theme overrides
+ */
+export function withHiveTheme(mode: 'light' | 'dark' = 'light') {
+  return function Wrapper(Story: () => ReactElement): ReactElement {
+    return (
+      <HiveThemeProvider mode={mode}>
+        <Story />
+      </HiveThemeProvider>
+    );
+  };
 }
