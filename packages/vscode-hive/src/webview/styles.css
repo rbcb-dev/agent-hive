@@ -1099,6 +1099,17 @@ body {
   margin-bottom: 1em;
 }
 
+/* Theme-specific code block styles for antd integration */
+.markdown-rendered.theme-light pre {
+  background: var(--ant-color-fill-tertiary, var(--vscode-textCodeBlock-background, #f5f5f5));
+  border: 1px solid var(--ant-color-border, var(--border-color, #d9d9d9));
+}
+
+.markdown-rendered.theme-dark pre {
+  background: var(--ant-color-fill-tertiary, var(--vscode-textCodeBlock-background, #1f1f1f));
+  border: 1px solid var(--ant-color-border, var(--border-color, #424242));
+}
+
 .markdown-rendered pre code {
   padding: 0;
   background: transparent;
@@ -1112,15 +1123,15 @@ body {
   top: 8px;
   right: 8px;
   padding: 4px 10px;
-  background: var(--vscode-button-secondaryBackground, #3a3d41);
-  color: var(--vscode-button-secondaryForeground, #ffffff);
-  border: none;
-  border-radius: 4px;
+  background: var(--ant-color-bg-elevated, var(--vscode-button-secondaryBackground, #3a3d41));
+  color: var(--ant-color-text, var(--vscode-button-secondaryForeground, #ffffff));
+  border: 1px solid var(--ant-color-border, transparent);
+  border-radius: var(--ant-border-radius, 4px);
   cursor: pointer;
   font-size: 12px;
   font-family: inherit;
   opacity: 0;
-  transition: opacity 0.15s ease-in-out;
+  transition: opacity 0.15s ease-in-out, background 0.15s ease-in-out;
   z-index: 10;
 }
 
@@ -1131,18 +1142,18 @@ body {
 }
 
 .markdown-rendered pre .markdown-copy-button:hover {
-  background: var(--vscode-button-secondaryHoverBackground, #45494e);
+  background: var(--ant-color-bg-text-hover, var(--vscode-button-secondaryHoverBackground, #45494e));
 }
 
 .markdown-rendered pre .markdown-copy-button:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder, #007fd4);
+  outline: 2px solid var(--ant-color-primary, var(--vscode-focusBorder, #007fd4));
   outline-offset: 2px;
   opacity: 1;
 }
 
 .markdown-rendered pre .markdown-copy-button.copy-button-copied {
-  background: var(--vscode-button-background, #0e639c);
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--ant-color-primary, var(--vscode-button-background, #0e639c));
+  color: var(--ant-color-text-light-solid, var(--vscode-button-foreground, #ffffff));
 }
 
 /* Inline code */
@@ -1152,6 +1163,23 @@ body {
   background: var(--vscode-textCodeBlock-background, #2a2a2a);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 0.9em;
+}
+
+/* Theme-specific inline code styles for antd integration */
+.markdown-rendered.theme-light code {
+  background: var(--ant-color-fill-tertiary, var(--vscode-textCodeBlock-background, #f5f5f5));
+  color: var(--ant-color-text, #000000);
+}
+
+.markdown-rendered.theme-dark code {
+  background: var(--ant-color-fill-tertiary, var(--vscode-textCodeBlock-background, #1f1f1f));
+  color: var(--ant-color-text, #ffffff);
+}
+
+/* Code inside pre should not have extra background */
+.markdown-rendered pre code {
+  background: transparent;
+  color: inherit;
 }
 
 /* Tables */

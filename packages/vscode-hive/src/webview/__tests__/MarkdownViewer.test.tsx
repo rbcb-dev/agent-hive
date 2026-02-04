@@ -251,6 +251,30 @@ const x: number = 1;
       });
     });
 
+    it('renders code blocks with theme-aware container class', async () => {
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} theme="light" />);
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container).toHaveClass('theme-light');
+      });
+    });
+
+    it('applies dark theme class when theme is dark', async () => {
+      const codeContent = `\`\`\`typescript
+const x = 1;
+\`\`\``;
+      render(<MarkdownViewer content={codeContent} theme="dark" />);
+      // Wait for async rendering to complete
+      await waitFor(() => {
+        const container = document.querySelector('.markdown-rendered');
+        expect(container).toHaveClass('theme-dark');
+      });
+    });
+
     it('can disable code highlighting', async () => {
       const codeContent = `\`\`\`typescript
 const x: number = 1;
