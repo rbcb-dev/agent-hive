@@ -210,15 +210,16 @@ describe('FileNavigator', () => {
 
     // Click again to expand - need to re-query since DOM has changed
     const expandedComponentsText = screen.getByText('components');
-    const expandedTreeNode = expandedComponentsText.closest('.ant-tree-treenode');
-    const expandSwitcher = expandedTreeNode?.querySelector('.ant-tree-switcher');
+    const expandSwitcher = expandedComponentsText.closest('.ant-tree-treenode')?.querySelector('.ant-tree-switcher');
     fireEvent.click(expandSwitcher!);
     
     // After expand, the node should have expanded state (aria-expanded="true")
     // Note: Due to virtual scrolling in jsdom, child nodes may not render immediately
     // We verify the expanded state via the class instead of child visibility
+    // Re-query inside waitFor to get the updated DOM node with new classes
     await waitFor(() => {
-      expect(expandedTreeNode).toHaveClass('ant-tree-treenode-switcher-open');
+      const freshNode = screen.getByText('components').closest('.ant-tree-treenode');
+      expect(freshNode).toHaveClass('ant-tree-treenode-switcher-open');
     });
   });
 
