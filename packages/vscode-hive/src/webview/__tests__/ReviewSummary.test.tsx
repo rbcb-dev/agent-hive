@@ -15,9 +15,9 @@ describe('ReviewSummary', () => {
       />
     );
 
-    expect(screen.getByText('Approve')).toBeInTheDocument();
-    expect(screen.getByText('Request Changes')).toBeInTheDocument();
-    expect(screen.getByText('Comment')).toBeInTheDocument();
+    expect(screen.getByText('✓ Approve')).toBeInTheDocument();
+    expect(screen.getByText('✗ Request Changes')).toBeInTheDocument();
+    expect(screen.getByText('💬 Comment')).toBeInTheDocument();
   });
 
   it('renders summary textarea', () => {
@@ -41,7 +41,7 @@ describe('ReviewSummary', () => {
     );
 
     // Select verdict
-    fireEvent.click(screen.getByText('Approve'));
+    fireEvent.click(screen.getByText('✓ Approve'));
     
     // Enter summary
     const textarea = screen.getByPlaceholderText(/summary/i);
@@ -61,7 +61,8 @@ describe('ReviewSummary', () => {
       />
     );
 
-    const submitButton = screen.getByText('Submit Review');
+    // antd Button wraps text in span, so we need to get the parent button
+    const submitButton = screen.getByText('Submit Review').closest('button');
     expect(submitButton).toBeDisabled();
   });
 
@@ -73,8 +74,9 @@ describe('ReviewSummary', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('Approve'));
-    const submitButton = screen.getByText('Submit Review');
+    fireEvent.click(screen.getByText('✓ Approve'));
+    // antd Button wraps text in span, so we need to get the parent button
+    const submitButton = screen.getByText('Submit Review').closest('button');
     expect(submitButton).not.toBeDisabled();
   });
 
@@ -89,7 +91,8 @@ describe('ReviewSummary', () => {
     const textarea = screen.getByPlaceholderText(/summary/i);
     expect(textarea).toBeDisabled();
     
-    const submitButton = screen.getByText('Submitting…');
+    // antd Button wraps text in span, so we need to get the parent button
+    const submitButton = screen.getByText('Submitting…').closest('button');
     expect(submitButton).toBeDisabled();
   });
 
@@ -101,10 +104,11 @@ describe('ReviewSummary', () => {
       />
     );
 
-    const approveButton = screen.getByText('Approve');
-    fireEvent.click(approveButton);
+    const approveLabel = screen.getByText('✓ Approve');
+    fireEvent.click(approveLabel);
     
-    expect(approveButton.closest('button')).toHaveClass('selected');
+    // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
+    expect(approveLabel.closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
   });
 
   it('allows changing verdict', () => {
@@ -115,10 +119,11 @@ describe('ReviewSummary', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('Approve'));
-    fireEvent.click(screen.getByText('Request Changes'));
+    fireEvent.click(screen.getByText('✓ Approve'));
+    fireEvent.click(screen.getByText('✗ Request Changes'));
     
-    expect(screen.getByText('Request Changes').closest('button')).toHaveClass('selected');
-    expect(screen.getByText('Approve').closest('button')).not.toHaveClass('selected');
+    // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
+    expect(screen.getByText('✗ Request Changes').closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
+    expect(screen.getByText('✓ Approve').closest('label')).not.toHaveClass('ant-radio-button-wrapper-checked');
   });
 });
