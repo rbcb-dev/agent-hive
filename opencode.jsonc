@@ -51,7 +51,7 @@
   //   - Worktree isolation for parallel task execution
   //   - Context persistence across sessions (.hive/ directory)
   //   - Plan approval workflow (integrate with VS Code extension)
-  "plugin": ["opencode-hive", "@tarquinen/opencode-dcp@latest"],
+  "plugin": ["opencode-hive@1.0.7", "@tarquinen/opencode-dcp@1.2.8"],
 
   // ============================================================================
   // AGENT CONFIGURATION
