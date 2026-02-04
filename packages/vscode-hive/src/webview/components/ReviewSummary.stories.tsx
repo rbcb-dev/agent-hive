@@ -199,3 +199,44 @@ export const VerdictStatistics: Story = {
     },
   },
 };
+
+/**
+ * Keyboard Submit - Tests Cmd/Ctrl+Enter keyboard shortcut
+ * Verifies that pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) triggers submit
+ */
+export const KeyboardSubmit: Story = {
+  args: {
+    isSubmitting: false,
+    onSubmit: fn(),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Tests the keyboard shortcut for submitting reviews. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) while focused on the textarea to submit.',
+      },
+    },
+    // Disable snapshot for interaction test - visual state is same as WithSummary
+    snapshot: { disable: true },
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Select a verdict first (required for submit) - click the label text
+    const approveLabel = canvas.getByText(/Approve/i);
+    await userEvent.click(approveLabel);
+
+    // Get the textarea and type some content
+    const textarea = canvas.getByPlaceholderText(/summary/i);
+    await userEvent.type(textarea, 'LGTM! Clean implementation.');
+
+    // Verify onSubmit hasn't been called yet
+    await expect(args.onSubmit).not.toHaveBeenCalled();
+
+    // Submit with Cmd+Enter (metaKey) - using type() pattern like ThreadPanel story
+    await userEvent.type(textarea, '{Meta>}{Enter}{/Meta}');
+
+    // Verify onSubmit was called with correct args
+    await expect(args.onSubmit).toHaveBeenCalledTimes(1);
+    await expect(args.onSubmit).toHaveBeenCalledWith('approve', 'LGTM! Clean implementation.');
+  },
+};

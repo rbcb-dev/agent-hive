@@ -64,6 +64,13 @@ export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): R
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
     <Flex vertical gap="middle" className="review-summary">
       <RadioGroup
@@ -77,6 +84,7 @@ export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): R
       <TextArea
         value={summary}
         onChange={handleSummaryChange}
+        onKeyDown={handleKeyDown}
         placeholder="Write your review summary..."
         autoSize={{ minRows: 3, maxRows: 8 }}
         showCount
