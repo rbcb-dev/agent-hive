@@ -4,9 +4,19 @@
  * This component now uses custom hooks for state management:
  * - useReviewSession: Manages session state, scope, file/thread selection, and extension messaging
  * - useFileContentCache: Manages file content caching with TTL
+ * 
+ * Layout:
+ * Uses antd Layout components with HiveThemeProvider for theming:
+ * - Layout: Root container with minHeight 100vh
+ * - Header: Contains ScopeTabs for navigation
+ * - Sider: Collapsible sidebar with FileNavigator and ThreadList
+ * - Content: Main content area with DiffViewer/CodeViewer/MarkdownViewer
+ * - Footer: ReviewSummary for submission
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Layout } from './primitives';
+import { HiveThemeProvider } from './theme/Provider';
 import { ScopeTabs } from './components/ScopeTabs';
 import { FileNavigator } from './components/FileNavigator';
 import { ThreadList } from './components/ThreadList';
@@ -19,6 +29,8 @@ import { useReviewSession, useFileContentCache } from './hooks';
 import { addMessageListener } from './vscodeApi';
 import type { ReviewThread, DiffFile } from 'hive-core';
 import type { ExtensionToWebviewMessage } from './types';
+
+const { Header, Sider, Content } = Layout;
 
 const SCOPES = [
   { id: 'feature', label: 'Feature' },
@@ -105,6 +117,9 @@ export function App(): React.ReactElement {
     }
   }, [handleSelectThread]);
 
+  // Sidebar collapse state
+  const [collapsed, setCollapsed] = useState(false);
+
   // Determine if selected file is markdown and extract content
   const isSelectedFileMarkdown = selectedFile ? isMarkdownFile(selectedFile) : false;
   const markdownContent = (selectedFileData && isSelectedFileMarkdown) 
@@ -112,96 +127,105 @@ export function App(): React.ReactElement {
     : null;
 
   return (
-    <div className="hive-review">
-      <header className="review-header">
-        <ScopeTabs
-          scopes={SCOPES}
-          activeScope={activeScope}
-          onScopeChange={handleScopeChange}
-        />
-      </header>
+    <HiveThemeProvider mode="light">
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header style={{ padding: '0 16px', display: 'flex', alignItems: 'center', background: 'var(--ant-color-bg-container)' }}>
+          <ScopeTabs
+            scopes={SCOPES}
+            activeScope={activeScope}
+            onScopeChange={handleScopeChange}
+          />
+        </Header>
+        <Layout hasSider>
+          <Sider 
+            width={280} 
+            collapsible 
+            collapsed={collapsed}
+            onCollapse={setCollapsed}
+            style={{ background: 'var(--ant-color-bg-container)' }}
+          >
+            <nav role="navigation" style={{ padding: collapsed ? '8px' : '16px' }}>
+              <div className="sidebar-section">
+                {!collapsed && <h3>Files</h3>}
+                <FileNavigator
+                  files={filePaths}
+                  threads={threads}
+                  selectedFile={selectedFile}
+                  onSelectFile={handleSelectFile}
+                />
+              </div>
+              <div className="sidebar-section">
+                {!collapsed && <h3>Threads</h3>}
+                <ThreadList
+                  threads={threadSummaries}
+                  selectedThread={selectedThread}
+                  onSelectThread={handleSelectThread}
+                />
+              </div>
+            </nav>
+          </Sider>
+          <Layout>
+            <Content style={{ padding: 16, overflow: 'auto' }} role="main">
+              <div className="content-area">
+                {activeScope === 'code' && isSelectedFileMarkdown && (
+                  <MarkdownViewer 
+                    content={markdownContent} 
+                    filePath={selectedFile || undefined}
+                  />
+                )}
+                {activeScope === 'code' && !isSelectedFileMarkdown && (
+                  <DiffViewer file={selectedFileData} />
+                )}
+                {activeScope !== 'code' && scopeContent && (
+                  <>
+                    <div className="scope-toolbar">
+                      <button 
+                        onClick={handleAddComment}
+                        className="btn btn-primary"
+                        title="Add a comment on this content"
+                      >
+                        + Add Comment
+                      </button>
+                    </div>
+                    {scopeContent.language === 'markdown' ? (
+                      <MarkdownViewer 
+                        content={scopeContent.content}
+                        filePath={scopeContent.uri}
+                      />
+                    ) : (
+                      <CodeViewer
+                        code={scopeContent.content}
+                        language={scopeContent.language}
+                        threads={[]}
+                        onThreadClick={handleCodeViewerThreadClick}
+                      />
+                    )}
+                  </>
+                )}
+                {activeScope !== 'code' && !scopeContent && (
+                  <div className="scope-content">
+                    <p>No content available for {activeScope} scope</p>
+                  </div>
+                )}
+              </div>
 
-      <div className="review-body">
-        <nav className="review-sidebar" role="navigation">
-          <div className="sidebar-section">
-            <h3>Files</h3>
-            <FileNavigator
-              files={filePaths}
-              threads={threads}
-              selectedFile={selectedFile}
-              onSelectFile={handleSelectFile}
-            />
-          </div>
-          <div className="sidebar-section">
-            <h3>Threads</h3>
-            <ThreadList
-              threads={threadSummaries}
-              selectedThread={selectedThread}
-              onSelectThread={handleSelectThread}
-            />
-          </div>
-        </nav>
-
-        <main className="review-main" role="main">
-           <div className="content-area">
-             {activeScope === 'code' && isSelectedFileMarkdown && (
-               <MarkdownViewer 
-                 content={markdownContent} 
-                 filePath={selectedFile || undefined}
-               />
-             )}
-             {activeScope === 'code' && !isSelectedFileMarkdown && (
-               <DiffViewer file={selectedFileData} />
-             )}
-             {activeScope !== 'code' && scopeContent && (
-               <>
-                 <div className="scope-toolbar">
-                   <button 
-                     onClick={handleAddComment}
-                     className="btn btn-primary"
-                     title="Add a comment on this content"
-                   >
-                     + Add Comment
-                   </button>
-                 </div>
-                 {scopeContent.language === 'markdown' ? (
-                   <MarkdownViewer 
-                     content={scopeContent.content}
-                     filePath={scopeContent.uri}
-                   />
-                 ) : (
-                   <CodeViewer
-                     code={scopeContent.content}
-                     language={scopeContent.language}
-                     threads={[]}
-                     onThreadClick={handleCodeViewerThreadClick}
-                   />
-                 )}
-               </>
-             )}
-             {activeScope !== 'code' && !scopeContent && (
-               <div className="scope-content">
-                 <p>No content available for {activeScope} scope</p>
-               </div>
-             )}
-           </div>
-
-           <aside className="thread-sidebar">
-             <ThreadPanel
-               thread={selectedThreadData}
-               onReply={handleReply}
-               onResolve={handleResolve}
-             />
-           </aside>
-         </main>
-      </div>
-
-      <footer className="review-footer">
-        <ReviewSummary
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
-      </footer>
-    </div>
+              <aside className="thread-sidebar">
+                <ThreadPanel
+                  thread={selectedThreadData}
+                  onReply={handleReply}
+                  onResolve={handleResolve}
+                />
+              </aside>
+            </Content>
+          </Layout>
+        </Layout>
+        <div style={{ padding: 16, borderTop: '1px solid var(--ant-color-border)' }}>
+          <ReviewSummary
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      </Layout>
+    </HiveThemeProvider>
   );
 }
