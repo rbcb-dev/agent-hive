@@ -7,7 +7,7 @@ import { render, screen, fireEvent } from './test-utils';
 import { ReviewSummary } from '../components/ReviewSummary';
 
 describe('ReviewSummary', () => {
-  it('renders verdict selector', () => {
+  it('renders verdict selector with codicons', () => {
     render(
       <ReviewSummary
         onSubmit={() => {}}
@@ -15,9 +15,20 @@ describe('ReviewSummary', () => {
       />
     );
 
-    expect(screen.getByText('✓ Approve')).toBeInTheDocument();
-    expect(screen.getByText('✗ Request Changes')).toBeInTheDocument();
-    expect(screen.getByText('💬 Comment')).toBeInTheDocument();
+    // Check that verdict buttons render with text
+    expect(screen.getByText('Approve')).toBeInTheDocument();
+    expect(screen.getByText('Request Changes')).toBeInTheDocument();
+    expect(screen.getByText('Comment')).toBeInTheDocument();
+    
+    // Check that codicons are rendered
+    const approveBtn = screen.getByText('Approve').closest('label');
+    expect(approveBtn?.querySelector('.codicon-check')).toBeInTheDocument();
+    
+    const requestChangesBtn = screen.getByText('Request Changes').closest('label');
+    expect(requestChangesBtn?.querySelector('.codicon-request-changes')).toBeInTheDocument();
+    
+    const commentBtn = screen.getByText('Comment').closest('label');
+    expect(commentBtn?.querySelector('.codicon-comment')).toBeInTheDocument();
   });
 
   it('renders summary textarea', () => {
@@ -41,7 +52,7 @@ describe('ReviewSummary', () => {
     );
 
     // Select verdict
-    fireEvent.click(screen.getByText('✓ Approve'));
+    fireEvent.click(screen.getByText('Approve'));
     
     // Enter summary
     const textarea = screen.getByPlaceholderText(/summary/i);
@@ -74,7 +85,7 @@ describe('ReviewSummary', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('✓ Approve'));
+    fireEvent.click(screen.getByText('Approve'));
     // antd Button wraps text in span, so we need to get the parent button
     const submitButton = screen.getByText('Submit Review').closest('button');
     expect(submitButton).not.toBeDisabled();
@@ -104,11 +115,23 @@ describe('ReviewSummary', () => {
       />
     );
 
-    const approveLabel = screen.getByText('✓ Approve');
+    const approveLabel = screen.getByText('Approve');
     fireEvent.click(approveLabel);
     
     // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
     expect(approveLabel.closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
+  });
+
+  it('renders submit button with send codicon', () => {
+    render(
+      <ReviewSummary
+        onSubmit={() => {}}
+        isSubmitting={false}
+      />
+    );
+
+    const submitButton = screen.getByText('Submit Review').closest('button');
+    expect(submitButton?.querySelector('.codicon-send')).toBeInTheDocument();
   });
 
   it('allows changing verdict', () => {
@@ -119,11 +142,11 @@ describe('ReviewSummary', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('✓ Approve'));
-    fireEvent.click(screen.getByText('✗ Request Changes'));
+    fireEvent.click(screen.getByText('Approve'));
+    fireEvent.click(screen.getByText('Request Changes'));
     
     // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
-    expect(screen.getByText('✗ Request Changes').closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
-    expect(screen.getByText('✓ Approve').closest('label')).not.toHaveClass('ant-radio-button-wrapper-checked');
+    expect(screen.getByText('Request Changes').closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
+    expect(screen.getByText('Approve').closest('label')).not.toHaveClass('ant-radio-button-wrapper-checked');
   });
 });

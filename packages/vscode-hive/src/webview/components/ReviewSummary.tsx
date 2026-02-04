@@ -2,12 +2,14 @@
  * ReviewSummary component - Verdict selector + summary input + submit
  * 
  * Uses antd primitives: RadioGroup (button style), TextArea, Button
+ * Uses @vscode/codicons for icons in verdict buttons and submit button.
  */
 
 import React, { useState } from 'react';
 import type { ReviewVerdict } from 'hive-core';
 import { Flex, RadioGroup, TextArea, Button } from '../primitives';
 import type { RadioChangeEvent } from '../primitives';
+import '@vscode/codicons/dist/codicon.css';
 
 export interface ReviewSummaryProps {
   onSubmit: (verdict: ReviewVerdict, summary: string) => void;
@@ -15,9 +17,33 @@ export interface ReviewSummaryProps {
 }
 
 const VERDICT_OPTIONS = [
-  { label: '✓ Approve', value: 'approve' },
-  { label: '✗ Request Changes', value: 'request_changes' },
-  { label: '💬 Comment', value: 'comment' },
+  { 
+    label: (
+      <>
+        <span className="codicon codicon-check" aria-hidden="true" />
+        {' '}Approve
+      </>
+    ), 
+    value: 'approve' 
+  },
+  { 
+    label: (
+      <>
+        <span className="codicon codicon-request-changes" aria-hidden="true" />
+        {' '}Request Changes
+      </>
+    ), 
+    value: 'request_changes' 
+  },
+  { 
+    label: (
+      <>
+        <span className="codicon codicon-comment" aria-hidden="true" />
+        {' '}Comment
+      </>
+    ), 
+    value: 'comment' 
+  },
 ];
 
 export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): React.ReactElement {
@@ -58,6 +84,7 @@ export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): R
       />
       <Button
         type="primary"
+        icon={<span className="codicon codicon-send" aria-hidden="true" />}
         onClick={handleSubmit}
         loading={isSubmitting}
         disabled={!selectedVerdict || isSubmitting}

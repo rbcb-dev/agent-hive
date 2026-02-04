@@ -46,9 +46,9 @@ describe('App', () => {
   it('renders review summary panel', () => {
     render(<App />);
 
-    // Should have review submission controls (with emoji prefixes)
-    expect(screen.getByText('✓ Approve')).toBeInTheDocument();
-    expect(screen.getByText('✗ Request Changes')).toBeInTheDocument();
+    // Should have review submission controls with codicons
+    expect(screen.getByText('Approve')).toBeInTheDocument();
+    expect(screen.getByText('Request Changes')).toBeInTheDocument();
     expect(screen.getByText('Submit Review')).toBeInTheDocument();
   });
 
