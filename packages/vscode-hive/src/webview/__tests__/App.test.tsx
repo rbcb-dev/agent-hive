@@ -58,8 +58,8 @@ describe('App', () => {
     // Click on Code tab
     fireEvent.click(screen.getByText('Code'));
 
-    // Code tab should be active (have active class)
-    expect(screen.getByText('Code').closest('button')).toHaveClass('active');
+    // Code tab should be active (antd Segmented uses ant-segmented-item-selected class)
+    expect(screen.getByText('Code').closest('.ant-segmented-item')).toHaveClass('ant-segmented-item-selected');
   });
 
   it('notifies extension that webview is ready on mount', async () => {

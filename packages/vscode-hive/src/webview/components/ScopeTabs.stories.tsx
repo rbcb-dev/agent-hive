@@ -75,6 +75,22 @@ export const MultipleScopes: Story = {
 };
 
 /**
+ * Tabs without icons, showing plain label rendering.
+ * Verifies the component handles the no-icon case correctly.
+ */
+export const WithoutIcons: Story = {
+  args: {
+    scopes: [
+      { id: 'feature', label: 'Feature' },
+      { id: 'task', label: 'Task' },
+      { id: 'context', label: 'Context' },
+    ],
+    activeScope: 'feature',
+    onScopeChange: fn(),
+  },
+};
+
+/**
  * Interactive test: Tab switching triggers onScopeChange callback.
  * 
  * Play function verifies:
@@ -91,17 +107,17 @@ export const TabSwitchingInteraction: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    // Click the task tab
-    const taskTab = canvas.getByRole('tab', { name: /Task/i });
-    await userEvent.click(taskTab);
+    // Click the task option (antd Segmented uses radio buttons internally)
+    const taskOption = canvas.getByText('Task');
+    await userEvent.click(taskOption);
 
     // Verify callback fired with correct scope ID
     await expect(args.onScopeChange).toHaveBeenCalledWith('task');
     await expect(args.onScopeChange).toHaveBeenCalledTimes(1);
 
-    // Click the context tab
-    const contextTab = canvas.getByRole('tab', { name: /Context/i });
-    await userEvent.click(contextTab);
+    // Click the context option
+    const contextOption = canvas.getByText('Context');
+    await userEvent.click(contextOption);
 
     // Verify callback fired again with different scope
     await expect(args.onScopeChange).toHaveBeenCalledWith('context');
@@ -122,9 +138,9 @@ export const ActiveTabNoCallback: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    // Click the already-active feature tab
-    const featureTab = canvas.getByRole('tab', { name: /Feature/i });
-    await userEvent.click(featureTab);
+    // Click the already-active feature option
+    const featureOption = canvas.getByText('Feature');
+    await userEvent.click(featureOption);
 
     // Verify callback was NOT called
     await expect(args.onScopeChange).not.toHaveBeenCalled();
@@ -134,6 +150,9 @@ export const ActiveTabNoCallback: Story = {
 /**
  * Accessibility test: Verify ARIA attributes are correct.
  * Uses play function to validate accessible markup.
+ * 
+ * Note: antd Segmented uses radiogroup/radio roles (not tablist/tab),
+ * which provides proper keyboard navigation and selection semantics.
  */
 export const AccessibilityValidation: Story = {
   args: {
@@ -144,20 +163,20 @@ export const AccessibilityValidation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Check the tablist role exists
-    const tablist = canvas.getByRole('tablist');
-    await expect(tablist).toBeInTheDocument();
+    // antd Segmented uses radiogroup role for accessibility
+    const radiogroup = canvas.getByRole('radiogroup');
+    await expect(radiogroup).toBeInTheDocument();
 
-    // Check all tabs have correct role
-    const tabs = canvas.getAllByRole('tab');
-    await expect(tabs).toHaveLength(3);
+    // Check all options have correct radio role
+    const radios = canvas.getAllByRole('radio');
+    await expect(radios).toHaveLength(3);
 
-    // Check active tab has aria-selected="true"
-    const activeTab = canvas.getByRole('tab', { name: /Task/i });
-    await expect(activeTab).toHaveAttribute('aria-selected', 'true');
+    // Check active option is checked
+    const activeOption = canvas.getByRole('radio', { name: /Task/i });
+    await expect(activeOption).toBeChecked();
 
-    // Check inactive tabs have aria-selected="false"
-    const inactiveTab = canvas.getByRole('tab', { name: /Feature/i });
-    await expect(inactiveTab).toHaveAttribute('aria-selected', 'false');
+    // Check inactive options are not checked
+    const inactiveOption = canvas.getByRole('radio', { name: /Feature/i });
+    await expect(inactiveOption).not.toBeChecked();
   },
 };

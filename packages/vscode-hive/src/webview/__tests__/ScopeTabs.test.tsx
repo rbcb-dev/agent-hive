@@ -40,8 +40,9 @@ describe('ScopeTabs', () => {
       />
     );
 
-    const planTab = screen.getByText('Plan').closest('button');
-    expect(planTab).toHaveClass('active');
+    // The antd Segmented component uses ant-segmented-item-selected class for active items
+    const planTab = screen.getByText('Plan').closest('.ant-segmented-item');
+    expect(planTab).toHaveClass('ant-segmented-item-selected');
   });
 
   it('calls onScopeChange when tab is clicked', () => {
