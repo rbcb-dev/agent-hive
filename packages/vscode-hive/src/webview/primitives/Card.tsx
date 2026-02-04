@@ -27,6 +27,8 @@ export interface CardProps {
   variant?: 'outlined' | 'borderless';
   /** Click handler */
   onClick?: () => void;
+  /** Test ID for testing */
+  'data-testid'?: string;
 }
 
 export function Card({
@@ -39,6 +41,7 @@ export function Card({
   extra,
   variant,
   onClick,
+  'data-testid': dataTestId,
 }: CardProps): React.ReactElement {
   return (
     <AntdCard
@@ -50,6 +53,7 @@ export function Card({
       extra={extra}
       variant={variant}
       onClick={onClick}
+      data-testid={dataTestId}
     >
       {children}
     </AntdCard>

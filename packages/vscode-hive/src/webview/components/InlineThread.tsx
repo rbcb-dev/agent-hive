@@ -1,10 +1,16 @@
 /**
  * InlineThread component - Displays a thread inline below a code line
  * with annotations, reply input, and resolve functionality.
+ *
+ * Uses antd Card, Flex, TextArea, Button, and Typography primitives.
  */
 
-import React, { useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { useState } from 'react';
 import type { ReviewThread, ReviewAnnotation } from 'hive-core';
+import { Card, Flex, TextArea, Button, Typography } from '../primitives';
+
+const { Text, Paragraph } = Typography;
 
 export interface InlineThreadProps {
   /** The thread to display */
@@ -21,22 +27,24 @@ function AnnotationItem({ annotation }: { annotation: ReviewAnnotation }): React
   const isLLM = annotation.author.type === 'llm';
 
   return (
-    <div className={`inline-annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}>
-      <div className="annotation-header">
-        <span className="annotation-author">{annotation.author.name}</span>
-        {isLLM ? <span className="annotation-badge">AI</span> : null}
-        <span className="annotation-time">
+    <Flex vertical gap={4} className={`inline-annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}>
+      <Flex justify="space-between" align="center" className="annotation-header">
+        <Flex gap={8} align="center">
+          <Text strong className="annotation-author">{annotation.author.name}</Text>
+          {isLLM ? <Text type="secondary" className="annotation-badge">AI</Text> : null}
+        </Flex>
+        <Text type="secondary" style={{ fontSize: 11 }} className="annotation-time">
           {new Date(annotation.createdAt).toLocaleString()}
-        </span>
-      </div>
-      <div className="annotation-body">{annotation.body}</div>
+        </Text>
+      </Flex>
+      <Paragraph style={{ margin: 0 }} className="annotation-body">{annotation.body}</Paragraph>
       {annotation.suggestion ? (
         <div className="annotation-suggestion">
-          <span className="suggestion-label">Suggestion:</span>
+          <Text type="secondary" className="suggestion-label">Suggestion:</Text>
           <pre className="suggestion-code">{annotation.suggestion.replacement}</pre>
         </div>
       ) : null}
-    </div>
+    </Flex>
   );
 }
 
@@ -55,7 +63,7 @@ export function InlineThread({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.metaKey) {
       handleReply();
     }
@@ -64,66 +72,79 @@ export function InlineThread({
   const isResolved = thread.status === 'resolved';
 
   return (
-    <div
+    <Card
+      size="small"
       className={`inline-thread ${isResolved ? 'thread-resolved' : ''}`}
       data-testid="inline-thread"
     >
-      <div className="inline-thread-header">
-        <span className="thread-status-label">
-          {isResolved ? 'Resolved' : 'Open'}
-        </span>
-        <div className="inline-thread-actions">
-          {!isResolved ? (
-            <button
-              className="btn-resolve"
-              onClick={() => onResolve(thread.id)}
-              aria-label="Mark thread as resolved"
+      <Flex vertical gap="small">
+        {/* Header with status and actions */}
+        <Flex justify="space-between" align="center" className="inline-thread-header">
+          <Text type="secondary" className="thread-status-label">
+            {isResolved ? 'Resolved' : 'Open'}
+          </Text>
+          <Flex gap={8} className="inline-thread-actions">
+            {!isResolved ? (
+              <Button
+                type="link"
+                size="small"
+                onClick={() => onResolve(thread.id)}
+                className="btn-resolve"
+                aria-label="Mark thread as resolved"
+              >
+                Resolve
+              </Button>
+            ) : null}
+            <Button
+              type="text"
+              size="small"
+              onClick={onClose}
+              className="btn-close"
+              aria-label="Close thread"
             >
-              Resolve
-            </button>
-          ) : null}
-          <button
-            className="btn-close"
-            onClick={onClose}
-            aria-label="Close thread"
-          >
-            ×
-          </button>
-        </div>
-      </div>
+              ×
+            </Button>
+          </Flex>
+        </Flex>
 
-      <div className="inline-thread-annotations">
-        {thread.annotations.map((annotation) => (
-          <AnnotationItem key={annotation.id} annotation={annotation} />
-        ))}
-      </div>
+        {/* Annotations list */}
+        <Flex vertical gap={8} className="inline-thread-annotations">
+          {thread.annotations.map((annotation) => (
+            <AnnotationItem key={annotation.id} annotation={annotation} />
+          ))}
+        </Flex>
 
-      <div className="inline-thread-reply">
-        <label htmlFor={`reply-input-${thread.id}`} className="visually-hidden">
-          Reply to thread
-        </label>
-        <textarea
-          id={`reply-input-${thread.id}`}
-          className="reply-input"
-          placeholder="Reply…"
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={2}
-          aria-describedby={`reply-hint-${thread.id}`}
-        />
-        <span id={`reply-hint-${thread.id}`} className="visually-hidden">
-          Press Cmd+Enter to submit
-        </span>
-        <button
-          className="btn-reply"
-          onClick={handleReply}
-          disabled={!replyText.trim()}
-          aria-label="Reply"
-        >
-          Reply
-        </button>
-      </div>
-    </div>
+        {/* Reply input */}
+        <Flex vertical gap={8} className="inline-thread-reply">
+          <label htmlFor={`reply-input-${thread.id}`} className="visually-hidden">
+            Reply to thread
+          </label>
+          <Flex gap="small">
+            <TextArea
+              id={`reply-input-${thread.id}`}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Reply…"
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              style={{ flex: 1 }}
+              className="reply-input"
+              aria-describedby={`reply-hint-${thread.id}`}
+            />
+            <Button
+              onClick={handleReply}
+              disabled={!replyText.trim()}
+              className="btn-reply"
+              aria-label="Reply"
+            >
+              Reply
+            </Button>
+          </Flex>
+          <span id={`reply-hint-${thread.id}`} className="visually-hidden">
+            Press Cmd+Enter to submit
+          </span>
+        </Flex>
+      </Flex>
+    </Card>
   );
 }

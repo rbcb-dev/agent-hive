@@ -6,7 +6,7 @@
 
 import { Input } from 'antd';
 import type { TextAreaProps as AntdTextAreaProps } from 'antd/es/input';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 export interface TextAreaProps {
   /** Current value (controlled) */
@@ -39,6 +39,12 @@ export interface TextAreaProps {
   onBlur?: () => void;
   /** Press enter handler */
   onPressEnter?: () => void;
+  /** Key down handler */
+  onKeyDown?: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
+  /** Input element id */
+  id?: string;
+  /** Aria describedby for accessibility */
+  'aria-describedby'?: string;
 }
 
 export function TextArea({
@@ -57,6 +63,9 @@ export function TextArea({
   onFocus,
   onBlur,
   onPressEnter,
+  onKeyDown,
+  id,
+  'aria-describedby': ariaDescribedby,
 }: TextAreaProps): React.ReactElement {
   return (
     <Input.TextArea
@@ -75,6 +84,9 @@ export function TextArea({
       onFocus={onFocus}
       onBlur={onBlur}
       onPressEnter={onPressEnter}
+      onKeyDown={onKeyDown}
+      id={id}
+      aria-describedby={ariaDescribedby}
     />
   );
 }
