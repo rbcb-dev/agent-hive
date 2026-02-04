@@ -300,4 +300,75 @@ describe('FileNavigator', () => {
       expect(onSelectFile).not.toHaveBeenCalled();
     });
   });
+
+  describe('file/folder icons', () => {
+    it('shows folder icons for directories', () => {
+      const { container } = render(
+        <FileNavigator
+          files={mockFiles}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={() => {}}
+        />
+      );
+
+      // Folders should have folder icons
+      const folderNodes = container.querySelectorAll('.folder-node');
+      expect(folderNodes.length).toBeGreaterThan(0);
+      
+      // Each folder should contain a folder icon
+      folderNodes.forEach((node) => {
+        const icon = node.querySelector('.codicon-folder');
+        expect(icon).toBeInTheDocument();
+      });
+    });
+
+    it('shows file icons for files based on extension', () => {
+      const { container } = render(
+        <FileNavigator
+          files={mockFiles}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={() => {}}
+        />
+      );
+
+      // TypeScript files should have file-code icons
+      const buttonNode = screen.getByText('Button.tsx').closest('.file-node');
+      expect(buttonNode?.querySelector('.codicon-file-code')).toBeInTheDocument();
+
+      // Markdown files should have markdown icons
+      const readmeNode = screen.getByText('README.md').closest('.file-node');
+      expect(readmeNode?.querySelector('.codicon-markdown')).toBeInTheDocument();
+    });
+
+    it('shows different icon types for different file extensions', () => {
+      const files = [
+        'src/index.ts',
+        'package.json',
+        'README.md',
+      ];
+
+      const { container } = render(
+        <FileNavigator
+          files={files}
+          threads={[]}
+          selectedFile={null}
+          onSelectFile={() => {}}
+        />
+      );
+
+      // TypeScript file should have file-code icon
+      const tsNode = screen.getByText('index.ts').closest('.file-node');
+      expect(tsNode?.querySelector('.codicon-file-code')).toBeInTheDocument();
+
+      // JSON file should have file-text icon
+      const jsonNode = screen.getByText('package.json').closest('.file-node');
+      expect(jsonNode?.querySelector('.codicon-file-text')).toBeInTheDocument();
+
+      // Markdown file should have markdown icon
+      const mdNode = screen.getByText('README.md').closest('.file-node');
+      expect(mdNode?.querySelector('.codicon-markdown')).toBeInTheDocument();
+    });
+  });
 });

@@ -948,6 +948,7 @@
     "@ant-design/cssinjs": "^2.0.3",
     "@opencode-ai/sdk": "^1.1.46",
     "@rc-component/virtual-list": "^1.0.2",
+    "@vscode/codicons": "^0.0.44",
     "antd": "6.2.3",
     "hive-core": "workspace:*",
     "marked": "^17.0.1",

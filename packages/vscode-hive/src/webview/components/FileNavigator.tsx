@@ -12,6 +12,7 @@ import type { ReviewThread } from 'hive-core';
 import type { Key } from 'react';
 import { Tree, Typography } from '../primitives';
 import type { TreeDataNode } from '../primitives';
+import { FileIcon } from './FileIcon';
 
 const { Text } = Typography;
 
@@ -193,7 +194,7 @@ export function FileNavigator({
     setExpandedKeys(keys);
   }, []);
 
-  // Custom title render with thread count badges
+  // Custom title render with thread count badges and file icons
   const renderTitle = useCallback(
     (node: ExtendedTreeNode): React.ReactNode => {
       const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -203,6 +204,9 @@ export function FileNavigator({
         }
       };
 
+      // Get the filename from the path (last segment)
+      const filename = String(node.title);
+
       return (
         <span
           className={node.isFile ? 'file-node' : 'folder-node'}
@@ -211,7 +215,8 @@ export function FileNavigator({
           tabIndex={node.isFile ? 0 : -1}
           role={node.isFile ? 'button' : undefined}
         >
-          <Text>{node.title as string}</Text>
+          <FileIcon filename={filename} isDirectory={!node.isFile} />
+          <Text style={{ marginLeft: 4 }}>{node.title as string}</Text>
           {node.threadCount && node.threadCount > 0 && (
             <Text
               type="secondary"
