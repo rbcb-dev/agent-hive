@@ -1,0 +1,57 @@
+/**
+ * Card - Ant Design Card wrapper
+ * 
+ * Provides a card container with title, actions, and various styling options.
+ */
+
+import { Card as AntdCard } from 'antd';
+import type { CardProps as AntdCardProps } from 'antd';
+import type { ReactNode } from 'react';
+
+export interface CardProps {
+  /** Card title */
+  title?: ReactNode;
+  /** Card size */
+  size?: 'default' | 'small';
+  /** Show hover effect */
+  hoverable?: boolean;
+  /** Card content */
+  children?: ReactNode;
+  /** Additional CSS class */
+  className?: string;
+  /** Inline styles */
+  style?: React.CSSProperties;
+  /** Card extra actions in header */
+  extra?: ReactNode;
+  /** Card variant (replaces bordered in v6) */
+  variant?: 'outlined' | 'borderless';
+  /** Click handler */
+  onClick?: () => void;
+}
+
+export function Card({
+  title,
+  size,
+  hoverable,
+  children,
+  className,
+  style,
+  extra,
+  variant,
+  onClick,
+}: CardProps): React.ReactElement {
+  return (
+    <AntdCard
+      title={title}
+      size={size}
+      hoverable={hoverable}
+      className={className}
+      style={style}
+      extra={extra}
+      variant={variant}
+      onClick={onClick}
+    >
+      {children}
+    </AntdCard>
+  );
+}
