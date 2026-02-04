@@ -181,10 +181,13 @@ function RenderedView({
     );
   }
 
+  // Apply theme class for CSS variable integration with antd tokens
+  const themeClass = theme === 'light' ? 'theme-light' : 'theme-dark';
+  
   return (
     <div 
       ref={containerRef}
-      className="markdown-rendered"
+      className={`markdown-rendered ${themeClass}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
