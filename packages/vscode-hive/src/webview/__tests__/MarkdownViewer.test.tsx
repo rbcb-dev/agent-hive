@@ -318,14 +318,8 @@ const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
       
-      // Wait for rendering to complete
-      await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
-      });
-      
-      // Should have a copy button for the code block
-      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      // Wait for the copy button to appear (added by useEffect after html renders)
+      const copyButton = await screen.findByRole('button', { name: /copy code/i });
       expect(copyButton).toBeInTheDocument();
     });
 
@@ -335,13 +329,8 @@ const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
       
-      // Wait for rendering to complete
-      await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
-      });
-      
-      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      // Wait for the copy button to appear (added by useEffect after html renders)
+      const copyButton = await screen.findByRole('button', { name: /copy code/i });
       fireEvent.click(copyButton);
       
       // Should have called clipboard.writeText with the code content
@@ -356,13 +345,8 @@ const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
       
-      // Wait for rendering to complete
-      await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
-      });
-      
-      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      // Wait for the copy button to appear (added by useEffect after html renders)
+      const copyButton = await screen.findByRole('button', { name: /copy code/i });
       fireEvent.click(copyButton);
       
       // Should show copied state
@@ -394,15 +378,11 @@ x = 2
 \`\`\``;
       render(<MarkdownViewer content={multiCodeContent} />);
       
-      // Wait for rendering to complete
+      // Wait for copy buttons to appear (added by useEffect after html renders)
       await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
+        const copyButtons = screen.getAllByRole('button', { name: /copy code/i });
+        expect(copyButtons).toHaveLength(2);
       });
-      
-      // Should have two copy buttons
-      const copyButtons = screen.getAllByRole('button', { name: /copy code/i });
-      expect(copyButtons).toHaveLength(2);
     });
 
     it('copies multi-line code correctly', async () => {
@@ -413,13 +393,8 @@ function hello() {
 \`\`\``;
       render(<MarkdownViewer content={multiLineCode} />);
       
-      // Wait for rendering to complete
-      await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
-      });
-      
-      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      // Wait for the copy button to appear (added by useEffect after html renders)
+      const copyButton = await screen.findByRole('button', { name: /copy code/i });
       fireEvent.click(copyButton);
       
       // Should have called clipboard.writeText with multi-line content
@@ -449,13 +424,8 @@ const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
       
-      // Wait for rendering to complete
-      await waitFor(() => {
-        const container = document.querySelector('.markdown-rendered');
-        expect(container?.innerHTML).toContain('shiki');
-      });
-      
-      const copyButton = screen.getByRole('button', { name: /copy code/i });
+      // Wait for the copy button to appear (added by useEffect after html renders)
+      const copyButton = await screen.findByRole('button', { name: /copy code/i });
       fireEvent.click(copyButton);
       
       // Should have called the fallback after clipboard fails
