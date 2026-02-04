@@ -208,6 +208,23 @@ Do it
 
     expect(featureJson.sessionId).toBe(sessionID);
 
+    const statusRaw = await hooks.tool!.hive_status.execute(
+      { feature: "smoke-feature" },
+      toolContext
+    );
+    const hiveStatus = JSON.parse(statusRaw as string) as {
+      tasks?: {
+        list?: Array<{ folder: string; dependsOn?: string[] | null }>;
+        runnable?: string[];
+        blockedBy?: Record<string, string[]>;
+      };
+    };
+
+    expect(hiveStatus.tasks?.list?.[0]?.folder).toBe("01-first-task");
+    expect(hiveStatus.tasks?.list?.[0]?.dependsOn).toEqual([]);
+    expect(hiveStatus.tasks?.runnable).toContain("01-first-task");
+    expect(hiveStatus.tasks?.blockedBy).toEqual({});
+
     const execStartOutput = await hooks.tool!.hive_exec_start.execute(
       { feature: "smoke-feature", task: "01-first-task" },
       toolContext
@@ -225,6 +242,18 @@ Do it
     );
     expect(execStart.instructions).toContain("sync: true");
     expect(execStart.instructions).not.toContain("sync: false");
+
+    const specPath = path.join(
+      testRoot,
+      ".hive",
+      "features",
+      "smoke-feature",
+      "tasks",
+      "01-first-task",
+      "spec.md"
+    );
+    const specContent = fs.readFileSync(specPath, "utf-8");
+    expect(specContent).toContain("## Dependencies");
 
     const statusOutput = await hooks.tool!.hive_worker_status.execute(
       { feature: "smoke-feature" },
@@ -261,6 +290,97 @@ Do it
         typeof workerActivity?.lastMessagePreview === "string"
     ).toBe(true);
     expect(typeof status.summary?.stuckWorkers).toBe("number");
+  });
+
+  it("returns task tool call using @file prompt when delegateMode=task", async () => {
+    const configPath = path.join(testRoot, ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({ delegateMode: "task" })
+    );
+
+    const ctx: PluginInput = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+      $: createStubShell(),
+    };
+
+    const hooks = await plugin(ctx);
+    const toolContext = createToolContext("sess_task_mode");
+
+    await hooks.tool!.hive_feature_create.execute(
+      { name: "task-mode-feature" },
+      toolContext
+    );
+
+    const plan = `# Task Mode Feature
+
+## Discovery
+
+**Q: Is this a test?**
+A: Yes
+
+## Overview
+
+Test
+
+## Tasks
+
+### 1. First Task
+Do it
+`;
+    await hooks.tool!.hive_plan_write.execute(
+      { content: plan, feature: "task-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_plan_approve.execute(
+      { feature: "task-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_tasks_sync.execute(
+      { feature: "task-mode-feature" },
+      toolContext
+    );
+
+    const execStartOutput = await hooks.tool!.hive_exec_start.execute(
+      { feature: "task-mode-feature", task: "01-first-task" },
+      toolContext
+    );
+    const execStart = JSON.parse(execStartOutput as string) as {
+      instructions?: string;
+      taskToolCall?: {
+        subagent_type?: string;
+        description?: string;
+        prompt?: string;
+      };
+    };
+
+    const expectedPromptPath = path.posix.join(
+      ".hive",
+      "features",
+      "task-mode-feature",
+      "tasks",
+      "01-first-task",
+      "worker-prompt.md"
+    );
+
+    expect(execStart.backgroundTaskCall).toBeUndefined();
+    expect(execStart.taskToolCall).toBeDefined();
+    expect(execStart.taskToolCall?.subagent_type).toBeDefined();
+    expect(execStart.taskToolCall?.description).toBe("Hive: 01-first-task");
+    expect(execStart.taskToolCall?.prompt).toContain(`@${expectedPromptPath}`);
+    expect(execStart.instructions).toContain("task({");
+    expect(execStart.instructions).toContain(
+      "prompt: \"Follow instructions in @.hive/features/task-mode-feature/tasks/01-first-task/worker-prompt.md\""
+    );
+    expect(execStart.instructions).toContain(
+      "Use the `@path` attachment syntax in the prompt to reference the file. Do not inline the file contents."
+    );
+    expect(execStart.instructions).not.toContain("Read the prompt file");
   });
 
   it("system prompt hook injects Hive instructions", async () => {
@@ -315,6 +435,74 @@ Do it
     expect(joined).toContain("### Current Hive Status");
   });
 
+  it("blocks hive_exec_start when dependencies are not done", async () => {
+    const ctx: PluginInput = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+      $: createStubShell(),
+    };
+
+    const hooks = await plugin(ctx);
+    const toolContext = createToolContext("sess_dependency_block");
+
+    await hooks.tool!.hive_feature_create.execute(
+      { name: "dep-block-feature" },
+      toolContext
+    );
+
+    const plan = `# Dep Block Feature
+
+## Discovery
+
+**Q: Is this a test?**
+A: Yes
+
+## Overview
+
+Test
+
+## Tasks
+
+### 1. First Task
+Do it
+
+### 2. Second Task
+
+**Depends on**: 1
+
+Do it later
+`;
+
+    await hooks.tool!.hive_plan_write.execute(
+      { content: plan, feature: "dep-block-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_plan_approve.execute(
+      { feature: "dep-block-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_tasks_sync.execute(
+      { feature: "dep-block-feature" },
+      toolContext
+    );
+
+    const execStartOutput = await hooks.tool!.hive_exec_start.execute(
+      { feature: "dep-block-feature", task: "02-second-task" },
+      toolContext
+    );
+
+    const execStart = JSON.parse(execStartOutput as string) as {
+      success?: boolean;
+      error?: string;
+    };
+
+    expect(execStart.success).toBe(false);
+    expect(execStart.error).toContain("dependencies not done");
+  });
+
   it("auto-loads parallel exploration for planner agents by default", async () => {
     // Test unified mode agents
     const ctx: PluginInput = {
@@ -347,9 +535,10 @@ Do it
     );
     expect(agents["hive-master"]?.prompt).not.toContain(onboardingSnippet);
 
-    // scout-researcher should have parallel-exploration in prompt (unified mode)
+    // scout-researcher should NOT have parallel-exploration in prompt (unified mode)
+    // (removed to prevent recursive delegation - scout cannot spawn scouts)
     expect(agents["scout-researcher"]?.prompt).toBeDefined();
-    expect(agents["scout-researcher"]?.prompt).toContain(
+    expect(agents["scout-researcher"]?.prompt).not.toContain(
       parallelExplorationSkill!.template,
     );
     expect(agents["scout-researcher"]?.prompt).not.toContain(onboardingSnippet);
@@ -360,5 +549,70 @@ Do it
       parallelExplorationSkill!.template,
     );
     expect(agents["forager-worker"]?.prompt).not.toContain(onboardingSnippet);
+  });
+
+  it("includes task prompt mode when delegateMode=task", async () => {
+    const configPath = path.join(process.env.HOME || "", ".config", "opencode", "agent_hive.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({ delegateMode: "task" })
+    );
+
+    const ctx: PluginInput = {
+      directory: testRoot,
+      worktree: testRoot,
+      serverUrl: new URL("http://localhost:1"),
+      project: createProject(testRoot),
+      client: OPENCODE_CLIENT,
+      $: createStubShell(),
+    };
+
+    const hooks = await plugin(ctx);
+    const toolContext = createToolContext("sess_task_prompt_mode");
+
+    await hooks.tool!.hive_feature_create.execute(
+      { name: "prompt-mode-feature" },
+      toolContext
+    );
+
+    const plan = `# Prompt Mode Feature
+
+## Discovery
+
+**Q: Is this a test?**
+A: Yes
+
+## Tasks
+
+### 1. First Task
+Do it
+`;
+
+    await hooks.tool!.hive_plan_write.execute(
+      { content: plan, feature: "prompt-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_plan_approve.execute(
+      { feature: "prompt-mode-feature" },
+      toolContext
+    );
+    await hooks.tool!.hive_tasks_sync.execute(
+      { feature: "prompt-mode-feature" },
+      toolContext
+    );
+
+    const execStartOutput = await hooks.tool!.hive_exec_start.execute(
+      { feature: "prompt-mode-feature", task: "01-first-task" },
+      toolContext
+    );
+
+    const execStart = JSON.parse(execStartOutput as string) as {
+      delegateMode?: string;
+      taskPromptMode?: string;
+    };
+
+    expect(execStart.delegateMode).toBe("task");
+    expect(execStart.taskPromptMode).toBe("opencode-at-file");
   });
 });

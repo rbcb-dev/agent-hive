@@ -66,6 +66,12 @@ export interface TaskStatus {
   idempotencyKey?: string;
   /** Worker session info for background execution */
   workerSession?: WorkerSession;
+  /**
+   * Task dependencies expressed as task folder names (e.g., '01-setup', '02-core-api').
+   * A task cannot start until all its dependencies have status 'done'.
+   * Resolved from plan.md dependency annotations during hive_tasks_sync.
+   */
+  dependsOn?: string[];
 }
 
 export interface PlanComment {
@@ -269,7 +275,7 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
       model: DEFAULT_AGENT_MODELS['scout-researcher'],
       temperature: 0.5,
       skills: [],
-      autoLoadSkills: ['parallel-exploration'],
+      autoLoadSkills: [],
     },
     'forager-worker': {
       model: DEFAULT_AGENT_MODELS['forager-worker'],

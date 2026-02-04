@@ -231,6 +231,11 @@ export class BackgroundManager {
             // Disable tools that could cause recursion
             background_task: false,
             delegate: false,
+            // Defense-in-depth: disable all Hive delegation tools
+            hive_background_task: false,
+            hive_background_output: false,
+            hive_background_cancel: false,
+            task: false,
           },
           // Pass variant to OpenCode for model options merging
           ...(normalizedVariant !== undefined && { variant: normalizedVariant }),
@@ -251,10 +256,78 @@ export class BackgroundManager {
   }
 
   /**
-   * Check if a Hive task can be started based on sequential ordering.
-   * Returns error if earlier tasks are still pending/in_progress.
+   * Check if a Hive task can be started based on dependency constraints.
+   * 
+   * Hybrid enforcement:
+   * 1. If task has explicit dependsOn array, check all deps have status 'done'
+   * 2. If task has no dependsOn (legacy/undefined), fall back to numeric sequential ordering
+   * 
+   * Only 'done' status satisfies a dependency - cancelled/failed/blocked/partial do NOT.
    */
   private checkHiveTaskOrdering(
+    feature: string,
+    taskFolder: string
+  ): { allowed: boolean; error?: string } {
+    // Try to get task status with dependsOn info
+    const taskStatus = this.taskService.getRawStatus(feature, taskFolder);
+    
+    // If task has explicit dependsOn field (including empty array), use dependency-based checking
+    if (taskStatus?.dependsOn !== undefined) {
+      return this.checkDependencies(feature, taskFolder, taskStatus.dependsOn);
+    }
+    
+    // Fall back to numeric sequential ordering for legacy tasks without dependsOn
+    return this.checkNumericOrdering(feature, taskFolder);
+  }
+
+  /**
+   * Check if all dependencies are satisfied (status === 'done').
+   * Only 'done' counts as satisfied - cancelled/failed/blocked/partial do NOT.
+   */
+  private checkDependencies(
+    feature: string,
+    taskFolder: string,
+    dependsOn: string[]
+  ): { allowed: boolean; error?: string } {
+    // Empty dependsOn means no dependencies - always allowed
+    if (dependsOn.length === 0) {
+      return { allowed: true };
+    }
+
+    const unmetDeps: Array<{ folder: string; status: string }> = [];
+
+    for (const depFolder of dependsOn) {
+      const depStatus = this.taskService.getRawStatus(feature, depFolder);
+      
+      // Only 'done' satisfies the dependency
+      if (!depStatus || depStatus.status !== 'done') {
+        unmetDeps.push({
+          folder: depFolder,
+          status: depStatus?.status ?? 'unknown',
+        });
+      }
+    }
+
+    if (unmetDeps.length > 0) {
+      const depList = unmetDeps
+        .map(d => `"${d.folder}" (${d.status})`)
+        .join(', ');
+      
+      return {
+        allowed: false,
+        error: `Dependency constraint: Task "${taskFolder}" cannot start - dependencies not done: ${depList}. ` +
+          `Only tasks with status 'done' satisfy dependencies.`,
+      };
+    }
+
+    return { allowed: true };
+  }
+
+  /**
+   * Legacy numeric sequential ordering check.
+   * Used when task has no dependsOn field (backwards compatibility).
+   */
+  private checkNumericOrdering(
     feature: string,
     taskFolder: string
   ): { allowed: boolean; error?: string } {
@@ -378,7 +451,7 @@ export class BackgroundManager {
 **Description:** ${task.description}
 **Agent:** ${task.agent}${errorLine}
 
-Use \`background_output({ task_id: "${task.taskId}" })\` to retrieve the result.
+ Use \`hive_background_output({ task_id: "${task.taskId}" })\` to retrieve the result.
 </system-reminder>`;
 
     try {

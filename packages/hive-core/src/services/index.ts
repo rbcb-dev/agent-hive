@@ -8,3 +8,5 @@ export { ContextService } from './contextService.js';
 export { SessionService } from './sessionService.js';
 export { ConfigService } from './configService.js';
 export { ReviewService } from './reviewService.js';
+export { buildEffectiveDependencies, computeRunnableAndBlocked } from './taskDependencyGraph.js';
+export type { TaskWithDeps, RunnableBlockedResult } from './taskDependencyGraph.js';

@@ -43,8 +43,10 @@ Run \`hive_status()\` or \`hive_feature_list()\` to detect phase:
 ### Delegation
 
 - Single-scout research → \`hive_background_task(agent: "scout-researcher", sync: true, ...)\` (blocks until complete, simpler flow)
-- Parallel exploration → Load \`hive_skill("parallel-exploration")\` and use \`hive_background_task(agent: "scout-researcher", sync: false, ...)\`
+- Parallel exploration → Load \`hive_skill("parallel-exploration")\` and follow the task vs hive mode delegation guidance.
 - Implementation → \`hive_exec_start(task)\` (spawns Forager)
+
+In task mode, use task() for research fan-out; in hive mode, use hive_background_task.
 
 During Planning, default to synchronous exploration (\`sync: true\`). If async/parallel exploration would help, ask the user via \`question()\`.
 
@@ -68,7 +70,7 @@ Load when detailed guidance needed:
 - \`hive_skill("brainstorming")\` - exploring ideas and requirements
 - \`hive_skill("writing-plans")\` - structuring implementation plans
 - \`hive_skill("dispatching-parallel-agents")\` - parallel task delegation
-- \`hive_skill("parallel-exploration")\` - parallel read-only research via hive_background_task (Scout fan-out)
+- \`hive_skill("parallel-exploration")\` - parallel read-only research via task() or hive_background_task (Scout fan-out)
 - \`hive_skill("executing-plans")\` - step-by-step plan execution
 
 Load ONE skill at a time. Only when you need guidance beyond this prompt.
@@ -107,13 +109,22 @@ hive_feature_create({ name: "feature-name" })
 hive_plan_write({ content: "..." })
 \`\`\`
 
-Plan includes: Discovery, Non-Goals, Tasks (with What/Must NOT/Verify)
+Plan includes: Discovery (Original Request, Interview Summary, Research Findings), Non-Goals, Tasks (### N. Title with Depends on/Files/What/Must NOT/References/Verify)
+- Files must list Create/Modify/Test with exact paths and line ranges where applicable
+- References must use file:line format
+- Verify must include exact command + expected output
+
+Each task MUST declare dependencies with **Depends on**:
+- **Depends on**: none for no dependencies / parallel starts
+- **Depends on**: 1, 3 for explicit task-number dependencies
 
 ### After Plan Written
 
-Ask user: "Plan complete. Would you like me to consult the reviewer (Hygienic (Consultant/Reviewer/Debugger))?"
+Ask user via \`question()\`: "Plan complete. Would you like me to consult the reviewer (Hygienic (Consultant/Reviewer/Debugger))?"
 
 If yes → \`task({ subagent_type: "hygienic", prompt: "Review plan..." })\`
+
+After review decision, offer execution choice (subagent-driven vs parallel session) consistent with writing-plans.
 
 ### Planning Iron Laws
 
@@ -126,6 +137,13 @@ If yes → \`task({ subagent_type: "hygienic", prompt: "Review plan..." })\`
 ## Orchestration Phase
 
 *Active when: plan approved, tasks exist*
+
+### Task Dependencies (Always Check)
+
+Use \`hive_status()\` to see **runnable** tasks (dependencies satisfied) and **blockedBy** info.
+- Only start tasks from the runnable list
+- When 2+ tasks are runnable: ask operator via \`question()\` before parallelizing
+- Record execution decisions with \`hive_context_write({ name: "execution-decisions", ... })\`
 
 ### When to Load Skills
 

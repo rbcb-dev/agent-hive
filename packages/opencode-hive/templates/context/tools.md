@@ -49,15 +49,17 @@ websearch_web_search_exa({ query: "Next.js 15 new features 2026", numResults: 5 
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `background_task` | Spawn async subagent | Parallel exploration via Scout fan-out |
+| `hive_background_task` | Spawn async subagent | Parallel exploration via Scout fan-out |
 
 ### Parallel Exploration (Preferred)
+
+In task mode, use task() for research fan-out; in hive mode, use hive_background_task.
 
 For exploratory research, load `hive_skill("parallel-exploration")` for the full playbook.
 
 Quick pattern:
 ```
-background_task({ 
+hive_background_task({ 
   agent: "scout-researcher", 
   prompt: "Find all API routes in src/ and summarize patterns",
   description: "Explore API patterns",
@@ -65,7 +67,7 @@ background_task({
 })
 ```
 
-Use `background_output({ task_id })` to retrieve results when notified.
+Use `hive_background_output({ task_id })` to retrieve results when notified.
 
 ---
 
@@ -78,4 +80,4 @@ Use `background_output({ task_id })` to retrieve results when notified.
 | Understand a library | `context7_query-docs` |
 | Current events/info | `websearch_web_search_exa` |
 | Structural refactoring | `ast_grep_replace` |
-| Multi-domain exploration | `hive_skill("parallel-exploration")` + `background_task` |
+| Multi-domain exploration | `hive_skill("parallel-exploration")` + `hive_background_task` |
