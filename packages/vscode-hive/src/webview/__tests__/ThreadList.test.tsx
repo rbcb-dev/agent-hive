@@ -109,4 +109,41 @@ describe('ThreadList', () => {
 
     expect(screen.getByText('No comments yet')).toBeInTheDocument();
   });
+
+  it('uses VirtualList for large lists (>50 items)', () => {
+    // Generate 60 threads
+    const manyThreads: ThreadSummary[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `thread-${i}`,
+      uri: `src/file-${i}.ts`,
+      firstLine: `Comment ${i}`,
+      status: 'open' as const,
+      commentCount: 1,
+      lastUpdated: '2024-01-15T10:00:00Z',
+    }));
+
+    const { container } = render(
+      <ThreadList
+        threads={manyThreads}
+        selectedThread={null}
+        onSelectThread={() => {}}
+      />
+    );
+
+    // VirtualList renders with rc-virtual-list class
+    expect(container.querySelector('.rc-virtual-list')).toBeInTheDocument();
+  });
+
+  it('uses Flex layout for small lists (<=50 items)', () => {
+    const { container } = render(
+      <ThreadList
+        threads={mockThreads}
+        selectedThread={null}
+        onSelectThread={() => {}}
+      />
+    );
+
+    // Should have thread-list class without virtual list
+    expect(container.querySelector('.thread-list')).toBeInTheDocument();
+    expect(container.querySelector('.rc-virtual-list')).not.toBeInTheDocument();
+  });
 });
