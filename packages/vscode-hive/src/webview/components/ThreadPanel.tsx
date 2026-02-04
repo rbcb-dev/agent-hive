@@ -1,9 +1,11 @@
 /**
  * ThreadPanel component - Single thread with comments and reply input
+ * Uses the shared ThreadView component with full mode.
  */
 
-import React, { useState } from 'react';
-import type { ReviewThread, ReviewAnnotation } from 'hive-core';
+import React from 'react';
+import type { ReviewThread } from 'hive-core';
+import { ThreadView } from './ThreadView';
 
 export interface ThreadPanelProps {
   thread: ReviewThread | null;
@@ -11,32 +13,7 @@ export interface ThreadPanelProps {
   onResolve: (threadId: string) => void;
 }
 
-function AnnotationItem({ annotation }: { annotation: ReviewAnnotation }): React.ReactElement {
-  const isLLM = annotation.author.type === 'llm';
-  
-  return (
-    <div className={`annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}>
-      <div className="annotation-header">
-        <span className="annotation-author">{annotation.author.name}</span>
-        {isLLM && <span className="annotation-badge">AI</span>}
-        <span className="annotation-time">
-          {new Date(annotation.createdAt).toLocaleString()}
-        </span>
-      </div>
-      <div className="annotation-body">{annotation.body}</div>
-      {annotation.suggestion && (
-        <div className="annotation-suggestion">
-          <span className="suggestion-label">Suggestion:</span>
-          <pre className="suggestion-code">{annotation.suggestion.replacement}</pre>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): React.ReactElement {
-  const [replyText, setReplyText] = useState('');
-
   if (!thread) {
     return (
       <div className="thread-panel thread-panel-empty">
@@ -45,21 +22,8 @@ export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): R
     );
   }
 
-  const handleReply = () => {
-    if (replyText.trim()) {
-      onReply(thread.id, replyText.trim());
-      setReplyText('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.metaKey) {
-      handleReply();
-    }
-  };
-
   return (
-    <div className="thread-panel">
+    <div className="thread-panel" style={{ overflow: 'auto' }}>
       <div className="thread-panel-header">
         {thread.uri && (
           <div className="thread-location">
@@ -67,47 +31,14 @@ export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): R
             <span className="thread-line">line {thread.range.start.line + 1}</span>
           </div>
         )}
-        <div className="thread-actions">
-          {thread.status === 'open' && (
-            <button
-              className="btn-resolve"
-              onClick={() => onResolve(thread.id)}
-              aria-label="Mark thread as resolved"
-            >
-              Resolve
-            </button>
-          )}
-        </div>
       </div>
 
-      <div className="thread-annotations">
-        {thread.annotations.map((annotation) => (
-          <AnnotationItem key={annotation.id} annotation={annotation} />
-        ))}
-      </div>
-
-      <div className="thread-reply">
-        <label htmlFor="reply-input" className="visually-hidden">Reply to thread</label>
-        <textarea
-          id="reply-input"
-          className="reply-input"
-          placeholder="Reply…"
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={3}
-          aria-describedby="reply-hint"
-        />
-        <span id="reply-hint" className="visually-hidden">Press Cmd+Enter to submit</span>
-        <button
-          className="btn-reply"
-          onClick={handleReply}
-          disabled={!replyText.trim()}
-          aria-label="Submit reply"
-        >
-          Reply
-        </button>
-      </div>
+      <ThreadView
+        thread={thread}
+        onReply={(body) => onReply(thread.id, body)}
+        onResolve={() => onResolve(thread.id)}
+        compact={false}
+      />
     </div>
   );
 }
