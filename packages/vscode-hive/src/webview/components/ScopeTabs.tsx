@@ -1,8 +1,13 @@
 /**
  * ScopeTabs component - Tab navigation for review scopes
+ * 
+ * Uses antd Segmented component for modern, accessible tab-like switching.
+ * Provides keyboard navigation (arrow keys) and animated selection indicator.
  */
 
 import React from 'react';
+import { Segmented } from '../primitives';
+import type { SegmentedOption } from '../primitives';
 
 export interface ScopeTabItem {
   id: string;
@@ -17,28 +22,34 @@ export interface ScopeTabsProps {
 }
 
 export function ScopeTabs({ scopes, activeScope, onScopeChange }: ScopeTabsProps): React.ReactElement {
-  const handleClick = (scopeId: string) => {
-    if (scopeId !== activeScope) {
-      onScopeChange(scopeId);
+  // Convert scopes to Segmented options format
+  const options: SegmentedOption[] = scopes.map((scope) => ({
+    label: scope.icon ? (
+      <span>
+        <span aria-hidden="true">{scope.icon} </span>
+        {scope.label}
+      </span>
+    ) : (
+      scope.label
+    ),
+    value: scope.id,
+  }));
+
+  const handleChange = (value: string | number) => {
+    const newValue = String(value);
+    // Only fire callback if value actually changed (matches original behavior)
+    if (newValue !== activeScope) {
+      onScopeChange(newValue);
     }
   };
 
   return (
-    <div className="scope-tabs" role="tablist" aria-label="Review scope">
-      {scopes.map((scope) => (
-        <button
-          key={scope.id}
-          className={`scope-tab ${scope.id === activeScope ? 'active' : ''}`}
-          onClick={() => handleClick(scope.id)}
-          role="tab"
-          aria-selected={scope.id === activeScope}
-          aria-controls={`scope-panel-${scope.id}`}
-          id={`scope-tab-${scope.id}`}
-        >
-          {scope.icon && <span className="scope-tab-icon" aria-hidden="true">{scope.icon}</span>}
-          {scope.label}
-        </button>
-      ))}
+    <div className="scope-tabs">
+      <Segmented
+        options={options}
+        value={activeScope}
+        onChange={handleChange}
+      />
     </div>
   );
 }
