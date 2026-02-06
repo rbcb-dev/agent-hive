@@ -1556,6 +1556,7 @@ Make the requested changes, then call hive_request_review again.`;
       const hiveAutoLoadedSkills = await buildAutoLoadedSkillsContent('hive-master', configService, directory);
       const hiveConfig = {
         model: hiveUserConfig.model,
+        variant: hiveUserConfig.variant,
         temperature: hiveUserConfig.temperature ?? 0.5,
         description: 'Hive (Hybrid) - Plans + orchestrates. Detects phase, loads skills on-demand.',
         prompt: QUEEN_BEE_PROMPT + hiveAutoLoadedSkills,
@@ -1574,6 +1575,7 @@ Make the requested changes, then call hive_request_review again.`;
       const architectAutoLoadedSkills = await buildAutoLoadedSkillsContent('architect-planner', configService, directory);
       const architectConfig = {
         model: architectUserConfig.model,
+        variant: architectUserConfig.variant,
         temperature: architectUserConfig.temperature ?? 0.7,
         description: 'Architect (Planner) - Plans features, interviews, writes plans. NEVER executes.',
         prompt: ARCHITECT_BEE_PROMPT + architectAutoLoadedSkills,
@@ -1595,6 +1597,7 @@ Make the requested changes, then call hive_request_review again.`;
       const swarmAutoLoadedSkills = await buildAutoLoadedSkillsContent('swarm-orchestrator', configService, directory);
       const swarmConfig = {
         model: swarmUserConfig.model,
+        variant: swarmUserConfig.variant,
         temperature: swarmUserConfig.temperature ?? 0.5,
         description: 'Swarm (Orchestrator) - Orchestrates execution. Delegates, spawns workers, verifies, merges.',
         prompt: SWARM_BEE_PROMPT + swarmAutoLoadedSkills,
@@ -1613,6 +1616,7 @@ Make the requested changes, then call hive_request_review again.`;
       const scoutAutoLoadedSkills = await buildAutoLoadedSkillsContent('scout-researcher', configService, directory);
       const scoutConfig = {
         model: scoutUserConfig.model,
+        variant: scoutUserConfig.variant,
         temperature: scoutUserConfig.temperature ?? 0.5,
         mode: 'subagent' as const,
         description: 'Scout (Explorer/Researcher/Retrieval) - Researches codebase + external docs/data.',
@@ -1633,6 +1637,7 @@ Make the requested changes, then call hive_request_review again.`;
       const foragerAutoLoadedSkills = await buildAutoLoadedSkillsContent('forager-worker', configService, directory);
       const foragerConfig = {
         model: foragerUserConfig.model,
+        variant: foragerUserConfig.variant,
         temperature: foragerUserConfig.temperature ?? 0.3,
         mode: 'subagent' as const,
         description: 'Forager (Worker/Coder) - Executes tasks directly in isolated worktrees. Never delegates.',
@@ -1651,6 +1656,7 @@ Make the requested changes, then call hive_request_review again.`;
       const hygienicAutoLoadedSkills = await buildAutoLoadedSkillsContent('hygienic-reviewer', configService, directory);
       const hygienicConfig = {
         model: hygienicUserConfig.model,
+        variant: hygienicUserConfig.variant,
         temperature: hygienicUserConfig.temperature ?? 0.3,
         mode: 'subagent' as const,
         description: 'Hygienic (Consultant/Reviewer/Debugger) - Reviews plan documentation quality. OKAY/REJECT verdict.',
