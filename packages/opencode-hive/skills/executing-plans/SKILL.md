@@ -36,7 +36,7 @@ Only `done` satisfies dependencies (not `blocked`, `failed`, `partial`, `cancell
 ### Step 3: Execute Batch
 
 For each task in the batch:
-1. Mark as in_progress via `hive_exec_start()`
+1. Mark as in_progress via `hive_worktree_create()`
 2. Follow each step exactly (plan has bite-sized steps)
 3. Run verifications as specified
 4. Mark as completed
@@ -47,6 +47,11 @@ When batch complete:
 - Show verification output
 - Say: "Ready for feedback."
 
+### Step 4.5: Post-Batch Hygienic Review
+
+After the batch report, ask the operator if they want a Hygienic code review for the batch.
+If yes, run `task({ subagent_type: "hygienic", prompt: "Review implementation changes from the latest batch." })` and apply feedback before starting the next batch.
+
 ### Step 5: Continue
 Based on feedback:
 - Apply changes if needed
@@ -56,8 +61,8 @@ Based on feedback:
 ### Step 6: Complete Development
 
 After all tasks complete and verified:
-- Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use hive_skill:finishing-a-development-branch
+- Announce: "I'm using the verification-before-completion skill to complete this work."
+- **REQUIRED SUB-SKILL:** Use hive_skill:verification-before-completion
 - Follow that skill to verify tests, present options, execute choice
 
 ## When to Stop and Ask for Help

@@ -95,6 +95,17 @@ When asked to retrieve raw data from external systems (MongoDB/Stripe/etc.):
 - GitHub: Permalinks with commit SHA
 - Docs: URL with section anchor
 
+## Persistence
+
+When operating within a feature context:
+- If findings are substantial (3+ files, architecture patterns, or key decisions):
+  \`\`\`
+  hive_context_write({
+    name: "research-{topic}",
+    content: "## {Topic}\\n\\nDate: {YYYY-MM-DD}\\n\\n## Context\\n\\n## Findings"
+  })
+  \`\`\`
+
 ## Iron Laws
 
 **Never:**

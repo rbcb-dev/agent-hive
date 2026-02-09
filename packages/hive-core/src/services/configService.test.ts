@@ -50,11 +50,6 @@ describe("ConfigService defaults", () => {
     );
   });
 
-  it("returns 'task' as default delegateMode", () => {
-    const service = new ConfigService();
-    expect(service.getDelegateMode()).toBe('task');
-  });
-
   it("returns 'unified' as default agentMode", () => {
     const service = new ConfigService();
     expect(service.get().agentMode).toBe('unified');
@@ -327,5 +322,47 @@ describe("ConfigService review configuration", () => {
     expect(config.review?.notifications?.reviewComplete).toBe(true);
     expect(config.review?.autoDelegate).toBe(true);
     expect(config.review?.parallelReviewers).toBe(2);
+  });
+});
+
+describe("ConfigService sandbox config", () => {
+  it("getSandboxConfig() returns { mode: 'none' } when not configured", () => {
+    const service = new ConfigService();
+    const sandboxConfig = service.getSandboxConfig();
+
+    expect(sandboxConfig).toEqual({ mode: 'none', persistent: false });
+  });
+
+  it("getSandboxConfig() returns { mode: 'docker' } when sandbox is set to docker", () => {
+    const service = new ConfigService();
+    const configPath = service.getPath();
+
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        sandbox: 'docker',
+      }),
+    );
+
+    const sandboxConfig = service.getSandboxConfig();
+    expect(sandboxConfig).toEqual({ mode: 'docker', persistent: true });
+  });
+
+  it("getSandboxConfig() returns { mode: 'docker', image: 'node:22-slim' } when configured with dockerImage", () => {
+    const service = new ConfigService();
+    const configPath = service.getPath();
+
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify({
+        sandbox: 'docker',
+        dockerImage: 'node:22-slim',
+      }),
+    );
+
+    const sandboxConfig = service.getSandboxConfig();
+    expect(sandboxConfig).toEqual({ mode: 'docker', image: 'node:22-slim', persistent: true });
   });
 });

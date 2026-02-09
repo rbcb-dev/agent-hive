@@ -203,15 +203,15 @@ export interface HiveConfig {
   /** Enable OMO-Slim delegation (optional integration) */
   omoSlimEnabled?: boolean;
   /** Choose between unified or dedicated agent modes */
-  agentMode?: 'unified' | 'dedicated';
-  /**
-   * Delegate mode for background task execution:
-   * - 'hive': Use hive_background_task tools
-   * - 'task': Use OpenCode's built-in task() tool (default)
-   */
-  delegateMode?: 'hive' | 'task';
-  /** Review panel configuration */
-  review?: ReviewConfig;
+   agentMode?: 'unified' | 'dedicated';
+   /**
+    * Delegate mode for background task execution:
+    * - 'hive': Use hive_background_task tools
+    * - 'task': Use OpenCode's built-in task() tool (default)
+    */
+   delegateMode?: 'hive' | 'task';
+   /** Review panel configuration */
+   review?: ReviewConfig;
   /** Agent configuration */
   agents?: {
     /** Hive Master (hybrid planner + orchestrator) */
@@ -227,6 +227,12 @@ export interface HiveConfig {
     /** Hygienic Reviewer */
     'hygienic-reviewer'?: AgentModelConfig;
   };
+  /** Sandbox mode for worker isolation */
+  sandbox?: 'none' | 'docker';
+  /** Docker image to use when sandbox is 'docker' (optional explicit override) */
+  dockerImage?: string;
+  /** Reuse Docker containers per worktree (default: true when sandbox is 'docker') */
+  persistentContainers?: boolean;
 }
 
 /** Default models for Hive agents */
@@ -247,6 +253,7 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
   agentMode: 'unified',
   delegateMode: 'task',
   review: DEFAULT_REVIEW_CONFIG,
+  sandbox: 'none',
   agents: {
     'hive-master': {
       model: DEFAULT_AGENT_MODELS['hive-master'],

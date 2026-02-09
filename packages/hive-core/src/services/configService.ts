@@ -8,6 +8,7 @@ import {
   ReviewConfig,
   ReviewNotificationsConfig,
 } from '../types.js';
+import type { SandboxConfig } from './dockerSandboxService.js';
 
 /**
  * ConfigService manages user config at ~/.config/opencode/agent_hive.json
@@ -194,36 +195,30 @@ export class ConfigService {
   }
 
   /**
-   * Get the delegate mode for background task execution.
-   * - 'hive': Use hive_background_task tools
-   * - 'task': Use OpenCode's built-in task() tool (default)
+   * Get sandbox configuration for worker isolation.
+   * Returns { mode: 'none' | 'docker', image?: string, persistent?: boolean }
    */
-  getDelegateMode(): 'hive' | 'task' {
+  getSandboxConfig(): SandboxConfig {
     const config = this.get();
-    return config.delegateMode ?? 'task';
-  }
+    const mode = config.sandbox ?? 'none';
+    const image = config.dockerImage;
+    const persistent = config.persistentContainers ?? (mode === 'docker');
 
-  /**
-   * Check if hive background tasks should be enabled.
-   * Returns true when delegateMode is 'hive'.
-   * Returns false when delegateMode is 'task' (use OpenCode's task tool instead).
-   */
-  isHiveBackgroundEnabled(): boolean {
-    return this.getDelegateMode() === 'hive';
-  }
+   return { mode, ...(image && { image }), persistent };
+   }
 
-  /**
-   * Get review panel configuration, merged with defaults.
-   */
-  getReviewConfig(): Required<ReviewConfig> & { notifications: Required<ReviewNotificationsConfig> } {
-    const config = this.get();
-    return {
-      ...DEFAULT_REVIEW_CONFIG,
-      ...config.review,
-      notifications: {
-        ...DEFAULT_REVIEW_NOTIFICATIONS,
-        ...config.review?.notifications,
-      },
-    };
-  }
-}
+   /**
+    * Get review panel configuration, merged with defaults.
+    */
+   getReviewConfig(): Required<ReviewConfig> & { notifications: Required<ReviewNotificationsConfig> } {
+     const config = this.get();
+     return {
+       ...DEFAULT_REVIEW_CONFIG,
+       ...config.review,
+       notifications: {
+         ...DEFAULT_REVIEW_NOTIFICATIONS,
+         ...config.review?.notifications,
+       },
+     };
+   }
+ }

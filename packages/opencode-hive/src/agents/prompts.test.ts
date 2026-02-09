@@ -4,6 +4,9 @@ import * as path from 'path';
 import { QUEEN_BEE_PROMPT } from './hive';
 import { ARCHITECT_BEE_PROMPT } from './architect';
 import { SWARM_BEE_PROMPT } from './swarm';
+import { FORAGER_BEE_PROMPT } from './forager';
+import { SCOUT_BEE_PROMPT } from './scout';
+import { HYGIENIC_BEE_PROMPT } from './hygienic';
 
 describe('Hive (Hybrid) prompt', () => {
   describe('delegation planning alignment', () => {
@@ -23,19 +26,48 @@ describe('Hive (Hybrid) prompt', () => {
       expect(QUEEN_BEE_PROMPT).not.toContain("- Don't execute - plan only");
     });
 
-    it('recommends sync: true for single-scout research', () => {
-      expect(QUEEN_BEE_PROMPT).toContain('sync: true');
+    it('explains task() is BLOCKING', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('BLOCKING');
+      expect(QUEEN_BEE_PROMPT).toContain('returns when done');
     });
 
     it('includes internal codebase exploration in Research intent', () => {
       expect(QUEEN_BEE_PROMPT).toContain('Internal codebase exploration');
     });
 
-    it('includes task vs hive mode research fan-out guidance', () => {
-      expect(QUEEN_BEE_PROMPT).toContain(
-        'In task mode, use task() for research fan-out; in hive mode, use hive_background_task.'
-      );
+    it('includes task() guidance for research', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('task(');
+      expect(QUEEN_BEE_PROMPT).toContain('scout-researcher');
     });
+  });
+
+  describe('turn termination and hard blocks', () => {
+    it('defines turn termination rules', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('### Turn Termination');
+      expect(QUEEN_BEE_PROMPT).toContain('Valid endings');
+      expect(QUEEN_BEE_PROMPT).toContain('NEVER end with');
+    });
+
+    it('separates hard blocks from anti-patterns', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('### Hard Blocks');
+      expect(QUEEN_BEE_PROMPT).toContain('### Anti-Patterns');
+    });
+  });
+
+  it('contains hard blocks section', () => {
+    expect(QUEEN_BEE_PROMPT).toContain('Hard Blocks');
+  });
+
+  it('contains turn termination', () => {
+    expect(QUEEN_BEE_PROMPT).toContain('Turn Termination');
+  });
+
+  it('contains docker-mastery skill reference', () => {
+    expect(QUEEN_BEE_PROMPT).toContain('docker-mastery');
+  });
+
+  it('contains agents-md-mastery skill reference', () => {
+    expect(QUEEN_BEE_PROMPT).toContain('agents-md-mastery');
   });
 });
 
@@ -48,7 +80,6 @@ describe('Architect (Planner) prompt', () => {
     it('permits research and review delegation via task()', () => {
       expect(ARCHITECT_BEE_PROMPT).toContain('You may use task() to delegate read-only research to Scout and plan review to Hygienic.');
       expect(ARCHITECT_BEE_PROMPT).toContain('Never use task() to delegate implementation or coding work.');
-      expect(ARCHITECT_BEE_PROMPT).toContain('Tool availability depends on delegateMode.');
     });
 
     it('does NOT contain the blanket prohibition "Delegate work or spawn workers"', () => {
@@ -67,6 +98,20 @@ describe('Architect (Planner) prompt', () => {
       expect(ARCHITECT_BEE_PROMPT).toContain('internal codebase');
     });
   });
+
+  it('contains expanded clearance checklist', () => {
+    expect(ARCHITECT_BEE_PROMPT).toContain('Test strategy confirmed');
+    expect(ARCHITECT_BEE_PROMPT).toContain('blocking questions outstanding');
+  });
+
+  it('contains turn termination rules', () => {
+    expect(ARCHITECT_BEE_PROMPT).toContain('Turn Termination');
+    expect(ARCHITECT_BEE_PROMPT).toContain('NEVER end with');
+  });
+
+  it('contains test strategy assessment', () => {
+    expect(ARCHITECT_BEE_PROMPT).toContain('Test Strategy');
+  });
 });
 
 describe('Swarm (Orchestrator) prompt', () => {
@@ -79,19 +124,91 @@ describe('Swarm (Orchestrator) prompt', () => {
       expect(SWARM_BEE_PROMPT).toContain('Cancel background tasks only when stale or no longer needed');
     });
 
-    it('contains sync: true guidance for single-scout research', () => {
-      expect(SWARM_BEE_PROMPT).toContain('sync: true');
+    it('explains task() is BLOCKING for delegation', () => {
+      expect(SWARM_BEE_PROMPT).toContain('BLOCKING');
+      expect(SWARM_BEE_PROMPT).toContain('returns when');
     });
 
-    it('contains sync: false guidance for fan-out', () => {
-      expect(SWARM_BEE_PROMPT).toContain('sync: false');
+    it('tells to check hive_status() after task() returns', () => {
+      expect(SWARM_BEE_PROMPT).toContain('hive_status()');
     });
 
-    it('includes task vs hive mode research fan-out guidance', () => {
-      expect(SWARM_BEE_PROMPT).toContain(
-        'In task mode, use task() for research fan-out; in hive mode, use hive_background_task.'
-      );
+    it('includes task() guidance for research fan-out', () => {
+      expect(SWARM_BEE_PROMPT).toContain('task() for research fan-out');
     });
+  });
+
+  it('does NOT contain oracle reference', () => {
+    expect(SWARM_BEE_PROMPT).not.toContain('oracle');
+  });
+
+  it('contains turn termination', () => {
+    expect(SWARM_BEE_PROMPT).toContain('Turn Termination');
+  });
+
+  it('contains verification checklist', () => {
+    expect(SWARM_BEE_PROMPT).toContain('After Delegation - VERIFY');
+  });
+});
+
+describe('Forager (Worker/Coder) prompt', () => {
+  it('contains resolve before blocking', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('Resolve Before Blocking');
+    expect(FORAGER_BEE_PROMPT).toContain('tried 3');
+  });
+
+  it('contains completion checklist', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('Completion Checklist');
+  });
+
+  it('adds resolve-before-blocking guidance', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('## Resolve Before Blocking');
+    expect(FORAGER_BEE_PROMPT).toContain('Default to exploration, questions are LAST resort');
+    expect(FORAGER_BEE_PROMPT).toContain('Context inference: Before asking "what does X do?", READ X first.');
+  });
+
+  it('adds a completion checklist before reporting done', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('## Completion Checklist');
+    expect(FORAGER_BEE_PROMPT).toContain('Record exact commands and results');
+  });
+
+  it('expands the orient step with explicit pre-flight actions', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('Read the referenced files and surrounding code');
+    expect(FORAGER_BEE_PROMPT).toContain('Search for similar patterns in the codebase');
+  });
+
+  it('contains Docker Sandbox section in Iron Laws', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('Docker Sandbox');
+  });
+
+  it('instructs to report as blocked instead of HOST: escape', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('report as blocked');
+    expect(FORAGER_BEE_PROMPT).not.toContain('HOST:');
+  });
+
+  it('contains docker-mastery skill reference', () => {
+    expect(FORAGER_BEE_PROMPT).toContain('docker-mastery');
+  });
+});
+
+describe('Scout (Explorer/Researcher) prompt', () => {
+  it('has clean persistence example', () => {
+    expect(SCOUT_BEE_PROMPT).not.toContain('Worker Prompt Builder');
+    expect(SCOUT_BEE_PROMPT).toContain('research-{topic}');
+  });
+
+  it('mentions year awareness', () => {
+    expect(SCOUT_BEE_PROMPT).toContain('current year');
+  });
+});
+
+describe('Hygienic (Consultant/Reviewer) prompt', () => {
+  it('contains agent-executable verification guidance', () => {
+    expect(HYGIENIC_BEE_PROMPT).toContain('agent-executable');
+  });
+
+  it('contains verification examples', () => {
+    expect(HYGIENIC_BEE_PROMPT).toContain('without human judgment');
   });
 });
 
@@ -104,12 +221,9 @@ describe('README.md documentation', () => {
       expect(readmeContent).toContain('### Planning-mode delegation');
     });
 
-    it('contains sync: true string', () => {
-      expect(readmeContent).toContain('sync: true');
-    });
-
-    it('contains sync: false string', () => {
-      expect(readmeContent).toContain('sync: false');
+    it('explains task() delegation model', () => {
+      expect(readmeContent).toContain('Delegate to Scout');
+      expect(readmeContent).toContain('Read-only exploration');
     });
 
     it('clarifies that "don\'t execute" means "don\'t implement"', () => {
@@ -119,6 +233,39 @@ describe('README.md documentation', () => {
     it('contains the Canonical Delegation Threshold content', () => {
       expect(readmeContent).toContain('cannot name the file path upfront');
       expect(readmeContent).toContain('2+ files');
+    });
+  });
+});
+
+describe('AGENTS.md tool guidance', () => {
+  describe('Hive (Hybrid) prompt', () => {
+    it('contains guidance to use hive_agents_md tool', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('hive_agents_md');
+    });
+
+    it('instructs to sync AGENTS.md after feature completion', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('feature completion');
+      expect(QUEEN_BEE_PROMPT).toContain('sync');
+    });
+
+    it('explains the init action for bootstrapping AGENTS.md', () => {
+      expect(QUEEN_BEE_PROMPT).toContain('init');
+      expect(QUEEN_BEE_PROMPT).toContain('AGENTS.md');
+    });
+  });
+
+  describe('Swarm (Orchestrator) prompt', () => {
+    it('contains guidance to use hive_agents_md tool', () => {
+      expect(SWARM_BEE_PROMPT).toContain('hive_agents_md');
+    });
+
+    it('instructs to sync AGENTS.md after batch completion', () => {
+      expect(SWARM_BEE_PROMPT).toContain('batch');
+      expect(SWARM_BEE_PROMPT).toContain('sync');
+    });
+
+    it('contains agents-md-mastery skill reference', () => {
+      expect(SWARM_BEE_PROMPT).toContain('agents-md-mastery');
     });
   });
 });

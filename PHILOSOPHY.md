@@ -36,6 +36,7 @@ The answer became this platform.
 |------|------|-------------|
 | **Beekeeper** | You | The human operator. Observes, steers, approves. Doesn't do the work — manages the hive. |
 | **Hive** | Platform | The Agent Hive platform itself. The structured workspace where agents operate. |
+| **Hive Bee** | Hybrid | Plans AND orchestrates. Phase-aware — detects whether to plan or execute. The default agent. |
 | **Architect Bee** | Planner | Plans features, interviews you, writes plan.md. NEVER executes or delegates. |
 | **Swarm Bee** | Orchestrator | Coordinates execution, delegates to workers, merges results. The Hive Queen. |
 | **Scout Bee** | Researcher | Researches codebase and external docs in parallel. Uses MCP tools. |
@@ -47,6 +48,7 @@ The answer became this platform.
 | **Royal Jelly** | Context | Context files that nourish workers — research, decisions, references. Without it, workers hallucinate. |
 | **Honey** | Artifacts | The output — `plan.md`, `spec.md`, `report.md`, code. Persistent documentation that emerges from work. |
 | **Propolis** | Verification | TDD subtasks that seal work as complete. Tests prove the cell is solid. |
+| **Wax Seal** | Sandbox | Docker container that isolates worker execution. Tests run inside, results flow out. |
 | **Waggle Dance** | Planning | The planning phase. Architect communicates, Beekeeper reviews, alignment before action. |
 | **Swarming** | Parallelism | Batched parallel execution. Multiple Foragers dispatched simultaneously to their cells. |
 | **Hiving** | Working | The act of using the Hive platform. *"Stop vibing. Start hiving."* |
@@ -244,7 +246,7 @@ Always:
 | Tool | Gate | Error |
 |------|------|-------|
 | `hive_plan_write` | `## Discovery` section required | "BLOCKED: Discovery required" |
-| `hive_exec_complete` | Verification keywords in summary | "BLOCKED: No verification" |
+| `hive_worktree_commit` | Verification keywords in summary | "BLOCKED: No verification" |
 
 **Phase Injection** (right context at right time):
 | Phase | Injection |
@@ -318,7 +320,7 @@ Everything is a task. Even fixes. Keeps the model consistent.
 When a Forager encounters a decision it can't make:
 - Worker reports `status: "blocked"` with blocker info (reason, options, recommendation)
 - Swarm Bee asks user via `question()` tool — NEVER plain text
-- Swarm resumes with `hive_exec_start(continueFrom: "blocked", decision: answer)`
+- Swarm resumes with `hive_worktree_create(continueFrom: "blocked", decision: answer)`
 - New worker spawns in SAME worktree with decision context
 
 This is different from "loop until done":
@@ -564,6 +566,65 @@ Human shapes at the top. Agent builds at the bottom. Gate in the middle. Tests v
 - MCP tools auto-enabled (OMO-style): grep_app, context7, websearch, ast_grep
 - Agent registration for @mention support in OpenCode
 - Blocked worker protocol: workers pause for decisions, resume with clarity
+
+### v1.1 (Consolidation + Knowledge Transfer)
+
+**Theme:** Less infrastructure, smarter agents. Trust the model, not the tooling.
+
+- **Tool consolidation (22 → 14 tools)**: Removed the entire background task infrastructure (~5,000 lines). Direct worktree execution proved simpler and more reliable than the async queue-poll-result pattern. Renamed `hive_exec_*` → `hive_worktree_*` to reflect the actual execution model
+- **Journal infrastructure removed**: Journals were write-only artifacts nobody read. Context files (`hive_context_write`) replaced them — persistent, queryable, and actually consumed by downstream workers
+- **Worker Orient Phase**: Workers now run a pre-flight checklist before coding — read references, check existing patterns, verify assumptions. This came from observing workers that jumped straight into implementation and missed critical context. Orient aligns with P1 (Context Persists) and P7 (Iron Laws)
+- **Task-type auto-inference**: `buildSpecContent()` infers whether a task is greenfield, testing, modification, bugfix, or refactoring from the task name and plan section. This is orchestrator-level intelligence — the worker gets better context without the planner having to annotate every task
+- **Richer worker summaries**: Instead of parsing structured notepad entries, we trust the model to write useful summaries. Guidance now asks for files changed, key decisions, gotchas, and what's left. "Models are smart" — structure the ask, not the answer
+- **Scout research persistence**: Scout findings now persist to context files, so research survives the session. Before this, a Scout could discover critical patterns and that knowledge died when the session ended
+- **Post-batch review checkpoints**: After merging each batch, orchestrators can consult the Hygienic reviewer to catch drift before it compounds. Review is collaborative, not mandatory — the beekeeper decides
+- **Active Discovery**: Planning agents now challenge user assumptions during the planning phase. This isn't adversarial — it's collaborative pushback that aligns with P3 (Human Shapes, Agent Builds) and P4 (Good Enough Wins). An agent that accepts everything uncritically isn't planning, it's transcribing
+
+**Design insight:** The common thread is knowledge transfer. Orient ensures workers receive context. Richer summaries ensure orchestrators receive results. Scout persistence ensures future sessions receive research. Active Discovery ensures plans receive honest scrutiny. Every change improved how information flows between agents.
+
+### v1.1.1 (Prompt Hardening + Self-Maintenance)
+
+**Theme:** Behavioral enforcement through prompt engineering, plus agents that bootstrap and maintain their own operating manual.
+
+We studied [Oh My OpenCode](https://github.com/code-yeongyu/oh-my-opencode) (omo) to learn prompt engineering patterns. Key insight: omo is prompt-composition-based (dynamic assembly), Hive is tool-based (`hive_status`, `hive_plan_write`, etc.). We borrowed selectively, not wholesale.
+
+**What changed across all 6 agent prompts:**
+
+- **Architect**: Expanded intent classification with Strategy column, 6-item clearance checklist before plan submission, Test Strategy section for planning test approaches, Turn Termination rules to prevent dangling turns
+- **Forager**: "Resolve Before Blocking" guidance (try 3+ approaches before reporting blocked), expanded Orient pre-flight checklist, 6-item Completion Checklist before `hive_worktree_commit`
+- **Scout**: Fixed leaked persistence example (truncated research dump was polluting output), added year awareness to Iron Laws so agents know the current date
+- **Swarm**: Removed reference to non-existent "oracle" subagent, added "After Delegation — VERIFY" checklist, Turn Termination section
+- **Hive**: Turn Termination in Universal section (valid/invalid turn endings), Hard Blocks table replacing vague "Iron Laws" prose, AI-Slop Flags for detecting scope inflation and premature abstraction
+- **Hygienic**: Agent-executable verification emphasis with concrete ✅/❌ examples, expanded Active Implementation Simulation for more thorough mental dry-runs
+
+**Skill cleanup:**
+
+- Deleted `onboarding` skill (unreferenced by any agent, 10 total → 9)
+- Fixed `executing-plans` skill: replaced broken `finishing-a-development-branch` reference with `verification-before-completion`
+- Fixed `test-driven-development` skill: removed broken `@testing-anti-patterns.md` reference
+- Updated `writing-plans` skill with agent-executable acceptance criteria guidance
+- Added 3 unreferenced-but-kept skills to Hive's loading table: `systematic-debugging`, `test-driven-development`, `verification-before-completion`
+
+**New capabilities:**
+
+- **AGENTS.md integration**: Self-maintaining bootstrap that evolves with the project. New `hive_agents_md` tool with two operations: `init` (codebase scan → AGENTS.md template) and `sync` (context findings → AGENTS.md proposals). Sync respects P2 (Plan → Approve → Execute) — agents propose updates, humans approve. Context files flow into living documentation instead of becoming stale write-only artifacts
+- **Docker sandbox**: Lightweight container isolation for TDD (P6 + P7 alignment). Workers execute tests in sandboxed Docker containers via bash interception hook — transparent to agents, no code changes needed. Escape hatch: `HOST: <command>` prefix bypasses sandbox for host-level operations. Level 1 implementation (docker run) with auto-detection of project runtime (node:22-slim, python:3.12-slim, etc.). Aligns with "Good Enough Wins" (P4) — most projects need clean test environments, not full devcontainer complexity
+
+**Design insight:** Both features address the same meta-problem: *How do agents learn from their own work?* Prompts are contracts, not suggestions — concrete tables, checklists, and ✅/❌ examples survive model interpretation (P7). AGENTS.md captures project-level learnings (conventions, patterns, gotchas). Docker sandbox ensures those learnings are tested in isolation. Together they create a self-improving loop: agents document what they learn, test in clean environments, and future agents benefit from both.
+
+### v1.2.0 (Tighten the Gates, Deepen the Loop)
+
+**Theme:** Make agents smarter about their infrastructure, tighten enforcement.
+
+- **Docker Mastery Skill**: On-demand skill teaching agents to think in containers — debugging, docker-compose, Dockerfile authoring, image optimization. Docker is a platform for sandboxes (testing, integration, deployment), not just transparent wrapping. Primary user: Forager. Loaded via `hive_skill("docker-mastery")`
+- **AGENTS.md Mastery Skill**: On-demand skill teaching agents what makes effective pseudo-memory. AGENTS.md isn't documentation — it's the first briefing every session. Quality > quantity. Signal entries change agent behavior; noise entries waste context window. Loaded via `hive_skill("agents-md-mastery")`
+- **Tighter Discovery gate**: Replaced substring match with regex + content length check (minimum 100 chars). Empty or hidden Discovery sections now rejected. Aligns with P7 (Hard Gates)
+- **Sandbox bypass audit**: All HOST: commands logged with `[hive:sandbox]` prefix. Escape hatch removed from agent prompts — agents must ask users when host access needed. P7 enforcement without removing the mechanism
+- **Atomic AGENTS.md apply**: New `apply` action on `hive_agents_md` tool. Agents propose → user approves → apply writes atomically. Eliminates manual edit errors during approval flow
+- **Persistent sandbox containers**: One container per worktree, reused across commands. 50 test runs = 1 container, not 50. `docker run -d` + `docker exec` replaces ephemeral `docker run --rm`
+- **Context lifecycle management**: Archive method moves stale contexts to timestamped archive/. Stats method reports context health. Size warning at 20K chars. Prevents unbounded context growth
+
+**Design insight:** v1.1.1 asked "how do agents learn from their work?" v1.2.0 asks "how do agents learn to use their tools?" Skills are the answer — on-demand depth without prompt bloat. The Docker skill teaches container thinking. The AGENTS.md skill teaches memory hygiene. Both make agents more capable without adding infrastructure.
 
 ---
 

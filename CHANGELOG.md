@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-02-08
+
+### Added
+- **Docker Mastery Skill**: On-demand skill teaching agents container thinking — debugging, docker-compose, Dockerfile authoring, image optimization, integration testing. Primary user: Forager. Loaded via `hive_skill("docker-mastery")`
+- **AGENTS.md Mastery Skill**: On-demand skill teaching agents what makes effective pseudo-memory — signal vs noise filtering, section structure, when to prune. Primary users: Hive, Swarm, Architect. Loaded via `hive_skill("agents-md-mastery")`
+- **Atomic AGENTS.md Apply**: New `apply` action on `hive_agents_md` tool — agents propose → user approves → apply writes atomically to eliminate manual edit errors
+- **Persistent Sandbox Containers**: One container per worktree, reused across commands via `docker exec`. 50 test runs = 1 container (not 50). Reduces overhead, speeds up test execution
+- **Context Lifecycle Management**: `archive()` moves stale contexts to timestamped archive/, `stats()` reports context health (count/size/age), size warning at 20K chars
+- **Sandbox Bypass Audit Logging**: All HOST: commands logged with `[hive:sandbox]` prefix for visibility into sandbox escape usage
+
+### Changed
+- **Discovery Gate Tightened**: Replaced substring match with regex + 100 char minimum content length. Empty or comment-hidden Discovery sections now rejected (P7 Hard Gates enforcement)
+- **Forager Prompt**: Removed HOST: escape hatch documentation — agents must report as blocked and ask users when host access needed
+- **Agent Prompts (Hive, Swarm, Forager)**: Added skill references for docker-mastery and agents-md-mastery
+- **Skill Count**: 9 skills → 11 skills (docker-mastery, agents-md-mastery added)
+- **JSON Schema**: Added sandbox, dockerImage, and persistentContainers properties to agent_hive.schema.json
+
+### Fixed
+- **Discovery Gate Bypass**: Empty Discovery sections or hidden Discovery headers (in HTML comments) no longer pass validation
+
+## [1.1.1] - 2026-02-08
+
+### Added
+- **AGENTS.md Self-Maintenance Tool**: New `hive_agents_md` tool with `init` and `sync` operations — agents can bootstrap AGENTS.md from codebase analysis and propose updates from feature context discoveries (with approval gate per P2)
+- **Docker Sandbox Isolation**: Level 1 Docker sandboxing for worker execution — transparent bash interception wraps test commands in containers, auto-detects project runtime (node/python/go/rust), includes `HOST:` escape hatch for host-level operations
+
+### Changed
+- **Architect Prompt Hardened**: Expanded intent classification with Strategy column, 6-item clearance checklist, Test Strategy section, Turn Termination rules
+- **Forager Prompt Hardened**: "Resolve Before Blocking" guidance (try 3+ approaches), expanded Orient pre-flight, 6-item Completion Checklist
+- **Forager Prompt**: Added Docker Sandbox awareness section to Iron Laws — explains transparent container wrapping and HOST: escape hatch
+- **Scout Prompt Fixed**: Fixed leaked persistence example (truncated research dump), added year awareness to Iron Laws
+- **Swarm Prompt Hardened**: Removed non-existent "oracle" subagent reference, added "After Delegation — VERIFY" checklist, Turn Termination
+- **Hive Prompt Hardened**: Turn Termination (valid/invalid endings), Hard Blocks table replacing vague Iron Laws prose, AI-Slop Flags
+- **Hygienic Prompt Hardened**: Agent-executable verification emphasis with ✅/❌ examples, expanded Active Implementation Simulation
+- **Writing-Plans Skill**: Added agent-executable acceptance criteria guidance
+- **Hive Skill Loading**: Added `systematic-debugging`, `test-driven-development`, `verification-before-completion` to Hive's skill table
+- **PHILOSOPHY.md**: Added "Wax Seal" (sandbox) to Hive Terminology table, added v1.1.1 evolution notes documenting AGENTS.md integration and Docker sandbox design decisions
+- **Agent Prompts (Hive + Swarm)**: Added AGENTS.md maintenance guidance — orchestrators sync context findings after feature completion
+
+### Removed
+- **Onboarding Skill**: Deleted — unreferenced by any agent (10 skills → 9)
+
+### Fixed
+- **Broken Skill References**: Fixed `executing-plans` referencing deleted `finishing-a-development-branch`, fixed `test-driven-development` referencing non-existent `@testing-anti-patterns.md`
+- **Skill Registry Regenerated**: `registry.generated.ts` updated to reflect 9 skills
+
+### Stats
+- 6 agent prompts updated, 3 skills fixed/removed, 39 prompt tests added/updated
+- Clean build across all 3 packages, 9 skills registered
+
+## [1.1.0] - 2026-02-06
+
+### Added
+- **Worker Orient Phase**: Forager agents now run a pre-flight checklist before coding — read references, check patterns, verify assumptions. Prevents "code first, ask questions later" failures
+- **Task-Type Auto-Inference**: `buildSpecContent()` automatically infers task type (greenfield/testing/modification/bugfix/refactoring) from task name and plan section, giving workers better context without manual annotation
+- **Post-Batch Code Review Checkpoints**: After each batch merge, orchestrators (Hive + Swarm) prompt for optional Hygienic reviewer consultation to catch drift early
+- **Scout Research Persistence**: Scout agents now persist research findings to context files via `hive_context_write`, so discoveries survive for future workers instead of dying with the session
+- **Active Discovery**: Planning agents (Hive + Architect) challenge user assumptions during planning — collaborative pushback on proposals that may not survive "Good Enough Wins" (P4)
+- **Worktree Info in `hive_status`**: Task status output now includes worktree path and branch info per task for better visibility
+
+### Changed
+- **Tool Consolidation**: Simplified from 22 tools → 14 tools by removing redundant background task and journal infrastructure
+- **Tool Rename**: `hive_exec_start` → `hive_worktree_create`, `hive_exec_complete` → `hive_worktree_commit` — names now reflect the worktree-based execution model
+- **Worker Summary Guidance**: Forager prompts now guide richer summaries (files changed, key decisions, gotchas, what's left) instead of the old notepad-based approach
+- **All Agent Prompts Updated**: Hive, Swarm, Architect, Scout, Forager, Hygienic — all reflect the consolidated tool set and new capabilities
+- **All Skills Updated**: Removed background task references, renamed exec→worktree throughout
+- **VS Code Extension Updated**: Tool registrations reflect the 14-tool set
+
+### Removed
+- **Background Task Infrastructure**: ~5,000 lines deleted — `agent-gate.ts`, `concurrency.ts`, `manager.ts`, `poller.ts`, `store.ts`, `types.ts`, `background-tools.ts` and tests. The complexity wasn't justified; direct worktree execution is simpler and more reliable
+- **`delegateMode` Config**: Removed from types and configuration — no longer needed without background tasks
+- **Journal Infrastructure**: Removed journal paths, templates, and references from hive-core — journals were write-only artifacts nobody read
+- **8 Redundant Tools**: `hive_background_start`, `hive_background_status`, `hive_background_cancel`, `hive_background_result`, `hive_exec_start`, `hive_exec_complete`, `hive_journal_read`, `hive_feature_status`
+- **Dead Notepad References**: Cleaned up stale notepad guidance from forager prompt
+
+### Fixed
+- **Stale Tool References**: `hive_exec_start`/`hive_exec_complete` → `hive_worktree_create`/`hive_worktree_commit` in PHILOSOPHY.md and all documentation
+
+### Stats
+- 54 files changed, 512 insertions, 7,328 deletions (net ~6,800 lines removed)
+- Test suite: 88 tests across 5 files (4 new tests for task-type inference)
+- Clean build across all 3 packages (hive-core, opencode-hive, vscode-hive)
+
 ## [1.0.7] - 2026-02-04
 
 ### Added
