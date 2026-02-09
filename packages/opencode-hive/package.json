@@ -56,5 +56,8 @@
     "dist/",
     "skills/",
     "README.md"
-  ]
+  ],
+  "nx": {
+    "includedScripts": ["build", "test"]
+  }
 }

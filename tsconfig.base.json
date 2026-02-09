@@ -16,6 +16,9 @@
       "hive-core": [
         "packages/hive-core/src/index.ts"
       ],
+      "opencode-hive": [
+        "packages/opencode-hive/src/index.ts"
+      ],
       "vscode-hive": [
         "packages/vscode-hive/src/index.ts"
       ]
