@@ -1,9 +1,23 @@
 {
   "name": "vscode-hive",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "includedScripts": [
+    "build",
+    "test:webview"
+  ],
   "sourceRoot": "packages/vscode-hive/src",
   "projectType": "library",
   "tags": [],
-  "// targets": "to see all targets run: nx show project vscode-hive --web",
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "config": "packages/vscode-hive/vitest.webview.config.ts",
+        "reportsDirectory": "../../coverage/packages/vscode-hive"
+      }
+    }
+  }
 }

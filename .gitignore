@@ -54,3 +54,4 @@ seamless-agent/
 .opencode/
 
 vite.config.*.timestamp*
+vitest.config.*.timestamp*
