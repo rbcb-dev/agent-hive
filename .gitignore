@@ -52,3 +52,5 @@ seamless-agent/
 .claude/
 .sisyphus/
 .opencode/
+
+vite.config.*.timestamp*

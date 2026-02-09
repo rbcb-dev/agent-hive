@@ -1,20 +1,9 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2022",
-    "moduleResolution": "bundler",
-    "declaration": true,
-    "emitDeclarationOnly": true,
     "outDir": "dist",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "sourceMap": false,
-    "strict": false,
-    "noImplicitAny": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
