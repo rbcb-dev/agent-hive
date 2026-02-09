@@ -45,6 +45,9 @@ oh-my-opencode-slim/
 opencode/
 seamless-agent/
 
+# NX cache
+.nx/
+
 # Tool configs
 .claude/
 .sisyphus/
