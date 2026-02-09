@@ -10,7 +10,15 @@
     "build": "bun run --filter hive-core build && bun run --filter opencode-hive build && bun run --filter vscode-hive build",
     "dev": "bun run --filter hive-core build && bun run --filter '*' dev",
     "release:prepare": "node scripts/release/prepare.mjs",
-    "release:check": "bun install && bun run build && npm -ws --if-present run test"
+    "release:check": "bun install && bun run build && npm -ws --if-present run test",
+    "lint": "bunx nx run-many --target=lint",
+    "nx:build": "bunx nx run-many --target=build",
+    "nx:test": "bunx nx run-many --target=test",
+    "nx:lint": "bunx nx run-many --target=lint",
+    "nx:graph": "bunx nx graph",
+    "nx:affected:build": "bunx nx affected --target=build",
+    "nx:affected:test": "bunx nx affected --target=test",
+    "nx:affected:lint": "bunx nx affected --target=lint"
   },
   "license": "MIT",
   "devDependencies": {
