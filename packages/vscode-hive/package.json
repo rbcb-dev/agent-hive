@@ -926,5 +926,8 @@
     "react-diff-view": "^3.3.2",
     "react-dom": "^19.2.4",
     "shiki": "^3.21.0"
+  },
+  "nx": {
+    "includedScripts": ["build", "test:webview"]
   }
 }
