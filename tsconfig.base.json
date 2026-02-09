@@ -12,6 +12,10 @@
     "noImplicitAny": false,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "hive-core": [
+        "packages/hive-core/src/index.ts"
+      ]
+    }
   }
 }

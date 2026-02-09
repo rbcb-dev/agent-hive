@@ -10,7 +10,9 @@
       "!{projectRoot}/**/*.spec.*",
       "!{projectRoot}/**/*.test.*",
       "!{projectRoot}/**/*.stories.*",
-      "!{projectRoot}/**/__tests__/**"
+      "!{projectRoot}/**/__tests__/**",
+      "!{projectRoot}/.eslintrc.json",
+      "!{projectRoot}/eslint.config.mjs"
     ],
     "sharedGlobals": [
       "{workspaceRoot}/package.json",
@@ -64,6 +66,12 @@
           "buildDepsName": "build-deps",
           "watchDepsName": "watch-deps"
         }
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
       }
     }
   ]

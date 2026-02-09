@@ -45,5 +45,8 @@
   "files": [
     "dist/",
     "README.md"
-  ]
+  ],
+  "nx": {
+    "includedScripts": ["build", "test"]
+  }
 }
