@@ -34,6 +34,11 @@
       "{workspaceRoot}/.prettierrc",
       "{workspaceRoot}/.prettierignore",
       "sharedGlobals"
+    ],
+    "storybook": [
+      "default",
+      "{projectRoot}/.storybook/**/*",
+      "{projectRoot}/**/*.stories.*"
     ]
   },
   "targetDefaults": {
@@ -85,14 +90,16 @@
     },
     "build-storybook": {
       "cache": true,
-      "inputs": [
-        "default",
-        "^production",
-        "{projectRoot}/.storybook/**/*",
-        "{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
-      ],
+      "inputs": ["storybook"],
       "outputs": [
         "{projectRoot}/storybook-static"
+      ]
+    },
+    "test-storybook": {
+      "cache": true,
+      "inputs": ["storybook"],
+      "outputs": [
+        "{projectRoot}/__image_snapshots__"
       ]
     }
   },
@@ -136,8 +143,8 @@
       "plugin": "@nx/storybook/plugin",
       "options": {
         "serveStorybookTargetName": "storybook",
-        "buildStorybookTargetName": "build-storybook",
-        "testStorybookTargetName": "test-storybook",
+        "buildStorybookTargetName": "storybook:build-inferred",
+        "testStorybookTargetName": "storybook:test-inferred",
         "staticStorybookTargetName": "static-storybook",
         "buildDepsTargetName": "storybook:build-deps",
         "watchDepsTargetName": "storybook:watch-deps"

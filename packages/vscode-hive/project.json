@@ -12,7 +12,9 @@
   "targets": {
     "build": {
       "dependsOn": [
-        "vite:build"
+        "vite:build",
+        "build-storybook",
+        "test-storybook"
       ]
     },
     "test": {
@@ -24,6 +26,27 @@
         "config": "packages/vscode-hive/vitest.webview.config.ts",
         "reportsDirectory": "../../coverage/packages/vscode-hive"
       }
+    },
+    "build-storybook": {
+      "executor": "@nx/storybook:build",
+      "outputs": ["{projectRoot}/storybook-static"],
+      "options": {
+        "configDir": "packages/vscode-hive/.storybook",
+        "outputDir": "packages/vscode-hive/storybook-static"
+      },
+      "cache": true,
+      "inputs": ["storybook", "^production"],
+      "dependsOn": ["^build"]
+    },
+    "test-storybook": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "packages/vscode-hive/vitest.storybook.config.ts"
+      },
+      "cache": true,
+      "inputs": ["storybook", "^production"],
+      "outputs": ["{projectRoot}/__image_snapshots__"],
+      "dependsOn": ["build-storybook"]
     }
   }
 }
