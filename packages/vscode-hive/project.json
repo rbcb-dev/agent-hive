@@ -11,6 +11,11 @@
   "projectType": "library",
   "tags": [],
   "targets": {
+    "build": {
+      "dependsOn": [
+        "vite:build"
+      ]
+    },
     "test": {
       "executor": "@nx/vitest:test",
       "outputs": [
