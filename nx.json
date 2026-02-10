@@ -24,6 +24,16 @@
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/bun.lock",
       "{workspaceRoot}/tsconfig.base.json"
+    ],
+    "linting": [
+      "{projectRoot}/**/*",
+      "!{projectRoot}/dist/**",
+      "!{projectRoot}/coverage/**",
+      "!{projectRoot}/node_modules/**",
+      "{workspaceRoot}/eslint.config.mjs",
+      "{workspaceRoot}/.prettierrc",
+      "{workspaceRoot}/.prettierignore",
+      "sharedGlobals"
     ]
   },
   "targetDefaults": {
@@ -63,6 +73,16 @@
         "default",
         "^production"
       ]
+    },
+    "format:check": {
+      "cache": true,
+      "inputs": ["linting"],
+      "outputs": []
+    },
+    "format:write": {
+      "cache": false,
+      "inputs": ["linting"],
+      "outputs": []
     }
   },
   "defaultBase": "main",

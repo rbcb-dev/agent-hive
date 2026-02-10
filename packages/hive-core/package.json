@@ -32,7 +32,9 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && bun build src/index.ts --outdir dist --target node --format esm && tsc --emitDeclarationOnly",
-    "test": "bun test"
+    "test": "bun test",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "format:write": "prettier --write 'src/**/*.ts'"
   },
   "dependencies": {
     "simple-git": "^3.27.0"
@@ -47,6 +49,6 @@
     "README.md"
   ],
   "nx": {
-    "includedScripts": ["build", "test"]
+    "includedScripts": ["build", "test", "format:check", "format:write"]
   }
 }
