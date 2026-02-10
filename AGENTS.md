@@ -8,7 +8,7 @@
 
 ```bash
 # Build all packages via NX (resolves dependency graph, runs lint + format checks, caches results)
-# Includes full Storybook pipeline for vscode-hive: vite:build → build-storybook → test-storybook
+# Includes full Storybook pipeline for vscode-hive: vite:build → build-storybook → test-storybook → test-storybook-visual
 bun run build
 
 # Legacy sequential build (for CI / upstream compat — no NX, no Storybook pipeline)
@@ -24,14 +24,14 @@ bun run test
 # Only build/test projects affected by your changes (faster for incremental work)
 bun run build:affected
 bun run test:affected
-bun run storybook:affected    # Build + test Storybook for affected projects only
+bun run storybook:affected    # Build + test Storybook (functional + visual) for affected projects only
 
 # Release preparation
 bun run release:check         # Install, legacy build, and test all packages
 bun run release:prepare       # Prepare release
 ```
 
-**`bun run build` (NX) vs `bun run build:legacy` (CI)**: `bun run build` uses NX to resolve the dependency graph, run lint + format checks first, include the Storybook pipeline (build → test with image snapshots), and cache results. `bun run build:legacy` runs each package sequentially via `--filter` without NX — this is what CI uses and matches upstream `main`. Prefer `bun run build` for local development; `build:legacy` is for CI workflows and release checks.
+**`bun run build` (NX) vs `bun run build:legacy` (CI)**: `bun run build` uses NX to resolve the dependency graph, run lint + format checks first, include the Storybook pipeline (build → test with image snapshots → visual snapshot verification), and cache results. `bun run build:legacy` runs each package sequentially via `--filter` without NX — this is what CI uses and matches upstream `main`. Prefer `bun run build` for local development; `build:legacy` is for CI workflows and release checks.
 
 Worktree dependency note: worktrees are isolated checkouts and do not share the root `node_modules`. If you run tests or builds inside a worktree, run `bun install` there first (or run tests from the repo root that already has dependencies installed).
 
@@ -50,6 +50,7 @@ bun run nx:typecheck                      # Typecheck all projects
 # Storybook (part of vscode-hive build pipeline)
 bun run nx:build-storybook                # Build Storybook for all projects that have it
 bun run nx:test-storybook                 # Run Storybook tests via Vitest portable stories
+bun run nx:test-storybook-visual          # Run visual snapshot tests via Vitest browser mode (Playwright)
 
 # Single project (use env vars prefix)
 NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
@@ -75,9 +76,9 @@ NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
 
 - NX uses existing `package.json` scripts (via `includedScripts`) — it does NOT replace bun/esbuild/vite builds
 - `tsconfig.base.json` provides path aliases for cross-package imports (no project references / composite)
-- NX caches `build`, `test`, `lint`, `format:check`, `build-storybook`, and `test-storybook` targets; cache outputs are in `{projectRoot}/dist`, `{projectRoot}/coverage`, `{projectRoot}/storybook-static`, and `{projectRoot}/__image_snapshots__`
+- NX caches `build`, `test`, `lint`, `format:check`, `build-storybook`, `test-storybook`, and `test-storybook-visual` targets; cache outputs are in `{projectRoot}/dist`, `{projectRoot}/coverage`, `{projectRoot}/storybook-static`, and `{projectRoot}/__image_snapshots__`
 - Build targets have `dependsOn: ["^build", "lint", "format:check"]` — NX runs lint + format checks before building
-- For vscode-hive, `build` depends on `vite:build`, `build-storybook`, and `test-storybook` — the full Storybook pipeline runs as part of the build
+- For vscode-hive, `build` depends on `vite:build`, `build-storybook`, `test-storybook`, and `test-storybook-visual` — the full Storybook pipeline (functional + visual) runs as part of the build
 - `format:check` is cacheable; `format:write` is NOT cacheable (it modifies files)
 - ESLint is configured with warnings-only rules (`@nx/enforce-module-boundaries`)
 - `.nxignore` excludes `docs/`, `scripts/`, `.github/`, `.hive/` from NX project graph analysis
@@ -89,8 +90,23 @@ Storybook testing uses **Vitest portable stories** (not `@storybook/test-runner`
 - **Configuration**: `packages/vscode-hive/vitest.storybook.config.ts` (separate from component tests in `vitest.webview.config.ts`)
 - **Pattern**: `composeStories()` + `Story.run()` via `@storybook/react-vite` portable stories API
 - **Image snapshots**: `vitest-image-snapshot` generates baseline PNGs in `packages/vscode-hive/__image_snapshots__/`; diff outputs (`__diff_output__/`) are gitignored
-- **NX pipeline**: `build-storybook` (`@nx/storybook:build`) → `test-storybook` (`@nx/vitest:test`) — chained via `dependsOn`
+- **NX pipeline**: `build-storybook` (`@nx/storybook:build`) → `test-storybook` (`@nx/vitest:test`) → `test-storybook-visual` (`@nx/vitest:test`) — chained via `dependsOn`
 - **File convention**: Storybook tests use `.spec.ts` extension to avoid collision with component tests (`.test.ts`)
+
+#### Visual Snapshot Testing
+
+Visual regression tests run in **Vitest browser mode** with Playwright (chromium):
+
+- **Configuration**: `packages/vscode-hive/vitest.visual.config.ts` (separate from functional tests)
+- **Test file**: `packages/vscode-hive/src/webview/__tests__/storybook-visual.spec.ts`
+- **NX target**: `test-storybook-visual` — depends on `build-storybook`, runs as part of `build`
+- **Baselines**: PNG files in `packages/vscode-hive/__image_snapshots__/` (committed to git)
+- **Updating baselines**: Run with `--update` flag to regenerate:
+  ```bash
+  NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run vscode-hive:test-storybook-visual --update
+  ```
+- **Root script**: `bun run nx:test-storybook-visual` runs visual tests for all projects
+- **Affected only**: `bun run storybook:affected` includes visual tests alongside functional tests
 
 ### Upstream Merge Strategy
 
