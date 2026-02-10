@@ -902,8 +902,6 @@
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.100.0",
     "@vitejs/plugin-react": "^5.1.2",
-    "@vitest/coverage-v8": "^4.0.18",
-    "@vitest/ui": "^4.0.18",
     "@vscode/vsce": "^3.7.1",
     "concurrently": "^9.2.1",
     "esbuild": "^0.27.2",
