@@ -82,6 +82,18 @@
       "cache": false,
       "inputs": ["linting"],
       "outputs": []
+    },
+    "build-storybook": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production",
+        "{projectRoot}/.storybook/**/*",
+        "{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
+      ],
+      "outputs": [
+        "{projectRoot}/storybook-static"
+      ]
     }
   },
   "defaultBase": "main",

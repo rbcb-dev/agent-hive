@@ -26,7 +26,9 @@
     "typecheck": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=typecheck",
     "nx:typecheck": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=typecheck",
     "nx:affected:typecheck": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected --target=typecheck",
-    "nx:affected:format": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected --target=format:check"
+    "nx:affected:format": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected --target=format:check",
+    "nx:build-storybook": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=build-storybook",
+    "nx:test-storybook": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=test-storybook"
   },
   "license": "MIT",
   "devDependencies": {
