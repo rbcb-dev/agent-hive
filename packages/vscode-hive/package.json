@@ -930,7 +930,6 @@
   "nx": {
     "includedScripts": [
       "build",
-      "test:webview",
       "format:check",
       "format:write"
     ]
