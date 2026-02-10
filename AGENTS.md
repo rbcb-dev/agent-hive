@@ -7,22 +7,31 @@
 ## Build & Test Commands
 
 ```bash
-# Build all packages (sequential, without NX — runs each package filter in order)
+# Build all packages via NX (resolves dependency graph, runs lint + format checks, caches results)
+# Includes full Storybook pipeline for vscode-hive: vite:build → build-storybook → test-storybook
 bun run build
 
-# Development mode (all packages)
+# Legacy sequential build (for CI / upstream compat — no NX, no Storybook pipeline)
+bun run build:legacy
+bun run build:ci              # Alias for build:legacy
+
+# Development mode (all packages via NX)
 bun run dev
 
-# Run tests (from package directories)
-bun run test              # Run all tests
-bun run test -- <file>    # Run specific test
+# Run all tests via NX
+bun run test
+
+# Only build/test projects affected by your changes (faster for incremental work)
+bun run build:affected
+bun run test:affected
+bun run storybook:affected    # Build + test Storybook for affected projects only
 
 # Release preparation
-bun run release:check     # Install, build, and test all packages
-bun run release:prepare   # Prepare release
+bun run release:check         # Install, legacy build, and test all packages
+bun run release:prepare       # Prepare release
 ```
 
-**`bun run build` vs `bun run nx:build`**: `bun run build` runs each package sequentially via `--filter` without NX orchestration. `bun run nx:build` uses NX to resolve the dependency graph, run lint + format checks first, and cache results. Prefer `bun run nx:build` for CI and full validation; use `bun run build` for quick local builds.
+**`bun run build` (NX) vs `bun run build:legacy` (CI)**: `bun run build` uses NX to resolve the dependency graph, run lint + format checks first, include the Storybook pipeline (build → test with image snapshots), and cache results. `bun run build:legacy` runs each package sequentially via `--filter` without NX — this is what CI uses and matches upstream `main`. Prefer `bun run build` for local development; `build:legacy` is for CI workflows and release checks.
 
 Worktree dependency note: worktrees are isolated checkouts and do not share the root `node_modules`. If you run tests or builds inside a worktree, run `bun install` there first (or run tests from the repo root that already has dependencies installed).
 
@@ -38,9 +47,9 @@ bun run format:check                      # Check formatting (Prettier)
 bun run format:write                      # Fix formatting across all packages
 bun run nx:typecheck                      # Typecheck all projects
 
-# Storybook (opt-in, not part of default build pipeline)
+# Storybook (part of vscode-hive build pipeline)
 bun run nx:build-storybook                # Build Storybook for all projects that have it
-bun run nx:test-storybook                 # Run Storybook interaction tests
+bun run nx:test-storybook                 # Run Storybook tests via Vitest portable stories
 
 # Single project (use env vars prefix)
 NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
@@ -66,11 +75,32 @@ NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
 
 - NX uses existing `package.json` scripts (via `includedScripts`) — it does NOT replace bun/esbuild/vite builds
 - `tsconfig.base.json` provides path aliases for cross-package imports (no project references / composite)
-- NX caches `build`, `test`, `lint`, `format:check`, and `build-storybook` targets; cache outputs are in `{projectRoot}/dist`, `{projectRoot}/coverage`, and `{projectRoot}/storybook-static`
+- NX caches `build`, `test`, `lint`, `format:check`, `build-storybook`, and `test-storybook` targets; cache outputs are in `{projectRoot}/dist`, `{projectRoot}/coverage`, `{projectRoot}/storybook-static`, and `{projectRoot}/__image_snapshots__`
 - Build targets have `dependsOn: ["^build", "lint", "format:check"]` — NX runs lint + format checks before building
-- Storybook targets (`build-storybook`, `test-storybook`) are opt-in and NOT part of the default `build` pipeline
+- For vscode-hive, `build` depends on `vite:build`, `build-storybook`, and `test-storybook` — the full Storybook pipeline runs as part of the build
 - `format:check` is cacheable; `format:write` is NOT cacheable (it modifies files)
 - ESLint is configured with warnings-only rules (`@nx/enforce-module-boundaries`)
+- `.nxignore` excludes `docs/`, `scripts/`, `.github/`, `.hive/` from NX project graph analysis
+
+### Storybook Testing Pipeline
+
+Storybook testing uses **Vitest portable stories** (not `@storybook/test-runner`):
+
+- **Configuration**: `packages/vscode-hive/vitest.storybook.config.ts` (separate from component tests in `vitest.webview.config.ts`)
+- **Pattern**: `composeStories()` + `Story.run()` via `@storybook/react-vite` portable stories API
+- **Image snapshots**: `vitest-image-snapshot` generates baseline PNGs in `packages/vscode-hive/__image_snapshots__/`; diff outputs (`__diff_output__/`) are gitignored
+- **NX pipeline**: `build-storybook` (`@nx/storybook:build`) → `test-storybook` (`@nx/vitest:test`) — chained via `dependsOn`
+- **File convention**: Storybook tests use `.spec.ts` extension to avoid collision with component tests (`.test.ts`)
+
+### Upstream Merge Strategy
+
+This repo adds NX configuration alongside (not replacing) existing build infrastructure:
+
+- **Root scripts**: Grouped with `//upstream` comments (legacy/CI-compat first) and `//nx` comments (NX-powered after) in `package.json`
+- **CI workflows** (`ci.yml`, `release.yml`): Use direct per-package builds, NOT NX — they remain unchanged
+- **NX-only files**: `nx.json`, `tsconfig.base.json`, `project.json` files, `.nxignore` — these don't exist in upstream `main`, so zero merge conflict
+- **Conflict surface**: Only `package.json` scripts + `devDependencies` + `.gitignore` entries; minimized by grouping NX additions at the end
+- **`release:check`**: Uses `build:legacy` to validate CI-compatible builds
 
 ### Package-Specific Commands
 
@@ -148,7 +178,8 @@ packages/
 
 ### Tests
 
-- Test files use `.test.ts` suffix
+- Component/unit test files use `.test.ts` suffix
+- Storybook test files use `.spec.ts` suffix (to keep Vitest configs separate)
 - Place tests next to source files or in `__tests__/` directories
 - Use descriptive test names
 
