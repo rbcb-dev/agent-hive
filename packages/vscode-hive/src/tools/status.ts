@@ -1,4 +1,11 @@
-import { FeatureService, TaskService, PlanService, ContextService, buildEffectiveDependencies, computeRunnableAndBlocked } from 'hive-core';
+import {
+  FeatureService,
+  TaskService,
+  PlanService,
+  ContextService,
+  buildEffectiveDependencies,
+  computeRunnableAndBlocked,
+} from 'hive-core';
 import type { TaskWithDeps } from 'hive-core';
 import type { ToolRegistration } from './base';
 
@@ -32,7 +39,7 @@ export function getStatusTools(workspaceRoot: string): ToolRegistration[] {
     const contextFiles = contextService.list(feature);
 
     // Build task summaries with dependency info from raw status
-    const tasksSummary = tasks.map(t => {
+    const tasksSummary = tasks.map((t) => {
       const rawStatus = taskService.getRawStatus(feature, t.folder);
       return {
         folder: t.folder,
@@ -45,31 +52,38 @@ export function getStatusTools(workspaceRoot: string): ToolRegistration[] {
     });
 
     // Compute runnable and blocked tasks for orchestrators (apply legacy fallback)
-    const tasksWithDeps: TaskWithDeps[] = tasksSummary.map(t => ({
+    const tasksWithDeps: TaskWithDeps[] = tasksSummary.map((t) => ({
       folder: t.folder,
       status: t.status,
       dependsOn: t.dependsOn ?? undefined,
     }));
     const effectiveDeps = buildEffectiveDependencies(tasksWithDeps);
-    const normalizedTasks: TaskWithDeps[] = tasksWithDeps.map(task => ({
+    const normalizedTasks: TaskWithDeps[] = tasksWithDeps.map((task) => ({
       ...task,
       dependsOn: effectiveDeps.get(task.folder),
     }));
     const { runnable, blocked } = computeRunnableAndBlocked(normalizedTasks);
 
-    const contextSummary = contextFiles.map(c => ({
+    const contextSummary = contextFiles.map((c) => ({
       name: c.name,
       chars: c.content.length,
       updatedAt: c.updatedAt,
     }));
 
-    const pendingTasks = tasksSummary.filter(t => t.status === 'pending');
-    const inProgressTasks = tasksSummary.filter(t => t.status === 'in_progress');
-    const doneTasks = tasksSummary.filter(t => t.status === 'done');
+    const pendingTasks = tasksSummary.filter((t) => t.status === 'pending');
+    const inProgressTasks = tasksSummary.filter(
+      (t) => t.status === 'in_progress',
+    );
+    const doneTasks = tasksSummary.filter((t) => t.status === 'done');
 
-    const planStatus = featureData.status === 'planning' ? 'draft' :
-      featureData.status === 'approved' ? 'approved' :
-        featureData.status === 'executing' ? 'locked' : 'none';
+    const planStatus =
+      featureData.status === 'planning'
+        ? 'draft'
+        : featureData.status === 'approved'
+          ? 'approved'
+          : featureData.status === 'executing'
+            ? 'locked'
+            : 'none';
 
     return JSON.stringify({
       feature: {
@@ -102,14 +116,16 @@ export function getStatusTools(workspaceRoot: string): ToolRegistration[] {
 
   const baseStatusTool: Omit<ToolRegistration, 'name'> = {
     displayName: 'Get Hive Status',
-    modelDescription: 'Get comprehensive status of a feature including plan, tasks, and context. Returns JSON with all relevant state for resuming work.',
+    modelDescription:
+      'Get comprehensive status of a feature including plan, tasks, and context. Returns JSON with all relevant state for resuming work.',
     readOnly: true,
     inputSchema: {
       type: 'object',
       properties: {
         feature: {
           type: 'string',
-          description: 'Feature name (optional, uses active feature if omitted)',
+          description:
+            'Feature name (optional, uses active feature if omitted)',
         },
       },
     },
@@ -128,7 +144,11 @@ export function getStatusTools(workspaceRoot: string): ToolRegistration[] {
   ];
 }
 
-function getNextAction(planStatus: string | null, tasks: Array<{ status: string; folder: string }>, runnable: string[]): string {
+function getNextAction(
+  planStatus: string | null,
+  tasks: Array<{ status: string; folder: string }>,
+  runnable: string[],
+): string {
   if (!planStatus || planStatus === 'draft') {
     return 'Write or revise plan with hive_plan_write, then get approval';
   }
@@ -138,7 +158,7 @@ function getNextAction(planStatus: string | null, tasks: Array<{ status: string;
   if (tasks.length === 0) {
     return 'Generate tasks from plan with hive_tasks_sync';
   }
-  const inProgress = tasks.find(t => t.status === 'in_progress');
+  const inProgress = tasks.find((t) => t.status === 'in_progress');
   if (inProgress) {
     return `Continue work on task: ${inProgress.folder}`;
   }
@@ -149,7 +169,7 @@ function getNextAction(planStatus: string | null, tasks: Array<{ status: string;
   if (runnable.length === 1) {
     return `Start next task with hive_worktree_create: ${runnable[0]}`;
   }
-  const pending = tasks.find(t => t.status === 'pending');
+  const pending = tasks.find((t) => t.status === 'pending');
   if (pending) {
     return `Pending tasks exist but are blocked by dependencies. Check blockedBy for details.`;
   }

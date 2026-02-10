@@ -1,13 +1,17 @@
 /**
  * Tests for ReviewPanel webview integration
- * 
+ *
  * Note: Full VSCode extension testing requires complex setup.
  * These tests focus on the logic that can be tested in isolation.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as path from 'path';
-import { getLanguageId, isPathWithinWorkspace, LARGE_FILE_THRESHOLD } from '../fileUtils';
+import {
+  getLanguageId,
+  isPathWithinWorkspace,
+  LARGE_FILE_THRESHOLD,
+} from '../fileUtils';
 
 // Test the URI rewriting logic
 describe('ReviewPanel URI Utilities', () => {
@@ -66,7 +70,11 @@ describe('ReviewPanel URI Utilities', () => {
 
   describe('localResourceRoots', () => {
     it('should include dist/webview directory', () => {
-      const webviewDistPath = path.join(mockExtensionUri.fsPath, 'dist', 'webview');
+      const webviewDistPath = path.join(
+        mockExtensionUri.fsPath,
+        'dist',
+        'webview',
+      );
       expect(webviewDistPath).toBe('/mock/extension/path/dist/webview');
     });
   });
@@ -312,7 +320,7 @@ describe('File Content Request Protocol - Path Utilities', () => {
     const workspaceRoot = '/project';
     const relativePath = 'src/index.ts';
     const absolutePath = path.join(workspaceRoot, relativePath);
-    
+
     expect(absolutePath).toBe('/project/src/index.ts');
   });
 
@@ -364,11 +372,15 @@ describe('File Content Request Protocol - getLanguageId', () => {
 // Test isPathWithinWorkspace utility
 describe('File Content Request Protocol - isPathWithinWorkspace', () => {
   it('should return true for path within workspace', () => {
-    expect(isPathWithinWorkspace('/project', '/project/src/file.ts')).toBe(true);
+    expect(isPathWithinWorkspace('/project', '/project/src/file.ts')).toBe(
+      true,
+    );
   });
 
   it('should return true for nested paths', () => {
-    expect(isPathWithinWorkspace('/project', '/project/src/deep/nested/file.ts')).toBe(true);
+    expect(
+      isPathWithinWorkspace('/project', '/project/src/deep/nested/file.ts'),
+    ).toBe(true);
   });
 
   it('should return false for path outside workspace', () => {
@@ -377,7 +389,9 @@ describe('File Content Request Protocol - isPathWithinWorkspace', () => {
 
   it('should return false for parent directory traversal', () => {
     // Even if the path starts with workspace, traversal should be blocked
-    expect(isPathWithinWorkspace('/project', '/project/../etc/passwd')).toBe(false);
+    expect(isPathWithinWorkspace('/project', '/project/../etc/passwd')).toBe(
+      false,
+    );
   });
 
   it('should handle workspace root exactly', () => {

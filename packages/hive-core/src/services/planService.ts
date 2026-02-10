@@ -9,7 +9,12 @@ import {
   writeText,
   fileExists,
 } from '../utils/paths.js';
-import { FeatureJson, CommentsJson, PlanComment, PlanReadResult } from '../types.js';
+import {
+  FeatureJson,
+  CommentsJson,
+  PlanComment,
+  PlanReadResult,
+} from '../types.js';
 import * as fs from 'fs';
 
 export class PlanService {
@@ -18,17 +23,17 @@ export class PlanService {
   write(featureName: string, content: string): string {
     const planPath = getPlanPath(this.projectRoot, featureName);
     writeText(planPath, content);
-    
+
     this.clearComments(featureName);
     this.revokeApproval(featureName);
-    
+
     return planPath;
   }
 
   read(featureName: string): PlanReadResult | null {
     const planPath = getPlanPath(this.projectRoot, featureName);
     const content = readText(planPath);
-    
+
     if (content === null) return null;
 
     const comments = this.getComments(featureName);
@@ -49,7 +54,7 @@ export class PlanService {
     const approvedPath = getApprovedPath(this.projectRoot, featureName);
     const timestamp = new Date().toISOString();
     fs.writeFileSync(approvedPath, `Approved at ${timestamp}\n`);
-    
+
     // Also update feature.json for backwards compatibility
     const featurePath = getFeatureJsonPath(this.projectRoot, featureName);
     const feature = readJson<FeatureJson>(featurePath);
@@ -69,7 +74,7 @@ export class PlanService {
     if (fileExists(approvedPath)) {
       fs.unlinkSync(approvedPath);
     }
-    
+
     // Also update feature.json for backwards compatibility
     const featurePath = getFeatureJsonPath(this.projectRoot, featureName);
     const feature = readJson<FeatureJson>(featurePath);
@@ -86,19 +91,22 @@ export class PlanService {
     return data?.threads || [];
   }
 
-  addComment(featureName: string, comment: Omit<PlanComment, 'id' | 'timestamp'>): PlanComment {
+  addComment(
+    featureName: string,
+    comment: Omit<PlanComment, 'id' | 'timestamp'>,
+  ): PlanComment {
     const commentsPath = getCommentsPath(this.projectRoot, featureName);
     const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
-    
+
     const newComment: PlanComment = {
       ...comment,
       id: `comment-${Date.now()}`,
       timestamp: new Date().toISOString(),
     };
-    
+
     data.threads.push(newComment);
     writeJson(commentsPath, data);
-    
+
     return newComment;
   }
 

@@ -2,13 +2,19 @@
  * CodeViewer component - Renders code with VS Code-style syntax highlighting and line numbers
  * Uses Shiki for accurate TextMate-based highlighting with bundled themes.
  * Supports thread markers in the gutter for inline thread display.
- * 
+ *
  * BREAKING CHANGE: theme prop has been removed. Theme is now obtained from
  * HiveThemeProvider context via useTheme() hook. Components using CodeViewer
  * must be wrapped in HiveThemeProvider.
  */
 
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import type { ReviewThread } from 'hive-core';
 import { InlineThread } from './InlineThread';
 import { useCodeHighlighter } from '../hooks/useCodeHighlighter';
@@ -76,7 +82,9 @@ interface CodeLine {
 }
 
 /** Group threads by their starting line (0-indexed) */
-function groupThreadsByLine(threads: ReviewThread[]): Map<number, ReviewThread[]> {
+function groupThreadsByLine(
+  threads: ReviewThread[],
+): Map<number, ReviewThread[]> {
   const map = new Map<number, ReviewThread[]>();
   for (const thread of threads) {
     const line = thread.range.start.line;
@@ -103,12 +111,18 @@ export function CodeViewer({
 }: CodeViewerProps): React.ReactElement {
   // Get theme from context (requires HiveThemeProvider wrapper)
   const theme = useTheme();
-  
+
   // Use the extracted hook for syntax highlighting
-  const { tokens: highlightedTokens, isLoading } = useCodeHighlighter({ code, language, theme });
-  
+  const { tokens: highlightedTokens, isLoading } = useCodeHighlighter({
+    code,
+    language,
+    theme,
+  });
+
   // Track which line (0-indexed) has expanded inline thread
-  const [expandedThreadLine, setExpandedThreadLine] = useState<number | null>(null);
+  const [expandedThreadLine, setExpandedThreadLine] = useState<number | null>(
+    null,
+  );
   // Track copy button state
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,19 +152,22 @@ export function CodeViewer({
   const threadsByLine = useMemo(() => groupThreadsByLine(threads), [threads]);
 
   // Handle thread marker click
-  const handleThreadMarkerClick = useCallback((lineIndex: number, lineThreads: ReviewThread[]) => {
-    // Toggle the inline thread expansion
-    if (expandedThreadLine === lineIndex) {
-      setExpandedThreadLine(null);
-    } else {
-      setExpandedThreadLine(lineIndex);
-    }
-    // Call the external handler if provided
-    if (onThreadClick) {
-      // lineNumber is 1-indexed for external callback
-      onThreadClick(lineThreads, lineIndex + 1);
-    }
-  }, [expandedThreadLine, onThreadClick]);
+  const handleThreadMarkerClick = useCallback(
+    (lineIndex: number, lineThreads: ReviewThread[]) => {
+      // Toggle the inline thread expansion
+      if (expandedThreadLine === lineIndex) {
+        setExpandedThreadLine(null);
+      } else {
+        setExpandedThreadLine(lineIndex);
+      }
+      // Call the external handler if provided
+      if (onThreadClick) {
+        // lineNumber is 1-indexed for external callback
+        onThreadClick(lineThreads, lineIndex + 1);
+      }
+    },
+    [expandedThreadLine, onThreadClick],
+  );
 
   // Handle closing inline thread
   const handleCloseInlineThread = useCallback(() => {
@@ -158,18 +175,24 @@ export function CodeViewer({
   }, []);
 
   // Handle reply to thread
-  const handleThreadReply = useCallback((threadId: string, body: string) => {
-    if (onThreadReply) {
-      onThreadReply(threadId, body);
-    }
-  }, [onThreadReply]);
+  const handleThreadReply = useCallback(
+    (threadId: string, body: string) => {
+      if (onThreadReply) {
+        onThreadReply(threadId, body);
+      }
+    },
+    [onThreadReply],
+  );
 
   // Handle resolve thread
-  const handleThreadResolve = useCallback((threadId: string) => {
-    if (onThreadResolve) {
-      onThreadResolve(threadId);
-    }
-  }, [onThreadResolve]);
+  const handleThreadResolve = useCallback(
+    (threadId: string) => {
+      if (onThreadResolve) {
+        onThreadResolve(threadId);
+      }
+    },
+    [onThreadResolve],
+  );
 
   // Handle copy to clipboard
   const handleCopyClick = useCallback(async () => {
@@ -239,9 +262,10 @@ export function CodeViewer({
           const lineThreads = threadsByLine.get(line.lineIndex);
           const hasLineThreads = lineThreads && lineThreads.length > 0;
           const isExpanded = expandedThreadLine === line.lineIndex;
-          
+
           // Check if any thread on this line is resolved
-          const allResolved = lineThreads?.every(t => t.status === 'resolved') ?? false;
+          const allResolved =
+            lineThreads?.every((t) => t.status === 'resolved') ?? false;
 
           return (
             <React.Fragment key={line.lineNumber}>
@@ -253,7 +277,9 @@ export function CodeViewer({
                       <button
                         className={`thread-marker ${allResolved ? 'thread-marker-resolved' : 'thread-marker-open'}`}
                         data-testid={`thread-marker-${line.lineIndex}`}
-                        onClick={() => handleThreadMarkerClick(line.lineIndex, lineThreads)}
+                        onClick={() =>
+                          handleThreadMarkerClick(line.lineIndex, lineThreads)
+                        }
                         aria-label={`${lineThreads.length} thread${lineThreads.length > 1 ? 's' : ''} on line ${line.lineNumber}`}
                         aria-expanded={isExpanded}
                       >
@@ -271,18 +297,18 @@ export function CodeViewer({
                   </span>
                 ) : null}
                 <span className="line-code">
-                  {isLoading ? (
-                    line.content || '\u00A0'
-                  ) : (
-                    line.tokens.map((token, i) => (
-                      <span
-                        key={i}
-                        style={token.color ? { color: token.color } : undefined}
-                      >
-                        {token.content || '\u00A0'}
-                      </span>
-                    ))
-                  )}
+                  {isLoading
+                    ? line.content || '\u00A0'
+                    : line.tokens.map((token, i) => (
+                        <span
+                          key={i}
+                          style={
+                            token.color ? { color: token.color } : undefined
+                          }
+                        >
+                          {token.content || '\u00A0'}
+                        </span>
+                      ))}
                 </span>
               </div>
               {/* Inline thread panel when expanded */}

@@ -1,11 +1,14 @@
 /**
  * Tree - Ant Design Tree wrapper
- * 
+ *
  * Provides a tree component with virtual scrolling, selection, and expansion.
  */
 
 import { Tree as AntdTree } from 'antd';
-import type { TreeProps as AntdTreeProps, TreeDataNode as AntdTreeDataNode } from 'antd';
+import type {
+  TreeProps as AntdTreeProps,
+  TreeDataNode as AntdTreeDataNode,
+} from 'antd';
 import type { ReactNode, Key } from 'react';
 
 // Re-export TreeDataNode type for consumers

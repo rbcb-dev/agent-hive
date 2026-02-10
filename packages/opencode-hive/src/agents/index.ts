@@ -1,6 +1,6 @@
 /**
  * Hive Agents
- * 
+ *
  * The Hive Colony Model:
  * - Hive (Hybrid): Plans AND orchestrates based on phase
  * - Architect (Planner): Plans features, interviews, writes plans
@@ -18,10 +18,9 @@ export { scoutBeeAgent, SCOUT_BEE_PROMPT } from './scout';
 export { foragerBeeAgent, FORAGER_BEE_PROMPT } from './forager';
 export { hygienicBeeAgent, HYGIENIC_BEE_PROMPT } from './hygienic';
 
-
 /**
  * Agent registry for OpenCode plugin
- * 
+ *
  * Bee Agents (recommended):
  * - hive: Hybrid planner + orchestrator (detects phase, loads skills)
  * - architect: Discovery/planning (requirements, plan writing)
@@ -34,7 +33,8 @@ export const hiveAgents = {
   // Bee Agents (lean, focused - recommended)
   hive: {
     name: 'Hive (Hybrid)',
-    description: 'Hybrid planner + orchestrator. Detects phase, loads skills on-demand.',
+    description:
+      'Hybrid planner + orchestrator. Detects phase, loads skills on-demand.',
     mode: 'primary' as const,
   },
   architect: {
@@ -44,17 +44,20 @@ export const hiveAgents = {
   },
   swarm: {
     name: 'Swarm (Orchestrator)',
-    description: 'Orchestrates execution. Delegates, spawns workers, verifies, merges.',
+    description:
+      'Orchestrates execution. Delegates, spawns workers, verifies, merges.',
     mode: 'primary' as const,
   },
   scout: {
     name: 'Scout (Explorer/Researcher/Retrieval)',
-    description: 'Explores codebase, external docs, and retrieves external data.',
+    description:
+      'Explores codebase, external docs, and retrieves external data.',
     mode: 'subagent' as const,
   },
   forager: {
     name: 'Forager (Worker/Coder)',
-    description: 'Executes tasks directly in isolated worktrees. Never delegates.',
+    description:
+      'Executes tasks directly in isolated worktrees. Never delegates.',
     mode: 'subagent' as const,
   },
   hygienic: {

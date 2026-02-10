@@ -92,7 +92,7 @@ export const WithoutIcons: Story = {
 
 /**
  * Interactive test: Tab switching triggers onScopeChange callback.
- * 
+ *
  * Play function verifies:
  * 1. Clicking an inactive tab fires the callback
  * 2. Callback receives the correct scope ID
@@ -150,7 +150,7 @@ export const ActiveTabNoCallback: Story = {
 /**
  * Accessibility test: Verify ARIA attributes are correct.
  * Uses play function to validate accessible markup.
- * 
+ *
  * Note: antd Segmented uses radiogroup/radio roles (not tablist/tab),
  * which provides proper keyboard navigation and selection semantics.
  */

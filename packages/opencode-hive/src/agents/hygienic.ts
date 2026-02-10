@@ -109,6 +109,7 @@ Before verdict, mentally execute 2-3 tasks:
 
 export const hygienicBeeAgent = {
   name: 'Hygienic (Consultant/Reviewer/Debugger)',
-  description: 'Lean reviewer. Checks plan documentation quality, not design decisions.',
+  description:
+    'Lean reviewer. Checks plan documentation quality, not design decisions.',
   prompt: HYGIENIC_BEE_PROMPT,
 };

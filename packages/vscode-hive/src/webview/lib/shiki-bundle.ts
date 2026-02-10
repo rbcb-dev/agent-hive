@@ -1,13 +1,13 @@
 /**
  * Shiki Fine-Grained Bundle Configuration
- * 
+ *
  * This file configures the Shiki syntax highlighter with only the languages
  * and themes we actually use, using dynamic imports for code splitting.
- * 
+ *
  * To add a new language:
  * 1. Add a dynamic import to the LANGUAGE_IMPORTS array
  * 2. Add the language name to SUPPORTED_LANGUAGES
- * 
+ *
  * To add a new theme:
  * 1. Add a dynamic import to the THEME_IMPORTS array
  */
@@ -22,7 +22,7 @@ import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 /**
  * Language imports using dynamic imports for code splitting.
  * Each import will be loaded on-demand, reducing initial bundle size.
- * 
+ *
  * To add a new language, add: import('@shikijs/langs/<language>')
  */
 const LANGUAGE_IMPORTS = [
@@ -64,7 +64,7 @@ export const SUPPORTED_LANGUAGES = [
   'go',
 ] as const;
 
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 // ============================================================================
 // THEME CONFIGURATION
@@ -87,7 +87,7 @@ export const THEME_MAP = {
 } as const;
 
 export type ThemeMode = keyof typeof THEME_MAP;
-export type ThemeName = typeof THEME_MAP[ThemeMode];
+export type ThemeName = (typeof THEME_MAP)[ThemeMode];
 
 // ============================================================================
 // HIGHLIGHTER FACTORY
@@ -115,17 +115,17 @@ export const LANGUAGE_ALIASES: Record<string, SupportedLanguage> = {
  */
 export function normalizeLanguage(lang: string): SupportedLanguage {
   const normalized = lang.toLowerCase();
-  
+
   // Direct match
   if (SUPPORTED_LANGUAGES.includes(normalized as SupportedLanguage)) {
     return normalized as SupportedLanguage;
   }
-  
+
   // Alias match
   if (normalized in LANGUAGE_ALIASES) {
     return LANGUAGE_ALIASES[normalized];
   }
-  
+
   // Fallback to typescript (good for showing code without highlighting)
   return 'typescript';
 }
@@ -135,8 +135,10 @@ export function normalizeLanguage(lang: string): SupportedLanguage {
  */
 export function isLanguageSupported(lang: string): boolean {
   const normalized = lang.toLowerCase();
-  return SUPPORTED_LANGUAGES.includes(normalized as SupportedLanguage) 
-    || normalized in LANGUAGE_ALIASES;
+  return (
+    SUPPORTED_LANGUAGES.includes(normalized as SupportedLanguage) ||
+    normalized in LANGUAGE_ALIASES
+  );
 }
 
 // Singleton highlighter instance

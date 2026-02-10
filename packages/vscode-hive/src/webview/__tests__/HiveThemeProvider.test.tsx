@@ -1,6 +1,6 @@
 /**
  * Tests for HiveThemeProvider component
- * 
+ *
  * Verifies:
  * - CSS isolation (antd styles don't leak outside provider)
  * - Theme switching (light/dark mode)
@@ -18,7 +18,7 @@ describe('HiveThemeProvider', () => {
     render(
       <HiveThemeProvider>
         <div data-testid="test-child">Test Content</div>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     expect(screen.getByTestId('test-child')).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe('HiveThemeProvider', () => {
     render(
       <HiveThemeProvider>
         <Button data-testid="test-button">Click me</Button>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     // The button should be rendered and functional
@@ -40,7 +40,7 @@ describe('HiveThemeProvider', () => {
     render(
       <HiveThemeProvider mode="dark">
         <Button data-testid="test-button">Click me</Button>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     // The button should be rendered and functional
@@ -51,7 +51,7 @@ describe('HiveThemeProvider', () => {
     // This test verifies the provider hierarchy is correct
     // by checking that ConfigProvider context is available
     let configProviderUsed = false;
-    
+
     function TestComponent() {
       // Use ConfigProvider.useConfig to verify context is available
       const config = ConfigProvider.useConfig();
@@ -64,7 +64,7 @@ describe('HiveThemeProvider', () => {
     render(
       <HiveThemeProvider>
         <TestComponent />
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     expect(configProviderUsed).toBe(true);
@@ -76,7 +76,7 @@ describe('HiveThemeProvider', () => {
     render(
       <HiveThemeProvider>
         <div data-testid="app-content">Content</div>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     // The content should be inside the App wrapper
@@ -93,7 +93,7 @@ describe('HiveThemeProvider', () => {
         <HiveThemeProvider>
           <Button data-testid="inside-button">Inside Button</Button>
         </HiveThemeProvider>
-      </div>
+      </div>,
     );
 
     // Both buttons should be rendered
@@ -113,7 +113,7 @@ describe('HiveThemeProvider', () => {
     const { rerender } = render(
       <HiveThemeProvider mode="light">
         <Button data-testid="themed-button">Themed</Button>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     const buttonLight = screen.getByTestId('themed-button');
@@ -123,7 +123,7 @@ describe('HiveThemeProvider', () => {
     rerender(
       <HiveThemeProvider mode="dark">
         <Button data-testid="themed-button">Themed</Button>
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     const buttonDark = screen.getByTestId('themed-button');

@@ -1,13 +1,18 @@
 /**
  * DiffViewer component - Professional diff display using react-diff-view
- * 
+ *
  * Maintains backward compatibility with existing DiffFile-based API while
  * internally using react-diff-view for better rendering and features.
  */
 
 import React, { useMemo } from 'react';
 import { Diff, Hunk, parseDiff } from 'react-diff-view';
-import type { HunkData, ChangeData, ChangeEventArgs, EventMap } from 'react-diff-view';
+import type {
+  HunkData,
+  ChangeData,
+  ChangeEventArgs,
+  EventMap,
+} from 'react-diff-view';
 import type { DiffFile } from 'hive-core';
 import 'react-diff-view/style/index.css';
 
@@ -23,36 +28,45 @@ export interface DiffViewerProps {
  */
 function convertToUnifiedDiff(file: DiffFile): string {
   const lines: string[] = [];
-  
+
   // Add the file header
   lines.push(`diff --git a/${file.path} b/${file.path}`);
   lines.push(`--- a/${file.path}`);
   lines.push(`+++ b/${file.path}`);
-  
+
   // Add each hunk
   for (const hunk of file.hunks) {
     // Hunk header: @@ -oldStart,oldLines +newStart,newLines @@
-    lines.push(`@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`);
-    
+    lines.push(
+      `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`,
+    );
+
     // Add hunk lines with proper prefixes
     for (const line of hunk.lines) {
-      const prefix = line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' ';
+      const prefix =
+        line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' ';
       lines.push(`${prefix}${line.content}`);
     }
   }
-  
+
   return lines.join('\n');
 }
 
 /**
  * Map file status to diff type
  */
-function getDiffType(status: DiffFile['status']): 'add' | 'delete' | 'modify' | 'rename' | 'copy' {
+function getDiffType(
+  status: DiffFile['status'],
+): 'add' | 'delete' | 'modify' | 'rename' | 'copy' {
   switch (status) {
-    case 'A': return 'add';
-    case 'D': return 'delete';
-    case 'R': return 'rename';
-    case 'C': return 'copy';
+    case 'A':
+      return 'add';
+    case 'D':
+      return 'delete';
+    case 'R':
+      return 'rename';
+    case 'C':
+      return 'copy';
     case 'M':
     case 'U':
     case 'B':
@@ -61,13 +75,17 @@ function getDiffType(status: DiffFile['status']): 'add' | 'delete' | 'modify' | 
   }
 }
 
-export function DiffViewer({ file, viewType = 'unified', onLineClick }: DiffViewerProps): React.ReactElement {
+export function DiffViewer({
+  file,
+  viewType = 'unified',
+  onLineClick,
+}: DiffViewerProps): React.ReactElement {
   // Parse the diff using react-diff-view
   const parsedFiles = useMemo(() => {
     if (!file || file.isBinary || file.hunks.length === 0) {
       return [];
     }
-    
+
     try {
       const unifiedDiff = convertToUnifiedDiff(file);
       return parseDiff(unifiedDiff);
@@ -100,25 +118,27 @@ export function DiffViewer({ file, viewType = 'unified', onLineClick }: DiffView
   const parsedFile = parsedFiles[0];
 
   // Handle gutter click events for line selection
-  const gutterEvents: EventMap | undefined = onLineClick ? {
-    onClick: (args: ChangeEventArgs) => {
-      const { change } = args;
-      if (change) {
-        // Get line number from the change - handle different change types
-        let lineNumber: number | undefined;
-        if (change.type === 'insert') {
-          lineNumber = change.lineNumber;
-        } else if (change.type === 'delete') {
-          lineNumber = change.lineNumber;
-        } else if (change.type === 'normal') {
-          lineNumber = change.newLineNumber;
-        }
-        if (lineNumber !== undefined) {
-          onLineClick(file.path, lineNumber);
-        }
+  const gutterEvents: EventMap | undefined = onLineClick
+    ? {
+        onClick: (args: ChangeEventArgs) => {
+          const { change } = args;
+          if (change) {
+            // Get line number from the change - handle different change types
+            let lineNumber: number | undefined;
+            if (change.type === 'insert') {
+              lineNumber = change.lineNumber;
+            } else if (change.type === 'delete') {
+              lineNumber = change.lineNumber;
+            } else if (change.type === 'normal') {
+              lineNumber = change.newLineNumber;
+            }
+            if (lineNumber !== undefined) {
+              onLineClick(file.path, lineNumber);
+            }
+          }
+        },
       }
-    }
-  } : undefined;
+    : undefined;
 
   return (
     <div className="diff-viewer">

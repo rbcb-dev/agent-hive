@@ -1,6 +1,6 @@
 /**
  * Tabs - Ant Design Tabs wrapper
- * 
+ *
  * Tab navigation using the items-based API (NOT deprecated TabPane).
  */
 

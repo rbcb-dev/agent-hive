@@ -1,12 +1,12 @@
 /**
  * MarkdownViewer component - Display markdown with raw/rendered toggle
- * 
+ *
  * Supports:
  * - Rendered markdown preview with syntax-highlighted code blocks (via Shiki)
  * - Raw markdown with line numbers for thread anchoring
  * - Toggle between views while preserving anchoring
  * - XSS sanitization for security
- * 
+ *
  * BREAKING CHANGE: theme prop has been removed. Theme is now obtained from
  * HiveThemeProvider context via useTheme() hook. Components using MarkdownViewer
  * must be wrapped in HiveThemeProvider.
@@ -55,12 +55,12 @@ type ViewMode = 'raw' | 'rendered';
 /**
  * Raw line component with line number and click handler for anchoring
  */
-function RawLine({ 
-  lineNumber, 
-  content, 
-  onClick 
-}: { 
-  lineNumber: number; 
+function RawLine({
+  lineNumber,
+  content,
+  onClick,
+}: {
+  lineNumber: number;
   content: string;
   onClick?: (lineNumber: number) => void;
 }): React.ReactElement {
@@ -69,8 +69,8 @@ function RawLine({
   }, [lineNumber, onClick]);
 
   return (
-    <div 
-      className="raw-line" 
+    <div
+      className="raw-line"
       data-testid={`line-${lineNumber}`}
       onClick={handleClick}
     >
@@ -83,10 +83,10 @@ function RawLine({
 /**
  * Raw view showing markdown source with line numbers
  */
-function RawView({ 
-  content, 
-  onLineClick 
-}: { 
+function RawView({
+  content,
+  onLineClick,
+}: {
   content: string;
   onLineClick?: (lineNumber: number) => void;
 }): React.ReactElement {
@@ -95,7 +95,7 @@ function RawView({
   return (
     <div className="markdown-raw">
       {lines.map((line, index) => (
-        <RawLine 
+        <RawLine
           key={index}
           lineNumber={index + 1}
           content={line}
@@ -109,11 +109,11 @@ function RawView({
 /**
  * Rendered view showing parsed markdown as HTML with syntax-highlighted code blocks
  */
-function RenderedView({ 
+function RenderedView({
   content,
   theme = 'dark',
   highlightCode = true,
-}: { 
+}: {
   content: string;
   theme?: 'light' | 'dark';
   highlightCode?: boolean;
@@ -176,7 +176,7 @@ function RenderedView({
 
   if (isLoading) {
     return (
-      <div 
+      <div
         className="markdown-rendered markdown-rendered-loading"
         aria-busy="true"
         aria-label="Loading markdown"
@@ -188,9 +188,9 @@ function RenderedView({
 
   // Apply theme class for CSS variable integration with antd tokens
   const themeClass = theme === 'light' ? 'theme-light' : 'theme-dark';
-  
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`markdown-rendered ${themeClass}`}
       dangerouslySetInnerHTML={{ __html: html }}
@@ -201,10 +201,10 @@ function RenderedView({
 /**
  * View toggle button group
  */
-function ViewToggle({ 
-  mode, 
-  onChange 
-}: { 
+function ViewToggle({
+  mode,
+  onChange,
+}: {
   mode: ViewMode;
   onChange: (mode: ViewMode) => void;
 }): React.ReactElement {
@@ -230,8 +230,8 @@ function ViewToggle({
   );
 }
 
-export function MarkdownViewer({ 
-  content, 
+export function MarkdownViewer({
+  content,
   filePath,
   onLineClick,
   highlightCode = true,
@@ -239,18 +239,24 @@ export function MarkdownViewer({
 }: MarkdownViewerProps): React.ReactElement {
   // Get theme from context (requires HiveThemeProvider wrapper)
   const theme = useTheme();
-  
+
   const [viewMode, setViewMode] = useState<ViewMode>('rendered');
 
   // Compute container styles for maxHeight scrolling
   const containerStyle: React.CSSProperties | undefined = maxHeight
-    ? { maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight, overflow: 'auto' }
+    ? {
+        maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight,
+        overflow: 'auto',
+      }
     : undefined;
 
   // Empty state
   if (!content) {
     return (
-      <div className="markdown-viewer markdown-viewer-empty" style={containerStyle}>
+      <div
+        className="markdown-viewer markdown-viewer-empty"
+        style={containerStyle}
+      >
         <p>Select a file to view markdown</p>
       </div>
     );
@@ -264,7 +270,11 @@ export function MarkdownViewer({
       </div>
       <div className="markdown-content">
         {viewMode === 'rendered' ? (
-          <RenderedView content={content} theme={theme} highlightCode={highlightCode} />
+          <RenderedView
+            content={content}
+            theme={theme}
+            highlightCode={highlightCode}
+          />
         ) : (
           <RawView content={content} onLineClick={onLineClick} />
         )}

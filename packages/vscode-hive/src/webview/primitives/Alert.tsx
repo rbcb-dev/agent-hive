@@ -1,6 +1,6 @@
 /**
  * Alert - Ant Design Alert wrapper
- * 
+ *
  * Notification component for displaying messages with type variants.
  */
 

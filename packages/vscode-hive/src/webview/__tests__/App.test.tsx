@@ -59,13 +59,15 @@ describe('App', () => {
     fireEvent.click(screen.getByText('Code'));
 
     // Code tab should be active (antd Segmented uses ant-segmented-item-selected class)
-    expect(screen.getByText('Code').closest('.ant-segmented-item')).toHaveClass('ant-segmented-item-selected');
+    expect(screen.getByText('Code').closest('.ant-segmented-item')).toHaveClass(
+      'ant-segmented-item-selected',
+    );
   });
 
   it('notifies extension that webview is ready on mount', async () => {
     const { notifyReady } = await import('../vscodeApi');
     render(<App />);
-    
+
     expect(notifyReady).toHaveBeenCalled();
   });
 
@@ -119,7 +121,7 @@ describe('App - Antd Layout', () => {
     // Get the sider element
     const sider = document.querySelector('.ant-layout-sider');
     expect(sider).toBeInTheDocument();
-    
+
     // Initially not collapsed
     expect(sider).not.toHaveClass('ant-layout-sider-collapsed');
 
@@ -150,15 +152,15 @@ describe('App - File Content Request Protocol', () => {
 
   it('handles fileContent message by storing content', async () => {
     const { addMessageListener } = await import('../vscodeApi');
-    
+
     render(<App />);
-    
+
     // Verify addMessageListener was called
     expect(addMessageListener).toHaveBeenCalled();
-    
+
     // Get the handler that was passed to addMessageListener
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-    
+
     // Simulate receiving fileContent message
     act(() => {
       handler({
@@ -168,18 +170,18 @@ describe('App - File Content Request Protocol', () => {
         language: 'typescript',
       });
     });
-    
+
     // The content should be stored (we can verify by checking there's no error state)
     // In a full implementation, we'd expose the cache via context or props
   });
 
   it('handles fileError message by storing error', async () => {
     const { addMessageListener } = await import('../vscodeApi');
-    
+
     render(<App />);
-    
+
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-    
+
     // Simulate receiving fileError message
     act(() => {
       handler({
@@ -188,17 +190,17 @@ describe('App - File Content Request Protocol', () => {
         error: 'File not found: nonexistent.ts',
       });
     });
-    
+
     // The error should be stored (verified via internal state)
   });
 
   it('handles fileContent with warning for large files', async () => {
     const { addMessageListener } = await import('../vscodeApi');
-    
+
     render(<App />);
-    
+
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-    
+
     // Simulate receiving fileContent with warning
     act(() => {
       handler({
@@ -209,7 +211,7 @@ describe('App - File Content Request Protocol', () => {
         warning: 'File is large (15.5MB). Reading may take a moment.',
       });
     });
-    
+
     // Content and warning should be stored
   });
 });

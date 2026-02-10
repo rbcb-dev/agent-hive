@@ -1,6 +1,6 @@
 /**
  * VirtualList - @rc-component/virtual-list wrapper
- * 
+ *
  * High-performance virtual scrolling list for large datasets.
  */
 

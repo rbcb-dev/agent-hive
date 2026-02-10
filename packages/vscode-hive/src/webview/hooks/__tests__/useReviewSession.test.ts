@@ -129,7 +129,11 @@ describe('useReviewSession', () => {
     const { result } = renderHook(() => useReviewSession());
 
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-    const scopeContent = { uri: 'plan.md', content: '# Plan', language: 'markdown' };
+    const scopeContent = {
+      uri: 'plan.md',
+      content: '# Plan',
+      language: 'markdown',
+    };
 
     act(() => {
       handler({ type: 'scopeChanged', scope: 'plan', scopeContent });
@@ -148,7 +152,10 @@ describe('useReviewSession', () => {
     });
 
     expect(result.current.activeScope).toBe('code');
-    expect(postMessage).toHaveBeenCalledWith({ type: 'changeScope', scope: 'code' });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'changeScope',
+      scope: 'code',
+    });
   });
 
   it('selects file and notifies extension', async () => {
@@ -160,7 +167,10 @@ describe('useReviewSession', () => {
     });
 
     expect(result.current.selectedFile).toBe('src/app.ts');
-    expect(postMessage).toHaveBeenCalledWith({ type: 'selectFile', path: 'src/app.ts' });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'selectFile',
+      path: 'src/app.ts',
+    });
   });
 
   it('selects thread and notifies extension', async () => {
@@ -172,7 +182,10 @@ describe('useReviewSession', () => {
     });
 
     expect(result.current.selectedThread).toBe('thread-123');
-    expect(postMessage).toHaveBeenCalledWith({ type: 'selectThread', threadId: 'thread-123' });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'selectThread',
+      threadId: 'thread-123',
+    });
   });
 
   it('handles reply to existing thread', async () => {
@@ -205,19 +218,25 @@ describe('useReviewSession', () => {
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
     act(() => {
       handler({ type: 'sessionData', session: mockSession });
-      handler({ type: 'scopeChanged', scope: 'plan', scopeContent: { uri: 'plan.md', content: '', language: 'markdown' } });
+      handler({
+        type: 'scopeChanged',
+        scope: 'plan',
+        scopeContent: { uri: 'plan.md', content: '', language: 'markdown' },
+      });
     });
 
     act(() => {
       result.current.handleReply('new-thread-id', 'New comment');
     });
 
-    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'addComment',
-      entityId: 'new-thread-id',
-      body: 'New comment',
-      annotationType: 'comment',
-    }));
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'addComment',
+        entityId: 'new-thread-id',
+        body: 'New comment',
+        annotationType: 'comment',
+      }),
+    );
   });
 
   it('resolves thread', async () => {
@@ -228,7 +247,10 @@ describe('useReviewSession', () => {
       result.current.handleResolve('thread-123');
     });
 
-    expect(postMessage).toHaveBeenCalledWith({ type: 'resolve', threadId: 'thread-123' });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'resolve',
+      threadId: 'thread-123',
+    });
   });
 
   it('submits review and sets submitting state', async () => {
@@ -256,7 +278,11 @@ describe('useReviewSession', () => {
     const handler = vi.mocked(addMessageListener).mock.calls[0][0];
     act(() => {
       handler({ type: 'sessionData', session: mockSession });
-      handler({ type: 'scopeChanged', scope: 'plan', scopeContent: { uri: 'plan.md', content: '', language: 'markdown' } });
+      handler({
+        type: 'scopeChanged',
+        scope: 'plan',
+        scopeContent: { uri: 'plan.md', content: '', language: 'markdown' },
+      });
     });
 
     act(() => {
@@ -296,7 +322,7 @@ describe('useReviewSession', () => {
     const sessionWithDiffs: ReviewSession = {
       ...mockSession,
       diffs: {
-        'default': {
+        default: {
           baseRef: 'main',
           headRef: 'feature',
           mergeBase: 'abc123',
@@ -304,8 +330,20 @@ describe('useReviewSession', () => {
           fileRoot: '/repo',
           diffStats: { files: 2, insertions: 30, deletions: 5 },
           files: [
-            { path: 'src/app.ts', status: 'M', hunks: [], additions: 10, deletions: 5 },
-            { path: 'src/utils.ts', status: 'A', hunks: [], additions: 20, deletions: 0 },
+            {
+              path: 'src/app.ts',
+              status: 'M',
+              hunks: [],
+              additions: 10,
+              deletions: 5,
+            },
+            {
+              path: 'src/utils.ts',
+              status: 'A',
+              hunks: [],
+              additions: 20,
+              deletions: 0,
+            },
           ],
         },
       },

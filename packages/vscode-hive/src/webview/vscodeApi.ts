@@ -2,7 +2,10 @@
  * VSCode API wrapper for webview communication
  */
 
-import type { WebviewToExtensionMessage, ExtensionToWebviewMessage } from './types';
+import type {
+  WebviewToExtensionMessage,
+  ExtensionToWebviewMessage,
+} from './types';
 
 // Declare the VSCode API type
 declare function acquireVsCodeApi(): {
@@ -65,7 +68,7 @@ export function setState<T>(state: T): void {
  * Add a message listener for extension messages
  */
 export function addMessageListener(
-  handler: (message: ExtensionToWebviewMessage) => void
+  handler: (message: ExtensionToWebviewMessage) => void,
 ): () => void {
   const listener = (event: MessageEvent<ExtensionToWebviewMessage>) => {
     handler(event.data);

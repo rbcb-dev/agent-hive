@@ -20,7 +20,21 @@ const mockHighlighter = {
 vi.mock('../lib/shiki-bundle', () => ({
   getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
   normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
-  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  SUPPORTED_LANGUAGES: [
+    'typescript',
+    'javascript',
+    'tsx',
+    'jsx',
+    'json',
+    'markdown',
+    'html',
+    'css',
+    'yaml',
+    'shell',
+    'python',
+    'rust',
+    'go',
+  ],
   THEME_MAP: { light: 'github-light', dark: 'github-dark' },
   isLanguageSupported: vi.fn(() => true),
   resetHighlighter: vi.fn(),
@@ -29,9 +43,11 @@ vi.mock('../lib/shiki-bundle', () => ({
 describe('useMarkdownRenderer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockHighlighter.codeToHtml.mockImplementation((code: string, opts: { lang: string }) => {
-      return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
-    });
+    mockHighlighter.codeToHtml.mockImplementation(
+      (code: string, opts: { lang: string }) => {
+        return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
+      },
+    );
   });
 
   describe('basic functionality', () => {
@@ -39,7 +55,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '# Hello World',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -54,7 +70,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: 'This is **bold** text.',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -68,7 +84,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -85,7 +101,7 @@ describe('useMarkdownRenderer', () => {
         useMarkdownRenderer({
           markdown: '```typescript\nconst x = 1;\n```',
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -101,7 +117,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '```javascript\nlet y = 2;\n```',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -117,7 +133,7 @@ describe('useMarkdownRenderer', () => {
         useMarkdownRenderer({
           markdown: '```typescript\nconst x = 1;\n```',
           highlightCode: false,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -135,7 +151,7 @@ describe('useMarkdownRenderer', () => {
         useMarkdownRenderer({
           markdown: '```\nsome code\n```',
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -153,7 +169,7 @@ describe('useMarkdownRenderer', () => {
         useMarkdownRenderer({
           markdown: '```typescript\nconst x = 1;\n```',
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -162,7 +178,7 @@ describe('useMarkdownRenderer', () => {
 
       expect(mockHighlighter.codeToHtml).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ theme: 'github-dark' })
+        expect.objectContaining({ theme: 'github-dark' }),
       );
     });
 
@@ -172,7 +188,7 @@ describe('useMarkdownRenderer', () => {
           markdown: '```typescript\nconst x = 1;\n```',
           highlightCode: true,
           theme: 'light',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -181,7 +197,7 @@ describe('useMarkdownRenderer', () => {
 
       expect(mockHighlighter.codeToHtml).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ theme: 'github-light' })
+        expect.objectContaining({ theme: 'github-light' }),
       );
     });
   });
@@ -191,7 +207,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '<script>alert("xss")</script>',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -205,7 +221,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '<img onerror="alert(\'xss\')" src="invalid">',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -219,7 +235,7 @@ describe('useMarkdownRenderer', () => {
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '[click](javascript:alert("xss"))',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -239,7 +255,7 @@ describe('useMarkdownRenderer', () => {
         useMarkdownRenderer({
           markdown: '```javascript\nconst x = "<script>";\n```',
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -267,7 +283,7 @@ More text.`;
         useMarkdownRenderer({
           markdown,
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -293,7 +309,7 @@ x = 2
         useMarkdownRenderer({
           markdown,
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -309,7 +325,7 @@ x = 2
         useMarkdownRenderer({
           markdown: 'Use `const` for constants.',
           highlightCode: true,
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -327,12 +343,12 @@ x = 2
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '# Hello',
-        })
+        }),
       );
 
       // Initial state should have isLoading true
       expect(result.current.isLoading).toBe(true);
-      
+
       // Wait for async rendering to complete to avoid act() warnings
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -343,7 +359,7 @@ x = 2
       const { result } = renderHook(() =>
         useMarkdownRenderer({
           markdown: '# Hello',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -356,7 +372,7 @@ x = 2
     it('re-renders when markdown changes', async () => {
       const { result, rerender } = renderHook(
         ({ markdown }) => useMarkdownRenderer({ markdown }),
-        { initialProps: { markdown: '# First' } }
+        { initialProps: { markdown: '# First' } },
       );
 
       await waitFor(() => {
@@ -373,10 +389,24 @@ x = 2
     });
 
     it('re-renders when theme changes', async () => {
-      type Props = { markdown: string; theme: 'light' | 'dark'; highlightCode: boolean };
-      const { result, rerender } = renderHook<ReturnType<typeof useMarkdownRenderer>, Props>(
-        ({ markdown, theme, highlightCode }) => useMarkdownRenderer({ markdown, theme, highlightCode }),
-        { initialProps: { markdown: '```ts\nx\n```', theme: 'dark', highlightCode: true } }
+      type Props = {
+        markdown: string;
+        theme: 'light' | 'dark';
+        highlightCode: boolean;
+      };
+      const { result, rerender } = renderHook<
+        ReturnType<typeof useMarkdownRenderer>,
+        Props
+      >(
+        ({ markdown, theme, highlightCode }) =>
+          useMarkdownRenderer({ markdown, theme, highlightCode }),
+        {
+          initialProps: {
+            markdown: '```ts\nx\n```',
+            theme: 'dark',
+            highlightCode: true,
+          },
+        },
       );
 
       await waitFor(() => {
@@ -385,10 +415,16 @@ x = 2
 
       const callCountDark = mockHighlighter.codeToHtml.mock.calls.length;
 
-      rerender({ markdown: '```ts\nx\n```', theme: 'light', highlightCode: true });
+      rerender({
+        markdown: '```ts\nx\n```',
+        theme: 'light',
+        highlightCode: true,
+      });
 
       await waitFor(() => {
-        expect(mockHighlighter.codeToHtml.mock.calls.length).toBeGreaterThan(callCountDark);
+        expect(mockHighlighter.codeToHtml.mock.calls.length).toBeGreaterThan(
+          callCountDark,
+        );
       });
     });
   });

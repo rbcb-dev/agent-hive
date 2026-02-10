@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import { ConfigService } from "./configService";
-import { DEFAULT_HIVE_CONFIG } from "../types";
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { ConfigService } from './configService';
+import { DEFAULT_HIVE_CONFIG } from '../types';
 
 let originalHome: string | undefined;
 let tempHome: string;
 
-const makeTempHome = () => fs.mkdtempSync(path.join(os.tmpdir(), "hive-home-"));
+const makeTempHome = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hive-home-'));
 
 beforeEach(() => {
   originalHome = process.env.HOME;
@@ -25,28 +25,28 @@ afterEach(() => {
   fs.rmSync(tempHome, { recursive: true, force: true });
 });
 
-describe("ConfigService defaults", () => {
-  it("returns DEFAULT_HIVE_CONFIG when config is missing", () => {
+describe('ConfigService defaults', () => {
+  it('returns DEFAULT_HIVE_CONFIG when config is missing', () => {
     const service = new ConfigService();
     const config = service.get();
 
     expect(config).toEqual(DEFAULT_HIVE_CONFIG);
     expect(Object.keys(config.agents ?? {}).sort()).toEqual([
-      "architect-planner",
-      "forager-worker",
-      "hive-master",
-      "hygienic-reviewer",
-      "scout-researcher",
-      "swarm-orchestrator",
+      'architect-planner',
+      'forager-worker',
+      'hive-master',
+      'hygienic-reviewer',
+      'scout-researcher',
+      'swarm-orchestrator',
     ]);
-    expect(config.agents?.["architect-planner"]?.model).toBe(
-      "github-copilot/gpt-5.2-codex",
+    expect(config.agents?.['architect-planner']?.model).toBe(
+      'github-copilot/gpt-5.2-codex',
     );
-    expect(config.agents?.["hive-master"]?.model).toBe(
-      "github-copilot/claude-opus-4.5",
+    expect(config.agents?.['hive-master']?.model).toBe(
+      'github-copilot/claude-opus-4.5',
     );
-    expect(config.agents?.["swarm-orchestrator"]?.model).toBe(
-      "github-copilot/claude-opus-4.5",
+    expect(config.agents?.['swarm-orchestrator']?.model).toBe(
+      'github-copilot/claude-opus-4.5',
     );
   });
 
@@ -55,7 +55,7 @@ describe("ConfigService defaults", () => {
     expect(service.get().agentMode).toBe('unified');
   });
 
-  it("deep-merges agent overrides with defaults", () => {
+  it('deep-merges agent overrides with defaults', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -65,7 +65,7 @@ describe("ConfigService defaults", () => {
       JSON.stringify(
         {
           agents: {
-            "hive-master": { temperature: 0.8 },
+            'hive-master': { temperature: 0.8 },
           },
         },
         null,
@@ -74,17 +74,17 @@ describe("ConfigService defaults", () => {
     );
 
     const config = service.get();
-    expect(config.agents?.["hive-master"]?.temperature).toBe(0.8);
-    expect(config.agents?.["hive-master"]?.model).toBe(
-      "github-copilot/claude-opus-4.5",
+    expect(config.agents?.['hive-master']?.temperature).toBe(0.8);
+    expect(config.agents?.['hive-master']?.model).toBe(
+      'github-copilot/claude-opus-4.5',
     );
 
-    const agentConfig = service.getAgentConfig("hive-master");
+    const agentConfig = service.getAgentConfig('hive-master');
     expect(agentConfig.temperature).toBe(0.8);
-    expect(agentConfig.model).toBe("github-copilot/claude-opus-4.5");
+    expect(agentConfig.model).toBe('github-copilot/claude-opus-4.5');
   });
 
-  it("deep-merges variant field from user config", () => {
+  it('deep-merges variant field from user config', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -94,8 +94,8 @@ describe("ConfigService defaults", () => {
       JSON.stringify(
         {
           agents: {
-            "forager-worker": { variant: "high" },
-            "scout-researcher": { variant: "low", temperature: 0.2 },
+            'forager-worker': { variant: 'high' },
+            'scout-researcher': { variant: 'low', temperature: 0.2 },
           },
         },
         null,
@@ -105,25 +105,25 @@ describe("ConfigService defaults", () => {
 
     const config = service.get();
     // variant should be merged from user config
-    expect(config.agents?.["forager-worker"]?.variant).toBe("high");
-    expect(config.agents?.["scout-researcher"]?.variant).toBe("low");
+    expect(config.agents?.['forager-worker']?.variant).toBe('high');
+    expect(config.agents?.['scout-researcher']?.variant).toBe('low');
     // other defaults should still be present
-    expect(config.agents?.["forager-worker"]?.model).toBe(
-      "github-copilot/gpt-5.2-codex",
+    expect(config.agents?.['forager-worker']?.model).toBe(
+      'github-copilot/gpt-5.2-codex',
     );
-    expect(config.agents?.["scout-researcher"]?.temperature).toBe(0.2);
+    expect(config.agents?.['scout-researcher']?.temperature).toBe(0.2);
 
     // getAgentConfig should also return variant
-    const foragerConfig = service.getAgentConfig("forager-worker");
-    expect(foragerConfig.variant).toBe("high");
-    expect(foragerConfig.model).toBe("github-copilot/gpt-5.2-codex");
+    const foragerConfig = service.getAgentConfig('forager-worker');
+    expect(foragerConfig.variant).toBe('high');
+    expect(foragerConfig.model).toBe('github-copilot/gpt-5.2-codex');
 
-    const scoutConfig = service.getAgentConfig("scout-researcher");
-    expect(scoutConfig.variant).toBe("low");
+    const scoutConfig = service.getAgentConfig('scout-researcher');
+    expect(scoutConfig.variant).toBe('low');
     expect(scoutConfig.temperature).toBe(0.2);
   });
 
-  it("merges autoLoadSkills defaults and overrides", () => {
+  it('merges autoLoadSkills defaults and overrides', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -133,8 +133,11 @@ describe("ConfigService defaults", () => {
       JSON.stringify(
         {
           agents: {
-            "forager-worker": {
-              autoLoadSkills: ["custom-skill", "verification-before-completion"],
+            'forager-worker': {
+              autoLoadSkills: [
+                'custom-skill',
+                'verification-before-completion',
+              ],
             },
           },
         },
@@ -143,15 +146,15 @@ describe("ConfigService defaults", () => {
       ),
     );
 
-    const config = service.getAgentConfig("forager-worker");
+    const config = service.getAgentConfig('forager-worker');
     expect(config.autoLoadSkills).toEqual([
-      "test-driven-development",
-      "verification-before-completion",
-      "custom-skill",
+      'test-driven-development',
+      'verification-before-completion',
+      'custom-skill',
     ]);
   });
 
-  it("removes autoLoadSkills via disableSkills", () => {
+  it('removes autoLoadSkills via disableSkills', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -160,10 +163,10 @@ describe("ConfigService defaults", () => {
       configPath,
       JSON.stringify(
         {
-          disableSkills: ["parallel-exploration", "custom-skill"],
+          disableSkills: ['parallel-exploration', 'custom-skill'],
           agents: {
-            "hive-master": {
-              autoLoadSkills: ["custom-skill"],
+            'hive-master': {
+              autoLoadSkills: ['custom-skill'],
             },
           },
         },
@@ -172,11 +175,11 @@ describe("ConfigService defaults", () => {
       ),
     );
 
-    const config = service.getAgentConfig("hive-master");
+    const config = service.getAgentConfig('hive-master');
     expect(config.autoLoadSkills).toEqual([]);
   });
 
-  it("defaults have no variant set", () => {
+  it('defaults have no variant set', () => {
     const service = new ConfigService();
     const config = service.get();
 
@@ -187,24 +190,24 @@ describe("ConfigService defaults", () => {
     }
   });
 
-  it("scout-researcher autoLoadSkills does NOT include parallel-exploration", () => {
+  it('scout-researcher autoLoadSkills does NOT include parallel-exploration', () => {
     // Scout should not auto-load parallel-exploration to prevent recursive delegation.
     // Scouts are leaf agents that should not spawn further scouts.
     const service = new ConfigService();
-    const scoutConfig = service.getAgentConfig("scout-researcher");
+    const scoutConfig = service.getAgentConfig('scout-researcher');
 
-    expect(scoutConfig.autoLoadSkills).not.toContain("parallel-exploration");
+    expect(scoutConfig.autoLoadSkills).not.toContain('parallel-exploration');
   });
 });
 
-describe("ConfigService disabled skills/mcps", () => {
-  it("returns empty arrays when not configured", () => {
+describe('ConfigService disabled skills/mcps', () => {
+  it('returns empty arrays when not configured', () => {
     const service = new ConfigService();
     expect(service.getDisabledSkills()).toEqual([]);
     expect(service.getDisabledMcps()).toEqual([]);
   });
 
-  it("returns configured disabled skills", () => {
+  it('returns configured disabled skills', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -212,14 +215,17 @@ describe("ConfigService disabled skills/mcps", () => {
     fs.writeFileSync(
       configPath,
       JSON.stringify({
-        disableSkills: ["brainstorming", "writing-plans"],
+        disableSkills: ['brainstorming', 'writing-plans'],
       }),
     );
 
-    expect(service.getDisabledSkills()).toEqual(["brainstorming", "writing-plans"]);
+    expect(service.getDisabledSkills()).toEqual([
+      'brainstorming',
+      'writing-plans',
+    ]);
   });
 
-  it("returns configured disabled MCPs", () => {
+  it('returns configured disabled MCPs', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -227,16 +233,16 @@ describe("ConfigService disabled skills/mcps", () => {
     fs.writeFileSync(
       configPath,
       JSON.stringify({
-        disableMcps: ["websearch", "ast_grep"],
+        disableMcps: ['websearch', 'ast_grep'],
       }),
     );
 
-    expect(service.getDisabledMcps()).toEqual(["websearch", "ast_grep"]);
+    expect(service.getDisabledMcps()).toEqual(['websearch', 'ast_grep']);
   });
 });
 
-describe("ConfigService review configuration", () => {
-  it("returns default review config when not configured", () => {
+describe('ConfigService review configuration', () => {
+  it('returns default review config when not configured', () => {
     const service = new ConfigService();
     const reviewConfig = service.getReviewConfig();
 
@@ -251,7 +257,7 @@ describe("ConfigService review configuration", () => {
     });
   });
 
-  it("returns configured review notifications", () => {
+  it('returns configured review notifications', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -275,7 +281,7 @@ describe("ConfigService review configuration", () => {
     expect(reviewConfig.notifications.reviewComplete).toBe(true);
   });
 
-  it("returns configured autoDelegate and parallelReviewers", () => {
+  it('returns configured autoDelegate and parallelReviewers', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -298,7 +304,7 @@ describe("ConfigService review configuration", () => {
     expect(reviewConfig.notifications.newComments).toBe(true);
   });
 
-  it("deep-merges review config with defaults via get()", () => {
+  it('deep-merges review config with defaults via get()', () => {
     const service = new ConfigService();
     const configPath = service.getPath();
 
@@ -325,7 +331,7 @@ describe("ConfigService review configuration", () => {
   });
 });
 
-describe("ConfigService sandbox config", () => {
+describe('ConfigService sandbox config', () => {
   it("getSandboxConfig() returns { mode: 'none' } when not configured", () => {
     const service = new ConfigService();
     const sandboxConfig = service.getSandboxConfig();
@@ -363,6 +369,10 @@ describe("ConfigService sandbox config", () => {
     );
 
     const sandboxConfig = service.getSandboxConfig();
-    expect(sandboxConfig).toEqual({ mode: 'docker', image: 'node:22-slim', persistent: true });
+    expect(sandboxConfig).toEqual({
+      mode: 'docker',
+      image: 'node:22-slim',
+      persistent: true,
+    });
   });
 });

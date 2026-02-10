@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 
 /**
  * Discovery Gate Tests
- * 
+ *
  * The discovery gate ensures plan writers include substantive discovery
  * documentation before proceeding to implementation planning.
  */
@@ -21,14 +21,17 @@ Your plan must include a \`## Discovery\` section documenting:
 
 Add this section to your plan content and try again.`;
   }
-  
+
   // Extract content between ## Discovery and next ## heading (or end)
-  const afterDiscovery = content.slice(discoveryMatch.index! + discoveryMatch[0].length);
+  const afterDiscovery = content.slice(
+    discoveryMatch.index! + discoveryMatch[0].length,
+  );
   const nextHeading = afterDiscovery.search(/^##\s+/m);
-  const discoveryContent = nextHeading > -1
-    ? afterDiscovery.slice(0, nextHeading).trim()
-    : afterDiscovery.trim();
-  
+  const discoveryContent =
+    nextHeading > -1
+      ? afterDiscovery.slice(0, nextHeading).trim()
+      : afterDiscovery.trim();
+
   if (discoveryContent.length < 100) {
     return `BLOCKED: Discovery section is too thin (${discoveryContent.length} chars, minimum 100).
 
@@ -39,7 +42,7 @@ A substantive Discovery section should include:
 
 Expand your Discovery section and try again.`;
   }
-  
+
   return null; // Pass
 }
 
@@ -54,7 +57,7 @@ This is a plan without discovery.
 - Step 1
 - Step 2
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section required');
     expect(result).toContain('## Discovery');
@@ -69,7 +72,7 @@ This is a plan without discovery.
 - Step 1
 - Step 2
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section is too thin');
     expect(result).toContain('0 chars, minimum 100');
@@ -84,7 +87,7 @@ Just a short note here.
 ## Implementation
 - Step 1
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section is too thin');
     expect(result).toContain('minimum 100');
@@ -99,7 +102,7 @@ Hidden discovery that should not count.
 ## Implementation
 - Step 1
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section required');
   });
@@ -113,7 +116,7 @@ This is not the right header.
 ## Implementation
 - Step 1
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section required');
   });
@@ -127,7 +130,7 @@ This header has extra text after Discovery.
 ## Implementation
 - Step 1
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toContain('BLOCKED: Discovery section required');
   });
@@ -144,7 +147,7 @@ Researched existing auth patterns in src/lib/auth.ts:45-120. Found AuthProvider 
 - Step 1
 - Step 2
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toBeNull(); // Should pass
   });
@@ -161,7 +164,7 @@ Asked user about authentication requirements. They confirmed OAuth2 with PKCE fl
 Researched existing auth patterns in src/lib/auth.ts:45-120. Found AuthProvider component that handles token refresh.
 Key decision: Reuse AuthProvider instead of creating new component.
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toBeNull(); // Should pass
   });
@@ -176,7 +179,7 @@ This is exactly 100 characters of discovery content that should pass the validat
 ## Implementation
 This should not be counted as part of discovery.
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toBeNull(); // Should pass
   });
@@ -192,7 +195,7 @@ Researched existing auth patterns in src/lib/auth.ts:45-120. Found AuthProvider 
 ## Implementation
 - Step 1
 `;
-    
+
     const result = validateDiscoverySection(content);
     expect(result).toBeNull(); // Should pass
   });

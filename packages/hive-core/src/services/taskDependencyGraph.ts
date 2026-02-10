@@ -21,22 +21,24 @@ export interface RunnableBlockedResult {
 
 /**
  * Compute which pending tasks are runnable (all deps done) and which are blocked.
- * 
+ *
  * A task is runnable if:
  * - Its status is 'pending'
  * - All its dependencies have status 'done'
- * 
+ *
  * A task is blocked if:
  * - Its status is 'pending'
  * - At least one dependency does NOT have status 'done'
- * 
+ *
  * Only 'done' satisfies a dependency. Other statuses (in_progress, cancelled,
  * failed, blocked, partial) do NOT satisfy dependencies.
- * 
+ *
  * @param tasks - Array of tasks with their status and dependencies
  * @returns Object with runnable task folders and blocked tasks with their missing deps
  */
-export function computeRunnableAndBlocked(tasks: TaskWithDeps[]): RunnableBlockedResult {
+export function computeRunnableAndBlocked(
+  tasks: TaskWithDeps[],
+): RunnableBlockedResult {
   const statusByFolder = new Map<string, TaskStatusType>();
   for (const task of tasks) {
     statusByFolder.set(task.folder, task.status);
@@ -54,7 +56,7 @@ export function computeRunnableAndBlocked(tasks: TaskWithDeps[]): RunnableBlocke
 
     const deps = effectiveDepsByFolder.get(task.folder) ?? [];
 
-    const unmetDeps = deps.filter(dep => {
+    const unmetDeps = deps.filter((dep) => {
       const depStatus = statusByFolder.get(dep);
       return depStatus !== 'done';
     });
@@ -73,7 +75,9 @@ export function computeRunnableAndBlocked(tasks: TaskWithDeps[]): RunnableBlocke
  * Compute effective dependencies for each task, applying legacy numeric
  * sequential fallback when dependsOn is undefined.
  */
-export function buildEffectiveDependencies(tasks: TaskWithDeps[]): Map<string, string[]> {
+export function buildEffectiveDependencies(
+  tasks: TaskWithDeps[],
+): Map<string, string[]> {
   const orderByFolder = new Map<string, number | null>();
   const folderByOrder = new Map<number, string>();
 

@@ -17,7 +17,8 @@ const meta = {
     layout: 'padded',
     docs: {
       description: {
-        component: 'Review submission form with verdict selector (Approve, Request Changes, Comment) and summary textarea.',
+        component:
+          'Review submission form with verdict selector (Approve, Request Changes, Comment) and summary textarea.',
       },
     },
   },
@@ -93,7 +94,9 @@ export const RequestChanges: Story = {
     const canvas = within(canvasElement);
 
     // Select the Request Changes verdict
-    const requestChangesButton = canvas.getByRole('button', { name: /Request Changes/i });
+    const requestChangesButton = canvas.getByRole('button', {
+      name: /Request Changes/i,
+    });
     await userEvent.click(requestChangesButton);
 
     // Verify it's selected
@@ -140,10 +143,15 @@ export const WithSummary: Story = {
 
     // Enter summary text
     const textarea = canvas.getByPlaceholderText(/summary/i);
-    await userEvent.type(textarea, 'LGTM! Great implementation with clean code structure.');
+    await userEvent.type(
+      textarea,
+      'LGTM! Great implementation with clean code structure.',
+    );
 
     // Verify the summary was entered
-    await expect(textarea).toHaveValue('LGTM! Great implementation with clean code structure.');
+    await expect(textarea).toHaveValue(
+      'LGTM! Great implementation with clean code structure.',
+    );
   },
 };
 
@@ -161,7 +169,9 @@ export const SwitchingVerdicts: Story = {
 
     // Get all verdict buttons
     const approveButton = canvas.getByRole('button', { name: /Approve/i });
-    const requestChangesButton = canvas.getByRole('button', { name: /Request Changes/i });
+    const requestChangesButton = canvas.getByRole('button', {
+      name: /Request Changes/i,
+    });
     const commentButton = canvas.getByRole('button', { name: /Comment/i });
 
     // Select Approve
@@ -194,7 +204,8 @@ export const VerdictStatistics: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Displays the three verdict options (Approve, Request Changes, Comment) with their distinct visual indicators: green checkmark for approve, red X for request changes, and blue comment icon.',
+        story:
+          'Displays the three verdict options (Approve, Request Changes, Comment) with their distinct visual indicators: green checkmark for approve, red X for request changes, and blue comment icon.',
       },
     },
   },
@@ -212,7 +223,8 @@ export const KeyboardSubmit: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Tests the keyboard shortcut for submitting reviews. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) while focused on the textarea to submit.',
+        story:
+          'Tests the keyboard shortcut for submitting reviews. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) while focused on the textarea to submit.',
       },
     },
     // Disable snapshot for interaction test - visual state is same as WithSummary
@@ -237,6 +249,9 @@ export const KeyboardSubmit: Story = {
 
     // Verify onSubmit was called with correct args
     await expect(args.onSubmit).toHaveBeenCalledTimes(1);
-    await expect(args.onSubmit).toHaveBeenCalledWith('approve', 'LGTM! Clean implementation.');
+    await expect(args.onSubmit).toHaveBeenCalledWith(
+      'approve',
+      'LGTM! Clean implementation.',
+    );
   },
 };

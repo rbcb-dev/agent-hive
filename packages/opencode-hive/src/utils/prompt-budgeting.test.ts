@@ -37,7 +37,11 @@ describe('applyTaskBudget', () => {
 
     expect(result.tasks.length).toBe(3);
     // Should keep the LAST 3 tasks (most recent)
-    expect(result.tasks.map(t => t.name)).toEqual(['03-task', '04-task', '05-task']);
+    expect(result.tasks.map((t) => t.name)).toEqual([
+      '03-task',
+      '04-task',
+      '05-task',
+    ]);
   });
 
   it('truncates task summaries exceeding max chars', () => {
@@ -70,8 +74,12 @@ describe('applyTaskBudget', () => {
     const result = applyTaskBudget(tasks, { maxTasks: 2 });
 
     expect(result.truncationEvents.length).toBeGreaterThan(0);
-    expect(result.truncationEvents.some(e => e.type === 'tasks_dropped')).toBe(true);
-    const dropEvent = result.truncationEvents.find(e => e.type === 'tasks_dropped');
+    expect(
+      result.truncationEvents.some((e) => e.type === 'tasks_dropped'),
+    ).toBe(true);
+    const dropEvent = result.truncationEvents.find(
+      (e) => e.type === 'tasks_dropped',
+    );
     expect(dropEvent?.count).toBe(1); // 1 task dropped
   });
 
@@ -81,7 +89,9 @@ describe('applyTaskBudget', () => {
 
     const result = applyTaskBudget(tasks, { maxSummaryChars: 100 });
 
-    expect(result.truncationEvents.some(e => e.type === 'summary_truncated')).toBe(true);
+    expect(
+      result.truncationEvents.some((e) => e.type === 'summary_truncated'),
+    ).toBe(true);
   });
 
   it('returns all tasks when under limit', () => {
@@ -110,10 +120,15 @@ describe('applyTaskBudget', () => {
       { name: '03-task', summary: 'Third' },
     ];
 
-    const result = applyTaskBudget(tasks, { maxTasks: 2, feature: 'test-feature' });
+    const result = applyTaskBudget(tasks, {
+      maxTasks: 2,
+      feature: 'test-feature',
+    });
 
     expect(result.droppedTasksHint).toContain('01-task');
-    expect(result.droppedTasksHint).toContain('.hive/features/test-feature/tasks');
+    expect(result.droppedTasksHint).toContain(
+      '.hive/features/test-feature/tasks',
+    );
   });
 });
 
@@ -143,7 +158,9 @@ describe('applyContextBudget', () => {
     const result = applyContextBudget(files, { maxTotalContextChars: 5000 });
 
     // Should include some files in full/truncated form, then switch to name-only
-    expect(result.truncationEvents.some(e => e.type === 'context_names_only')).toBe(true);
+    expect(
+      result.truncationEvents.some((e) => e.type === 'context_names_only'),
+    ).toBe(true);
   });
 
   it('preserves small context files unchanged', () => {
@@ -161,7 +178,9 @@ describe('applyContextBudget', () => {
 
     const result = applyContextBudget(files, { maxContextChars: 500 });
 
-    expect(result.truncationEvents.some(e => e.type === 'context_truncated')).toBe(true);
+    expect(
+      result.truncationEvents.some((e) => e.type === 'context_truncated'),
+    ).toBe(true);
   });
 
   it('handles empty context list', () => {
@@ -175,9 +194,14 @@ describe('applyContextBudget', () => {
     const longContent = 'Y'.repeat(10000);
     const files = [{ name: 'decisions', content: longContent }];
 
-    const result = applyContextBudget(files, { maxContextChars: 500, feature: 'my-feature' });
+    const result = applyContextBudget(files, {
+      maxContextChars: 500,
+      feature: 'my-feature',
+    });
 
-    expect(result.files[0].pathHint).toContain('.hive/features/my-feature/context/decisions.md');
+    expect(result.files[0].pathHint).toContain(
+      '.hive/features/my-feature/context/decisions.md',
+    );
   });
 });
 
@@ -219,10 +243,14 @@ describe('prompt budgeting bounds growth', () => {
     const result = applyTaskBudget(tasks, DEFAULT_BUDGET);
 
     // Calculate total chars in result
-    const totalChars = result.tasks.reduce((sum, t) => sum + t.summary.length, 0);
+    const totalChars = result.tasks.reduce(
+      (sum, t) => sum + t.summary.length,
+      0,
+    );
 
     // Should be bounded by maxTasks * maxSummaryChars
-    const maxExpected = DEFAULT_BUDGET.maxTasks * (DEFAULT_BUDGET.maxSummaryChars + 50);
+    const maxExpected =
+      DEFAULT_BUDGET.maxTasks * (DEFAULT_BUDGET.maxSummaryChars + 50);
     expect(totalChars).toBeLessThanOrEqual(maxExpected);
   });
 
@@ -236,9 +264,14 @@ describe('prompt budgeting bounds growth', () => {
     const result = applyContextBudget(files, DEFAULT_BUDGET);
 
     // Calculate total chars in result
-    const totalChars = result.files.reduce((sum, f) => sum + f.content.length, 0);
+    const totalChars = result.files.reduce(
+      (sum, f) => sum + f.content.length,
+      0,
+    );
 
     // Should be bounded
-    expect(totalChars).toBeLessThanOrEqual(DEFAULT_BUDGET.maxTotalContextChars + 500);
+    expect(totalChars).toBeLessThanOrEqual(
+      DEFAULT_BUDGET.maxTotalContextChars + 500,
+    );
   });
 });

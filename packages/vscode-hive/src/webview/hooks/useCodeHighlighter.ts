@@ -1,7 +1,7 @@
 /**
  * useCodeHighlighter hook - Extracts Shiki highlighting logic for reusability
  * Provides async syntax highlighting with loading state and error handling.
- * 
+ *
  * Uses fine-grained Shiki bundle from lib/shiki-bundle.ts for smaller bundle size.
  * To add new languages/themes, update shiki-bundle.ts.
  */
@@ -36,7 +36,7 @@ export interface UseCodeHighlighterResult {
 /**
  * Hook for syntax highlighting code using Shiki.
  * Maintains a singleton highlighter instance for performance.
- * 
+ *
  * @param options - Configuration for highlighting
  * @returns Highlighted tokens, loading state, and any error
  */
@@ -81,17 +81,17 @@ export function useCodeHighlighter({
           lineTokens.map((token) => ({
             content: token.content,
             color: token.color,
-          }))
+          })),
         );
 
         setTokens(lineTokens);
         setError(null);
       } catch (err) {
         if (cancelled) return;
-        
+
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
-        
+
         // Fallback: return unhighlighted tokens
         const lines = code.split('\n');
         setTokens(lines.map((line) => [{ content: line }]));

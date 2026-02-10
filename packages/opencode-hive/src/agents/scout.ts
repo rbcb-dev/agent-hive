@@ -124,6 +124,7 @@ When operating within a feature context:
 
 export const scoutBeeAgent = {
   name: 'Scout (Explorer/Researcher/Retrieval)',
-  description: 'Lean researcher. Classifies requests, researches in parallel, cites evidence.',
+  description:
+    'Lean researcher. Classifies requests, researches in parallel, cites evidence.',
   prompt: SCOUT_BEE_PROMPT,
 };

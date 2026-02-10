@@ -29,7 +29,13 @@ describe('isValidPromptFilePath', () => {
     });
     try {
       const workspaceRoot = path.join('C:', 'Repo', 'Project');
-      const filePath = path.join('c:', 'other', 'project', '.hive', 'prompt.md');
+      const filePath = path.join(
+        'c:',
+        'other',
+        'project',
+        '.hive',
+        'prompt.md',
+      );
       expect(isValidPromptFilePath(filePath, workspaceRoot)).toBe(false);
     } finally {
       Object.defineProperty(process, 'platform', {

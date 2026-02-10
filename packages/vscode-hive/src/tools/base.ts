@@ -14,30 +14,32 @@ export interface ToolRegistration<T extends ToolInput = ToolInput> {
   invoke: (input: T, token: vscode.CancellationToken) => Promise<string>;
 }
 
-export function createToolResult(content: string): vscode.LanguageModelToolResult {
+export function createToolResult(
+  content: string,
+): vscode.LanguageModelToolResult {
   return new vscode.LanguageModelToolResult([
-    new vscode.LanguageModelTextPart(content)
+    new vscode.LanguageModelTextPart(content),
   ]);
 }
 
 export function registerTool<T extends ToolInput>(
   context: vscode.ExtensionContext,
-  registration: ToolRegistration<T>
+  registration: ToolRegistration<T>,
 ): vscode.Disposable {
   const tool: vscode.LanguageModelTool<T> = {
     prepareInvocation(
       options: vscode.LanguageModelToolInvocationPrepareOptions<T>,
-      _token: vscode.CancellationToken
+      _token: vscode.CancellationToken,
     ): vscode.ProviderResult<vscode.PreparedToolInvocation> {
       const invocationMessage = `Executing ${registration.displayName}...`;
-      
+
       if (registration.destructive) {
         return {
           invocationMessage,
           confirmationMessages: {
             title: registration.displayName,
             message: new vscode.MarkdownString(
-              `This action will modify your project. Continue?`
+              `This action will modify your project. Continue?`,
             ),
           },
         };
@@ -48,7 +50,7 @@ export function registerTool<T extends ToolInput>(
 
     async invoke(
       options: vscode.LanguageModelToolInvocationOptions<T>,
-      token: vscode.CancellationToken
+      token: vscode.CancellationToken,
     ): Promise<vscode.LanguageModelToolResult> {
       try {
         const result = await registration.invoke(options.input, token);
@@ -65,7 +67,7 @@ export function registerTool<T extends ToolInput>(
 
 export function registerAllTools(
   context: vscode.ExtensionContext,
-  registrations: ToolRegistration[]
+  registrations: ToolRegistration[],
 ): void {
   for (const reg of registrations) {
     const disposable = registerTool(context, reg);

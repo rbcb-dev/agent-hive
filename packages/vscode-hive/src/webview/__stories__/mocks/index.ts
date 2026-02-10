@@ -1,6 +1,6 @@
 /**
  * Mock data factories for Storybook stories
- * 
+ *
  * These factories create type-safe mock data for testing components
  * that depend on hive-core types like ReviewThread, DiffFile, etc.
  */
@@ -50,16 +50,16 @@ export interface CreateMockReviewThreadOptions {
 
 /**
  * Create a mock ReviewThread with sensible defaults
- * 
+ *
  * @example
  * const thread = createMockReviewThread();
  * const resolved = createMockReviewThread({ status: 'resolved' });
  */
 export function createMockReviewThread(
-  options: CreateMockReviewThreadOptions = {}
+  options: CreateMockReviewThreadOptions = {},
 ): ReviewThread {
   const timestamp = now();
-  
+
   return {
     id: options.id ?? uniqueId('thread'),
     entityId: options.entityId ?? uniqueId('entity'),
@@ -92,7 +92,7 @@ export interface CreateMockAnnotationOptions {
 
 /**
  * Create a mock ReviewAnnotation with sensible defaults
- * 
+ *
  * @example
  * const comment = createMockAnnotation();
  * const suggestion = createMockAnnotation({
@@ -104,10 +104,10 @@ export interface CreateMockAnnotationOptions {
  * });
  */
 export function createMockAnnotation(
-  options: CreateMockAnnotationOptions = {}
+  options: CreateMockAnnotationOptions = {},
 ): ReviewAnnotation {
   const timestamp = now();
-  
+
   return {
     id: options.id ?? uniqueId('annotation'),
     type: options.type ?? 'comment',
@@ -156,21 +156,21 @@ function createSampleHunk(startLine: number = 1): DiffHunk {
 
 /**
  * Create a mock DiffFile with sample hunks
- * 
+ *
  * @example
  * const file = createMockDiffFile();
  * const added = createMockDiffFile({ path: 'src/new.ts', status: 'A' });
  * const binary = createMockDiffFile({ path: 'image.png', isBinary: true });
  */
 export function createMockDiffFile(
-  options: CreateMockDiffFileOptions = {}
+  options: CreateMockDiffFileOptions = {},
 ): DiffFile {
   const hunks = options.hunks ?? [createSampleHunk()];
-  
+
   // Calculate additions/deletions from hunks if not provided
   let additions = options.additions ?? 0;
   let deletions = options.deletions ?? 0;
-  
+
   if (options.additions === undefined || options.deletions === undefined) {
     for (const hunk of hunks) {
       for (const line of hunk.lines) {
@@ -179,7 +179,7 @@ export function createMockDiffFile(
       }
     }
   }
-  
+
   return {
     path: options.path ?? 'src/components/Example.tsx',
     status: options.status ?? 'M',
@@ -205,18 +205,18 @@ export interface CreateMockFileTreeItemOptions {
 
 /**
  * Create a mock FileTreeItem with sensible defaults
- * 
+ *
  * @example
  * const item = createMockFileTreeItem();
  * const added = createMockFileTreeItem({ path: 'src/new.ts', status: 'A' });
  * const withComments = createMockFileTreeItem({ commentCount: 5 });
  */
 export function createMockFileTreeItem(
-  options: CreateMockFileTreeItemOptions = {}
+  options: CreateMockFileTreeItemOptions = {},
 ): FileTreeItem {
   const path = options.path ?? 'src/components/Example.tsx';
   const name = options.name ?? path.split('/').pop() ?? path;
-  
+
   return {
     path,
     name,

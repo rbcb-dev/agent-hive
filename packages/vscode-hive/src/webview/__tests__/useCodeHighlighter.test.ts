@@ -25,9 +25,30 @@ vi.mock('../lib/shiki-bundle', () => ({
       bash: 'shell',
     };
     const normalized = lang.toLowerCase();
-    return aliases[normalized] || (normalized.match(/^(typescript|javascript|tsx|jsx|json|markdown|html|css|yaml|shell|python|rust|go)$/) ? normalized : 'typescript');
+    return (
+      aliases[normalized] ||
+      (normalized.match(
+        /^(typescript|javascript|tsx|jsx|json|markdown|html|css|yaml|shell|python|rust|go)$/,
+      )
+        ? normalized
+        : 'typescript')
+    );
   }),
-  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  SUPPORTED_LANGUAGES: [
+    'typescript',
+    'javascript',
+    'tsx',
+    'jsx',
+    'json',
+    'markdown',
+    'html',
+    'css',
+    'yaml',
+    'shell',
+    'python',
+    'rust',
+    'go',
+  ],
   THEME_MAP: { light: 'github-light', dark: 'github-dark' },
   isLanguageSupported: vi.fn(() => true),
   resetHighlighter: vi.fn(),
@@ -37,7 +58,9 @@ describe('useCodeHighlighter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockHighlighter.codeToTokens.mockImplementation((code: string) => ({
-      tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
+      tokens: code
+        .split('\n')
+        .map((line) => [{ content: line, color: '#000' }]),
     }));
   });
 
@@ -47,7 +70,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'typescript',
-        })
+        }),
       );
 
       // Initially loading
@@ -59,7 +82,9 @@ describe('useCodeHighlighter', () => {
       });
 
       expect(result.current.tokens).toHaveLength(1);
-      expect(result.current.tokens[0]).toEqual([{ content: 'const x = 1;', color: '#000' }]);
+      expect(result.current.tokens[0]).toEqual([
+        { content: 'const x = 1;', color: '#000' },
+      ]);
       expect(result.current.error).toBeNull();
     });
 
@@ -68,7 +93,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;\nconst y = 2;',
           language: 'typescript',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -76,8 +101,12 @@ describe('useCodeHighlighter', () => {
       });
 
       expect(result.current.tokens).toHaveLength(2);
-      expect(result.current.tokens[0]).toEqual([{ content: 'const x = 1;', color: '#000' }]);
-      expect(result.current.tokens[1]).toEqual([{ content: 'const y = 2;', color: '#000' }]);
+      expect(result.current.tokens[0]).toEqual([
+        { content: 'const x = 1;', color: '#000' },
+      ]);
+      expect(result.current.tokens[1]).toEqual([
+        { content: 'const y = 2;', color: '#000' },
+      ]);
     });
 
     it('returns empty tokens for empty code', async () => {
@@ -85,7 +114,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: '',
           language: 'typescript',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -103,7 +132,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'typescript',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -112,7 +141,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'const x = 1;',
-        expect.objectContaining({ theme: 'github-dark' })
+        expect.objectContaining({ theme: 'github-dark' }),
       );
     });
 
@@ -122,7 +151,7 @@ describe('useCodeHighlighter', () => {
           code: 'const x = 1;',
           language: 'typescript',
           theme: 'light',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -131,7 +160,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'const x = 1;',
-        expect.objectContaining({ theme: 'github-light' })
+        expect.objectContaining({ theme: 'github-light' }),
       );
     });
   });
@@ -142,7 +171,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'TypeScript',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -151,7 +180,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'const x = 1;',
-        expect.objectContaining({ lang: 'typescript' })
+        expect.objectContaining({ lang: 'typescript' }),
       );
     });
 
@@ -160,7 +189,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'ts',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -169,7 +198,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'const x = 1;',
-        expect.objectContaining({ lang: 'typescript' })
+        expect.objectContaining({ lang: 'typescript' }),
       );
     });
 
@@ -178,7 +207,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'js',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -187,7 +216,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'const x = 1;',
-        expect.objectContaining({ lang: 'javascript' })
+        expect.objectContaining({ lang: 'javascript' }),
       );
     });
 
@@ -196,7 +225,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'some text',
           language: 'unknown-lang',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -205,7 +234,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenCalledWith(
         'some text',
-        expect.objectContaining({ lang: 'typescript' })
+        expect.objectContaining({ lang: 'typescript' }),
       );
     });
   });
@@ -214,7 +243,7 @@ describe('useCodeHighlighter', () => {
     it('re-highlights when code changes', async () => {
       const { result, rerender } = renderHook(
         ({ code, language }) => useCodeHighlighter({ code, language }),
-        { initialProps: { code: 'const x = 1;', language: 'typescript' } }
+        { initialProps: { code: 'const x = 1;', language: 'typescript' } },
       );
 
       await waitFor(() => {
@@ -229,13 +258,15 @@ describe('useCodeHighlighter', () => {
         expect(mockHighlighter.codeToTokens).toHaveBeenCalledTimes(2);
       });
 
-      expect(result.current.tokens[0]).toEqual([{ content: 'const y = 2;', color: '#000' }]);
+      expect(result.current.tokens[0]).toEqual([
+        { content: 'const y = 2;', color: '#000' },
+      ]);
     });
 
     it('re-highlights when language changes', async () => {
       const { result, rerender } = renderHook(
         ({ code, language }) => useCodeHighlighter({ code, language }),
-        { initialProps: { code: 'const x = 1;', language: 'typescript' } }
+        { initialProps: { code: 'const x = 1;', language: 'typescript' } },
       );
 
       await waitFor(() => {
@@ -250,22 +281,36 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenLastCalledWith(
         'const x = 1;',
-        expect.objectContaining({ lang: 'javascript' })
+        expect.objectContaining({ lang: 'javascript' }),
       );
     });
 
     it('re-highlights when theme changes', async () => {
       type Props = { code: string; language: string; theme: 'light' | 'dark' };
-      const { result, rerender } = renderHook<ReturnType<typeof useCodeHighlighter>, Props>(
-        ({ code, language, theme }) => useCodeHighlighter({ code, language, theme }),
-        { initialProps: { code: 'const x = 1;', language: 'typescript', theme: 'dark' } }
+      const { result, rerender } = renderHook<
+        ReturnType<typeof useCodeHighlighter>,
+        Props
+      >(
+        ({ code, language, theme }) =>
+          useCodeHighlighter({ code, language, theme }),
+        {
+          initialProps: {
+            code: 'const x = 1;',
+            language: 'typescript',
+            theme: 'dark',
+          },
+        },
       );
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      rerender({ code: 'const x = 1;', language: 'typescript', theme: 'light' });
+      rerender({
+        code: 'const x = 1;',
+        language: 'typescript',
+        theme: 'light',
+      });
 
       await waitFor(() => {
         expect(mockHighlighter.codeToTokens).toHaveBeenCalledTimes(2);
@@ -273,7 +318,7 @@ describe('useCodeHighlighter', () => {
 
       expect(mockHighlighter.codeToTokens).toHaveBeenLastCalledWith(
         'const x = 1;',
-        expect.objectContaining({ theme: 'github-light' })
+        expect.objectContaining({ theme: 'github-light' }),
       );
     });
   });
@@ -288,7 +333,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'typescript',
-        })
+        }),
       );
 
       await waitFor(() => {
@@ -306,12 +351,16 @@ describe('useCodeHighlighter', () => {
   describe('cleanup', () => {
     it('does not update state after unmount', async () => {
       // Use a slow mock to simulate async work - need to cast to any since mock types are strict
-      (mockHighlighter.codeToTokens as ReturnType<typeof vi.fn>).mockImplementation((code: string) => {
+      (
+        mockHighlighter.codeToTokens as ReturnType<typeof vi.fn>
+      ).mockImplementation((code: string) => {
         // Return a promise-like object for timing, but since getHighlighter awaits, this works
         return new Promise((resolve) => {
           setTimeout(() => {
             resolve({
-              tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
+              tokens: code
+                .split('\n')
+                .map((line) => [{ content: line, color: '#000' }]),
             });
           }, 50);
         });
@@ -321,7 +370,7 @@ describe('useCodeHighlighter', () => {
         useCodeHighlighter({
           code: 'const x = 1;',
           language: 'typescript',
-        })
+        }),
       );
 
       expect(result.current.isLoading).toBe(true);

@@ -35,9 +35,11 @@ import {
 /**
  * Create a mock ReviewSession for stories
  */
-function createMockSession(overrides: Partial<ReviewSession> = {}): ReviewSession {
+function createMockSession(
+  overrides: Partial<ReviewSession> = {},
+): ReviewSession {
   const now = new Date().toISOString();
-  
+
   return {
     schemaVersion: 1,
     id: 'session-123',
@@ -113,10 +115,17 @@ function createActiveReviewSession(): ReviewSession {
           { type: 'add', content: '  disabled?: boolean;' },
           { type: 'add', content: '}' },
           { type: 'add', content: '' },
-          { type: 'add', content: 'export function Button({ children, disabled }: ButtonProps) {' },
+          {
+            type: 'add',
+            content:
+              'export function Button({ children, disabled }: ButtonProps) {',
+          },
           { type: 'context', content: '  return (' },
           { type: 'remove', content: '    <button className="btn">' },
-          { type: 'add', content: '    <button className="btn" disabled={disabled}>' },
+          {
+            type: 'add',
+            content: '    <button className="btn" disabled={disabled}>',
+          },
           { type: 'context', content: '      {children}' },
           { type: 'context', content: '    </button>' },
           { type: 'context', content: '  );' },
@@ -136,8 +145,14 @@ function createActiveReviewSession(): ReviewSession {
         newStart: 1,
         newLines: 5,
         lines: [
-          { type: 'add', content: 'export function sum(numbers: number[]): number {' },
-          { type: 'add', content: '  return numbers.reduce((acc, n) => acc + n, 0);' },
+          {
+            type: 'add',
+            content: 'export function sum(numbers: number[]): number {',
+          },
+          {
+            type: 'add',
+            content: '  return numbers.reduce((acc, n) => acc + n, 0);',
+          },
           { type: 'add', content: '}' },
         ],
       },
@@ -165,8 +180,18 @@ function createActiveReviewSession(): ReviewSession {
       capturedAt: new Date().toISOString(),
       diffStats: { files: 2, insertions: 8, deletions: 2 },
       diffSummary: [
-        { path: 'src/components/Button.tsx', status: 'M', additions: 6, deletions: 2 },
-        { path: 'src/utils/helpers.ts', status: 'A', additions: 3, deletions: 0 },
+        {
+          path: 'src/components/Button.tsx',
+          status: 'M',
+          additions: 6,
+          deletions: 2,
+        },
+        {
+          path: 'src/utils/helpers.ts',
+          status: 'A',
+          additions: 3,
+          deletions: 0,
+        },
       ],
     },
   });
@@ -272,7 +297,7 @@ or file changes. Shows the basic UI structure.
   },
   play: async ({ canvasElement }) => {
     // Wait for component to mount
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Simulate extension sending session data
     sendMessage({
@@ -312,7 +337,7 @@ human reviewers and AI, and various thread statuses.
   },
   play: async ({ canvasElement }) => {
     // Wait for component to mount
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Simulate extension sending active session
     sendMessage({
@@ -358,7 +383,7 @@ switching scopes, selecting files, and viewing threads.
   },
   play: async ({ canvasElement }) => {
     // Wait for component to mount
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Send active session
     sendMessage({
@@ -405,7 +430,7 @@ Demonstrates how the app displays scope-specific content
   },
   play: async ({ canvasElement }) => {
     // Wait for component to mount
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Send session
     sendMessage({
@@ -426,7 +451,8 @@ Demonstrates how the app displays scope-specific content
       scope: 'plan',
       scopeContent: {
         uri: 'plan.md',
-        content: '# Implementation Plan\n\n## Tasks\n\n1. Setup infrastructure\n2. Implement core logic\n3. Add tests',
+        content:
+          '# Implementation Plan\n\n## Tasks\n\n1. Setup infrastructure\n2. Implement core logic\n3. Add tests',
         language: 'markdown',
       },
     });

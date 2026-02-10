@@ -1,4 +1,8 @@
-export type FeatureStatusType = 'planning' | 'approved' | 'executing' | 'completed';
+export type FeatureStatusType =
+  | 'planning'
+  | 'approved'
+  | 'executing'
+  | 'completed';
 
 export interface FeatureJson {
   name: string;
@@ -10,9 +14,23 @@ export interface FeatureJson {
   completedAt?: string;
 }
 
-export type TaskStatusType = 'pending' | 'in_progress' | 'done' | 'cancelled' | 'blocked' | 'failed' | 'partial';
+export type TaskStatusType =
+  | 'pending'
+  | 'in_progress'
+  | 'done'
+  | 'cancelled'
+  | 'blocked'
+  | 'failed'
+  | 'partial';
 export type TaskOrigin = 'plan' | 'manual';
-export type SubtaskType = 'test' | 'implement' | 'review' | 'verify' | 'research' | 'debug' | 'custom';
+export type SubtaskType =
+  | 'test'
+  | 'implement'
+  | 'review'
+  | 'verify'
+  | 'research'
+  | 'debug'
+  | 'custom';
 
 export interface Subtask {
   id: string;
@@ -164,11 +182,12 @@ export interface ReviewConfig {
 }
 
 /** Default review notification configuration */
-export const DEFAULT_REVIEW_NOTIFICATIONS: Required<ReviewNotificationsConfig> = {
-  llmQuestions: 'both',
-  newComments: true,
-  reviewComplete: true,
-};
+export const DEFAULT_REVIEW_NOTIFICATIONS: Required<ReviewNotificationsConfig> =
+  {
+    llmQuestions: 'both',
+    newComments: true,
+    reviewComplete: true,
+  };
 
 /** Default review configuration */
 export const DEFAULT_REVIEW_CONFIG: Required<ReviewConfig> = {
@@ -203,15 +222,15 @@ export interface HiveConfig {
   /** Enable OMO-Slim delegation (optional integration) */
   omoSlimEnabled?: boolean;
   /** Choose between unified or dedicated agent modes */
-   agentMode?: 'unified' | 'dedicated';
-   /**
-    * Delegate mode for background task execution:
-    * - 'hive': Use hive_background_task tools
-    * - 'task': Use OpenCode's built-in task() tool (default)
-    */
-   delegateMode?: 'hive' | 'task';
-   /** Review panel configuration */
-   review?: ReviewConfig;
+  agentMode?: 'unified' | 'dedicated';
+  /**
+   * Delegate mode for background task execution:
+   * - 'hive': Use hive_background_task tools
+   * - 'task': Use OpenCode's built-in task() tool (default)
+   */
+  delegateMode?: 'hive' | 'task';
+  /** Review panel configuration */
+  review?: ReviewConfig;
   /** Agent configuration */
   agents?: {
     /** Hive Master (hybrid planner + orchestrator) */
@@ -246,7 +265,8 @@ export const DEFAULT_AGENT_MODELS = {
 } as const;
 
 export const DEFAULT_HIVE_CONFIG: HiveConfig = {
-  $schema: 'https://raw.githubusercontent.com/tctinh/agent-hive/main/packages/opencode-hive/schema/agent_hive.schema.json',
+  $schema:
+    'https://raw.githubusercontent.com/tctinh/agent-hive/main/packages/opencode-hive/schema/agent_hive.schema.json',
   enableToolsFor: [],
   disableSkills: [],
   disableMcps: [],
@@ -287,7 +307,10 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
     'forager-worker': {
       model: DEFAULT_AGENT_MODELS['forager-worker'],
       temperature: 0.3,
-      autoLoadSkills: ['test-driven-development', 'verification-before-completion'],
+      autoLoadSkills: [
+        'test-driven-development',
+        'verification-before-completion',
+      ],
     },
     'hygienic-reviewer': {
       model: DEFAULT_AGENT_MODELS['hygienic-reviewer'],
@@ -303,19 +326,28 @@ export const DEFAULT_HIVE_CONFIG: HiveConfig = {
 // ============================================================================
 
 export type ReviewScope = 'feature' | 'task' | 'context' | 'plan' | 'code';
-export type ReviewStatus = 'in_progress' | 'approved' | 'changes_requested' | 'commented';
+export type ReviewStatus =
+  | 'in_progress'
+  | 'approved'
+  | 'changes_requested'
+  | 'commented';
 export type ReviewVerdict = 'approve' | 'request_changes' | 'comment';
 export type ThreadStatus = 'open' | 'resolved' | 'outdated';
-export type AnnotationType = 'comment' | 'suggestion' | 'task' | 'question' | 'approval';
+export type AnnotationType =
+  | 'comment'
+  | 'suggestion'
+  | 'task'
+  | 'question'
+  | 'approval';
 
 export interface Position {
-  line: number;      // 0-based
+  line: number; // 0-based
   character: number; // 0-based UTF-16
 }
 
 export interface Range {
-  start: Position;   // inclusive
-  end: Position;     // exclusive
+  start: Position; // inclusive
+  end: Position; // exclusive
 }
 
 export interface GitMeta {
@@ -325,7 +357,12 @@ export interface GitMeta {
   mergeBase: string;
   capturedAt: string;
   diffStats: { files: number; insertions: number; deletions: number };
-  diffSummary: Array<{ path: string; status: string; additions: number; deletions: number }>;
+  diffSummary: Array<{
+    path: string;
+    status: string;
+    additions: number;
+    deletions: number;
+  }>;
 }
 
 export interface ReviewAnnotation {
@@ -403,5 +440,10 @@ export interface ReviewSession {
 export interface ReviewIndex {
   schemaVersion: 1;
   activeSessionId: string | null;
-  sessions: Array<{ id: string; scope: ReviewScope; status: ReviewStatus; updatedAt: string }>;
+  sessions: Array<{
+    id: string;
+    scope: ReviewScope;
+    status: ReviewStatus;
+    updatedAt: string;
+  }>;
 }

@@ -2,13 +2,16 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn, expect, within, userEvent } from 'storybook/test';
 
 import { CodeViewer } from './CodeViewer';
-import { createMockReviewThread, createMockAnnotation } from '../__stories__/mocks';
+import {
+  createMockReviewThread,
+  createMockAnnotation,
+} from '../__stories__/mocks';
 
 /**
  * CodeViewer renders code with VS Code-style syntax highlighting and line numbers.
- * 
+ *
  * ## Supported Languages
- * 
+ *
  * The component supports the following languages via Shiki:
  * - **TypeScript** (typescript, ts)
  * - **JavaScript** (javascript, js)
@@ -20,9 +23,9 @@ import { createMockReviewThread, createMockAnnotation } from '../__stories__/moc
  * - **CSS** (css)
  * - **YAML** (yaml, yml)
  * - **Shell** (shell, sh, bash)
- * 
+ *
  * Unsupported languages fall back to JavaScript highlighting.
- * 
+ *
  * ## Features
  * - Syntax highlighting via Shiki (TextMate grammars)
  * - Configurable line numbers (show/hide, custom start)
@@ -31,7 +34,7 @@ import { createMockReviewThread, createMockAnnotation } from '../__stories__/moc
  * - Dark/light theme support (via HiveThemeProvider context)
  * - Thread markers in gutter for code review
  * - Inline thread expansion with reply/resolve
- * 
+ *
  * ## Breaking Change
  * Theme is now obtained from HiveThemeProvider context. Use the Storybook toolbar
  * theme switcher to toggle between light and dark themes.
@@ -284,7 +287,7 @@ function NewComponent() {
 /**
  * Dark theme - uses HiveThemeProvider context.
  * Use the Storybook toolbar theme switcher to toggle between light and dark themes.
- * 
+ *
  * Note: Theme is no longer a component prop. It's obtained from HiveThemeProvider context.
  */
 export const DarkTheme: Story = {
@@ -301,7 +304,7 @@ export const DarkTheme: Story = {
 /**
  * Light theme - uses HiveThemeProvider context.
  * Use the Storybook toolbar theme switcher to toggle between light and dark themes.
- * 
+ *
  * Note: Theme is no longer a component prop. It's obtained from HiveThemeProvider context.
  */
 export const LightTheme: Story = {
@@ -414,7 +417,10 @@ export const WithThreads: Story = {
     threads: [
       createMockReviewThread({
         id: 'thread-1',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         status: 'open',
         annotations: [
           createMockAnnotation({
@@ -440,7 +446,10 @@ export const MultipleThreads: Story = {
     threads: [
       createMockReviewThread({
         id: 'thread-1',
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 10 },
+        },
         status: 'open',
         annotations: [
           createMockAnnotation({
@@ -451,7 +460,10 @@ export const MultipleThreads: Story = {
       }),
       createMockReviewThread({
         id: 'thread-2',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         status: 'open',
         annotations: [
           createMockAnnotation({
@@ -462,7 +474,10 @@ export const MultipleThreads: Story = {
       }),
       createMockReviewThread({
         id: 'thread-3',
-        range: { start: { line: 12, character: 0 }, end: { line: 12, character: 10 } },
+        range: {
+          start: { line: 12, character: 0 },
+          end: { line: 12, character: 10 },
+        },
         status: 'resolved',
         annotations: [
           createMockAnnotation({
@@ -488,21 +503,30 @@ export const StackedThreads: Story = {
     threads: [
       createMockReviewThread({
         id: 'thread-1',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         annotations: [
           createMockAnnotation({ body: 'First comment on this line' }),
         ],
       }),
       createMockReviewThread({
         id: 'thread-2',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         annotations: [
           createMockAnnotation({ body: 'Second comment on this line' }),
         ],
       }),
       createMockReviewThread({
         id: 'thread-3',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         annotations: [
           createMockAnnotation({ body: 'Third comment on this line' }),
         ],
@@ -524,7 +548,10 @@ export const ResolvedThread: Story = {
     threads: [
       createMockReviewThread({
         id: 'resolved-thread',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         status: 'resolved',
         annotations: [
           createMockAnnotation({
@@ -554,7 +581,10 @@ export const ClickThreadMarker: Story = {
     threads: [
       createMockReviewThread({
         id: 'interactive-thread',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         annotations: [
           createMockAnnotation({
             body: 'Click the marker to see this thread!',
@@ -596,7 +626,10 @@ export const AccessibilityCheck: Story = {
     threads: [
       createMockReviewThread({
         id: 'a11y-thread',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
         annotations: [
           createMockAnnotation({ body: 'Accessibility test thread' }),
         ],
@@ -644,8 +677,11 @@ export const CopyToClipboard: Story = {
     // Copy button should be present
     const copyButton = canvas.getByTestId('copy-button');
     await expect(copyButton).toBeInTheDocument();
-    await expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
-    
+    await expect(copyButton).toHaveAttribute(
+      'aria-label',
+      'Copy code to clipboard',
+    );
+
     // Click to test the interaction (will show "Copied!")
     await userEvent.click(copyButton);
     await expect(copyButton).toHaveTextContent('Copied!');
@@ -731,7 +767,10 @@ console.log(message);`,
     // Find the copy button
     const copyButton = canvas.getByTestId('copy-button');
     await expect(copyButton).toBeInTheDocument();
-    await expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
+    await expect(copyButton).toHaveAttribute(
+      'aria-label',
+      'Copy code to clipboard',
+    );
 
     // Verify initial state shows "Copy"
     await expect(copyButton).toHaveTextContent('Copy');
@@ -791,7 +830,7 @@ export function Counter() {
 /**
  * Comprehensive showcase of all 10 supported languages.
  * Each language is shown with appropriate syntax highlighting.
- * 
+ *
  * Supported languages:
  * - TypeScript (ts)
  * - JavaScript (js)
@@ -812,43 +851,83 @@ export const AllLanguages: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>TypeScript</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          TypeScript
+        </h4>
         <CodeViewer code={multiLanguageCode.typescript} language="typescript" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JavaScript</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          JavaScript
+        </h4>
         <CodeViewer code={multiLanguageCode.javascript} language="javascript" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>TSX</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          TSX
+        </h4>
         <CodeViewer code={tsxCode} language="tsx" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JSX</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          JSX
+        </h4>
         <CodeViewer code={jsxCode} language="jsx" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>JSON</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          JSON
+        </h4>
         <CodeViewer code={multiLanguageCode.json} language="json" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>Markdown</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          Markdown
+        </h4>
         <CodeViewer code={multiLanguageCode.markdown} language="markdown" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>HTML</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          HTML
+        </h4>
         <CodeViewer code={multiLanguageCode.html} language="html" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>CSS</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          CSS
+        </h4>
         <CodeViewer code={multiLanguageCode.css} language="css" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>YAML</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          YAML
+        </h4>
         <CodeViewer code={multiLanguageCode.yaml} language="yaml" />
       </div>
       <div>
-        <h4 style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}>Shell</h4>
+        <h4
+          style={{ margin: '0 0 8px', color: 'var(--vscode-foreground, #ccc)' }}
+        >
+          Shell
+        </h4>
         <CodeViewer code={multiLanguageCode.shell} language="shell" />
       </div>
     </div>

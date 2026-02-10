@@ -1,20 +1,20 @@
 /**
  * Primitives Layer - The ONLY antd import boundary
- * 
+ *
  * This module re-exports all primitive components that wrap antd components.
  * All other application components should import from this module,
  * NOT directly from 'antd'.
- * 
+ *
  * Benefits:
  * - Single point of antd imports → easy future migration
  * - Controlled API surface → only expose what we need
  * - Type safety with our own interfaces
  * - No antd-specific concepts leak to components
- * 
+ *
  * @example
  * // Good - import from primitives
  * import { Button, Flex, Card } from '../primitives';
- * 
+ *
  * // Bad - direct antd import in components
  * import { Button } from 'antd'; // ❌ Don't do this in components/
  */
@@ -44,7 +44,11 @@ export type { TreeProps, TreeDataNode } from './Tree';
 export type { SegmentedProps, SegmentedOption } from './Segmented';
 export type { TabsProps, TabItem } from './Tabs';
 export type { CollapseProps, CollapseItem } from './Collapse';
-export type { RadioGroupProps, RadioOption, RadioChangeEvent } from './RadioGroup';
+export type {
+  RadioGroupProps,
+  RadioOption,
+  RadioChangeEvent,
+} from './RadioGroup';
 export type { TextAreaProps } from './TextArea';
 export type { AlertProps } from './Alert';
 export type {

@@ -12,7 +12,10 @@ describe('ThreadPanel', () => {
     id: 'thread-1',
     entityId: 'entity-1',
     uri: 'src/app.ts',
-    range: { start: { line: 10, character: 0 }, end: { line: 15, character: 0 } },
+    range: {
+      start: { line: 10, character: 0 },
+      end: { line: 15, character: 0 },
+    },
     status: 'open',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T11:00:00Z',
@@ -42,7 +45,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('src/app.ts')).toBeInTheDocument();
@@ -56,7 +59,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('This looks problematic')).toBeInTheDocument();
@@ -69,7 +72,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -82,7 +85,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     // Claude's comment should have an LLM indicator
@@ -95,7 +98,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText('Reply…')).toBeInTheDocument();
@@ -108,7 +111,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={onReply}
         onResolve={() => {}}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText('Reply…');
@@ -124,7 +127,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     const replyButton = screen.getByRole('button', { name: /^reply$/i });
@@ -137,7 +140,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('Resolve')).toBeInTheDocument();
@@ -150,7 +153,7 @@ describe('ThreadPanel', () => {
         thread={mockThread}
         onReply={() => {}}
         onResolve={onResolve}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('Resolve'));
@@ -164,7 +167,7 @@ describe('ThreadPanel', () => {
         thread={resolvedThread}
         onReply={() => {}}
         onResolve={() => {}}
-      />
+      />,
     );
 
     expect(screen.queryByText('Resolve')).not.toBeInTheDocument();
@@ -172,11 +175,7 @@ describe('ThreadPanel', () => {
 
   it('renders empty state when no thread selected', () => {
     render(
-      <ThreadPanel
-        thread={null}
-        onReply={() => {}}
-        onResolve={() => {}}
-      />
+      <ThreadPanel thread={null} onReply={() => {}} onResolve={() => {}} />,
     );
 
     expect(screen.getByText('Select a thread to view')).toBeInTheDocument();

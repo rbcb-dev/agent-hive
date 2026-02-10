@@ -1,6 +1,6 @@
 /**
  * Space - Ant Design Space wrapper
- * 
+ *
  * Provides spacing between inline elements with size and direction controls.
  * Note: Uses 'orientation' prop (non-deprecated) instead of 'direction'.
  */

@@ -27,11 +27,16 @@ type Story = StoryObj<typeof meta>;
 // =============================================================================
 
 function createMockThreadSummary(
-  overrides: Partial<ThreadSummary> = {}
+  overrides: Partial<ThreadSummary> = {},
 ): ThreadSummary {
   return {
-    id: overrides.id ?? `thread-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    uri: overrides.uri !== undefined ? overrides.uri : 'src/components/Example.tsx',
+    id:
+      overrides.id ??
+      `thread-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    uri:
+      overrides.uri !== undefined
+        ? overrides.uri
+        : 'src/components/Example.tsx',
     firstLine: overrides.firstLine ?? 'This is a comment preview...',
     status: overrides.status ?? 'open',
     commentCount: overrides.commentCount ?? 1,
@@ -110,7 +115,13 @@ export const WithThreads: Story = {
  */
 export const WithMixedStatus: Story = {
   args: {
-    threads: [openThread1, resolvedThread, openThread2, outdatedThread, planThread],
+    threads: [
+      openThread1,
+      resolvedThread,
+      openThread2,
+      outdatedThread,
+      planThread,
+    ],
     selectedThread: null,
     onSelectThread: fn(),
   },
@@ -140,7 +151,9 @@ export const SelectThread: Story = {
     const canvas = within(canvasElement);
 
     // Find the thread item with "async/await" text and click it
-    const threadItem = canvas.getByText(/async\/await/i).closest('.thread-list-item');
+    const threadItem = canvas
+      .getByText(/async\/await/i)
+      .closest('.thread-list-item');
     if (threadItem) {
       await userEvent.click(threadItem);
     }
@@ -186,7 +199,9 @@ export const KeyboardNavigation: Story = {
     const canvas = within(canvasElement);
 
     // Find the thread item and focus it
-    const threadItem = canvas.getByText(/async\/await/i).closest('.thread-list-item');
+    const threadItem = canvas
+      .getByText(/async\/await/i)
+      .closest('.thread-list-item');
     if (threadItem instanceof HTMLElement) {
       threadItem.focus();
       await userEvent.keyboard('{Enter}');
@@ -198,13 +213,15 @@ export const KeyboardNavigation: Story = {
 };
 
 // Generate many threads for VirtualList testing
-const manyThreads: ThreadSummary[] = Array.from({ length: 100 }, (_, i) => createMockThreadSummary({
-  id: `thread-${i}`,
-  uri: `src/file-${i}.ts`,
-  firstLine: `Comment ${i}: This is a sample comment for testing virtual scrolling performance with large lists`,
-  status: i % 3 === 0 ? 'resolved' : i % 5 === 0 ? 'outdated' : 'open',
-  commentCount: (i % 10) + 1,
-}));
+const manyThreads: ThreadSummary[] = Array.from({ length: 100 }, (_, i) =>
+  createMockThreadSummary({
+    id: `thread-${i}`,
+    uri: `src/file-${i}.ts`,
+    firstLine: `Comment ${i}: This is a sample comment for testing virtual scrolling performance with large lists`,
+    status: i % 3 === 0 ? 'resolved' : i % 5 === 0 ? 'outdated' : 'open',
+    commentCount: (i % 10) + 1,
+  }),
+);
 
 /**
  * Large list using VirtualList (>50 items) for performance
@@ -218,7 +235,8 @@ export const LargeList: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Lists with more than 50 items automatically use VirtualList for performance. Only visible items are rendered.',
+        story:
+          'Lists with more than 50 items automatically use VirtualList for performance. Only visible items are rendered.',
       },
     },
   },

@@ -1,2 +1,2 @@
-export { HiveSidebarProvider } from './sidebarProvider'
-export { PlanCommentController } from './planCommentController'
+export { HiveSidebarProvider } from './sidebarProvider';
+export { PlanCommentController } from './planCommentController';

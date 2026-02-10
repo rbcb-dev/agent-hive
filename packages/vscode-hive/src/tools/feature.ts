@@ -9,7 +9,8 @@ export function getFeatureTools(workspaceRoot: string): ToolRegistration[] {
     {
       name: 'hive_feature_create',
       displayName: 'Create Hive Feature',
-      modelDescription: 'Create a new Hive feature for plan-first development. Use at the start of any new work to establish a planning workspace with context, plan, and task tracking.',
+      modelDescription:
+        'Create a new Hive feature for plan-first development. Use at the start of any new work to establish a planning workspace with context, plan, and task tracking.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -38,7 +39,8 @@ export function getFeatureTools(workspaceRoot: string): ToolRegistration[] {
     {
       name: 'hive_feature_complete',
       displayName: 'Complete Hive Feature',
-      modelDescription: 'Mark a feature as completed. Use when all tasks are done and the feature is ready for final integration. This is irreversible.',
+      modelDescription:
+        'Mark a feature as completed. Use when all tasks are done and the feature is ready for final integration. This is irreversible.',
       destructive: true,
       inputSchema: {
         type: 'object',

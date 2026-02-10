@@ -1,9 +1,9 @@
 /**
  * FileNavigator component - Tree view of files with thread count badges
- * 
+ *
  * Displays a hierarchical folder structure with files from the review scope.
  * Shows thread count badges per file and supports click-to-load inline viewing.
- * 
+ *
  * Uses antd Tree with virtual scrolling for large file trees.
  */
 
@@ -52,7 +52,10 @@ function countThreadsPerFile(threads: ReviewThread[]): Map<string, number> {
 /**
  * Build a tree structure from a flat list of file paths for antd Tree
  */
-function buildTreeData(files: string[], threadCounts: Map<string, number>): ExtendedTreeNode[] {
+function buildTreeData(
+  files: string[],
+  threadCounts: Map<string, number>,
+): ExtendedTreeNode[] {
   const root: ExtendedTreeNode = { key: 'root', title: '', children: [] };
 
   for (const filePath of files) {
@@ -64,7 +67,9 @@ function buildTreeData(files: string[], threadCounts: Map<string, number>): Exte
       const isFile = i === parts.length - 1;
       const key = parts.slice(0, i + 1).join('/');
 
-      let child = current.children?.find((c) => c.key === key) as ExtendedTreeNode | undefined;
+      let child = current.children?.find((c) => c.key === key) as
+        | ExtendedTreeNode
+        | undefined;
 
       if (!child) {
         child = {
@@ -94,7 +99,9 @@ function buildTreeData(files: string[], threadCounts: Map<string, number>): Exte
       })
       .map((node) => ({
         ...node,
-        children: node.children ? sortNodes(node.children as ExtendedTreeNode[]) : undefined,
+        children: node.children
+          ? sortNodes(node.children as ExtendedTreeNode[])
+          : undefined,
       }));
   };
 
@@ -121,7 +128,10 @@ function getAllFolderPaths(nodes: ExtendedTreeNode[]): string[] {
 /**
  * Find a node in the tree by key
  */
-function findNode(nodes: ExtendedTreeNode[], key: string): ExtendedTreeNode | undefined {
+function findNode(
+  nodes: ExtendedTreeNode[],
+  key: string,
+): ExtendedTreeNode | undefined {
   for (const node of nodes) {
     if (node.key === key) return node;
     if (node.children) {
@@ -142,7 +152,10 @@ export function FileNavigator({
   const threadCounts = useMemo(() => countThreadsPerFile(threads), [threads]);
 
   // Build tree structure
-  const treeData = useMemo(() => buildTreeData(files, threadCounts), [files, threadCounts]);
+  const treeData = useMemo(
+    () => buildTreeData(files, threadCounts),
+    [files, threadCounts],
+  );
 
   // Track which files we've seen to detect new folders
   const prevFilesRef = React.useRef<string[]>([]);
@@ -186,7 +199,7 @@ export function FileNavigator({
         onSelectFile(key);
       }
     },
-    [treeData, onSelectFile]
+    [treeData, onSelectFile],
   );
 
   // Handle expansion
@@ -230,7 +243,7 @@ export function FileNavigator({
         </span>
       );
     },
-    [onSelectFile]
+    [onSelectFile],
   );
 
   // Empty state

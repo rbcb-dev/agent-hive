@@ -13,7 +13,11 @@ export interface ThreadPanelProps {
   onResolve: (threadId: string) => void;
 }
 
-export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): React.ReactElement {
+export function ThreadPanel({
+  thread,
+  onReply,
+  onResolve,
+}: ThreadPanelProps): React.ReactElement {
   if (!thread) {
     return (
       <div className="thread-panel thread-panel-empty">
@@ -28,7 +32,9 @@ export function ThreadPanel({ thread, onReply, onResolve }: ThreadPanelProps): R
         {thread.uri && (
           <div className="thread-location">
             <span className="thread-file">{thread.uri}</span>
-            <span className="thread-line">line {thread.range.start.line + 1}</span>
+            <span className="thread-line">
+              line {thread.range.start.line + 1}
+            </span>
           </div>
         )}
       </div>

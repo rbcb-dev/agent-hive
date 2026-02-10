@@ -1,6 +1,6 @@
 /**
  * Tests for prompt/payload observability utilities.
- * 
+ *
  * These utilities provide visibility into prompt sizes and detect
  * when thresholds are exceeded to prevent silent truncation risks.
  */
@@ -31,7 +31,9 @@ describe('calculatePromptMeta', () => {
     expect(meta.contextChars).toBe('Context file contents here.'.length);
     expect(meta.previousTasksChars).toBe('Task 1: Done\nTask 2: Done'.length);
     expect(meta.specChars).toBe('The task specification.'.length);
-    expect(meta.workerPromptChars).toBe('Full worker prompt with all sections combined.'.length);
+    expect(meta.workerPromptChars).toBe(
+      'Full worker prompt with all sections combined.'.length,
+    );
   });
 
   it('handles empty strings', () => {
@@ -140,7 +142,7 @@ describe('checkWarnings', () => {
 
     const warnings = checkWarnings(promptMeta, payloadMeta);
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some(w => w.type === 'workerPromptSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'workerPromptSize')).toBe(true);
   });
 
   it('warns when JSON payload exceeds threshold', () => {
@@ -159,7 +161,7 @@ describe('checkWarnings', () => {
 
     const warnings = checkWarnings(promptMeta, payloadMeta);
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some(w => w.type === 'jsonPayloadSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'jsonPayloadSize')).toBe(true);
   });
 
   it('warns when context size exceeds threshold', () => {
@@ -178,7 +180,7 @@ describe('checkWarnings', () => {
 
     const warnings = checkWarnings(promptMeta, payloadMeta);
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some(w => w.type === 'contextSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'contextSize')).toBe(true);
   });
 
   it('uses custom thresholds when provided', () => {
@@ -204,10 +206,10 @@ describe('checkWarnings', () => {
     });
 
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some(w => w.type === 'workerPromptSize')).toBe(true);
-    expect(warnings.some(w => w.type === 'jsonPayloadSize')).toBe(true);
-    expect(warnings.some(w => w.type === 'contextSize')).toBe(true);
-    expect(warnings.some(w => w.type === 'previousTasksSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'workerPromptSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'jsonPayloadSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'contextSize')).toBe(true);
+    expect(warnings.some((w) => w.type === 'previousTasksSize')).toBe(true);
   });
 
   it('includes severity level in warnings', () => {
@@ -225,7 +227,11 @@ describe('checkWarnings', () => {
     };
 
     const warnings = checkWarnings(promptMeta, payloadMeta);
-    expect(warnings.every(w => ['info', 'warning', 'critical'].includes(w.severity))).toBe(true);
+    expect(
+      warnings.every((w) =>
+        ['info', 'warning', 'critical'].includes(w.severity),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -240,7 +246,7 @@ describe('DEFAULT_THRESHOLDS', () => {
   it('has JSON payload threshold higher than worker prompt threshold', () => {
     // JSON payload includes worker prompt plus other fields
     expect(DEFAULT_THRESHOLDS.jsonPayloadMaxChars).toBeGreaterThanOrEqual(
-      DEFAULT_THRESHOLDS.workerPromptMaxChars
+      DEFAULT_THRESHOLDS.workerPromptMaxChars,
     );
   });
 });

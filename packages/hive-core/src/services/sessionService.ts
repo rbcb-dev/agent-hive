@@ -1,13 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { getFeaturePath, ensureDir, readJson, writeJson } from '../utils/paths.js';
+import {
+  getFeaturePath,
+  ensureDir,
+  readJson,
+  writeJson,
+} from '../utils/paths.js';
 import { SessionInfo, SessionsJson } from '../types.js';
 
 export class SessionService {
   constructor(private projectRoot: string) {}
 
   private getSessionsPath(featureName: string): string {
-    return path.join(getFeaturePath(this.projectRoot, featureName), 'sessions.json');
+    return path.join(
+      getFeaturePath(this.projectRoot, featureName),
+      'sessions.json',
+    );
   }
 
   private getSessions(featureName: string): SessionsJson {
@@ -21,11 +29,15 @@ export class SessionService {
     writeJson(sessionsPath, data);
   }
 
-  track(featureName: string, sessionId: string, taskFolder?: string): SessionInfo {
+  track(
+    featureName: string,
+    sessionId: string,
+    taskFolder?: string,
+  ): SessionInfo {
     const data = this.getSessions(featureName);
     const now = new Date().toISOString();
 
-    let session = data.sessions.find(s => s.sessionId === sessionId);
+    let session = data.sessions.find((s) => s.sessionId === sessionId);
     if (session) {
       session.lastActiveAt = now;
       if (taskFolder) session.taskFolder = taskFolder;
@@ -62,16 +74,20 @@ export class SessionService {
   }
 
   get(featureName: string, sessionId: string): SessionInfo | undefined {
-    return this.getSessions(featureName).sessions.find(s => s.sessionId === sessionId);
+    return this.getSessions(featureName).sessions.find(
+      (s) => s.sessionId === sessionId,
+    );
   }
 
   getByTask(featureName: string, taskFolder: string): SessionInfo | undefined {
-    return this.getSessions(featureName).sessions.find(s => s.taskFolder === taskFolder);
+    return this.getSessions(featureName).sessions.find(
+      (s) => s.taskFolder === taskFolder,
+    );
   }
 
   remove(featureName: string, sessionId: string): boolean {
     const data = this.getSessions(featureName);
-    const index = data.sessions.findIndex(s => s.sessionId === sessionId);
+    const index = data.sessions.findIndex((s) => s.sessionId === sessionId);
     if (index === -1) return false;
 
     data.sessions.splice(index, 1);
@@ -86,13 +102,14 @@ export class SessionService {
     const featuresPath = path.join(this.projectRoot, '.hive', 'features');
     if (!fs.existsSync(featuresPath)) return null;
 
-    const features = fs.readdirSync(featuresPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
+    const features = fs
+      .readdirSync(featuresPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
 
     for (const feature of features) {
       const sessions = this.getSessions(feature);
-      if (sessions.sessions.some(s => s.sessionId === sessionId)) {
+      if (sessions.sessions.some((s) => s.sessionId === sessionId)) {
         return feature;
       }
       if (sessions.master === sessionId) {
@@ -106,10 +123,10 @@ export class SessionService {
   fork(featureName: string, fromSessionId?: string): SessionInfo {
     const data = this.getSessions(featureName);
     const now = new Date().toISOString();
-    
-    const sourceSession = fromSessionId 
-      ? data.sessions.find(s => s.sessionId === fromSessionId)
-      : data.sessions.find(s => s.sessionId === data.master);
+
+    const sourceSession = fromSessionId
+      ? data.sessions.find((s) => s.sessionId === fromSessionId)
+      : data.sessions.find((s) => s.sessionId === data.master);
 
     const newSessionId = `ses_fork_${Date.now()}`;
     const newSession: SessionInfo = {

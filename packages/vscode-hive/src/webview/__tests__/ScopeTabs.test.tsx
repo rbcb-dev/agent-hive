@@ -21,7 +21,7 @@ describe('ScopeTabs', () => {
         scopes={defaultScopes}
         activeScope="feature"
         onScopeChange={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('Feature')).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe('ScopeTabs', () => {
         scopes={defaultScopes}
         activeScope="plan"
         onScopeChange={() => {}}
-      />
+      />,
     );
 
     // The antd Segmented component uses ant-segmented-item-selected class for active items
@@ -52,7 +52,7 @@ describe('ScopeTabs', () => {
         scopes={defaultScopes}
         activeScope="feature"
         onScopeChange={onScopeChange}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('Code'));
@@ -66,7 +66,7 @@ describe('ScopeTabs', () => {
         scopes={defaultScopes}
         activeScope="feature"
         onScopeChange={onScopeChange}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('Feature'));

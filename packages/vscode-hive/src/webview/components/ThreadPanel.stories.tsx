@@ -196,8 +196,10 @@ export const ReplyWithCmdEnter: Story = {
     const canvas = within(canvasElement);
 
     // Find the reply textarea
-    const replyInput = canvas.getByRole('textbox', { name: /reply to thread/i });
-    
+    const replyInput = canvas.getByRole('textbox', {
+      name: /reply to thread/i,
+    });
+
     // Type a reply message
     const replyText = 'This is my reply to the comment.';
     await userEvent.type(replyInput, replyText);
@@ -209,7 +211,10 @@ export const ReplyWithCmdEnter: Story = {
     await userEvent.type(replyInput, '{Meta>}{Enter}{/Meta}');
 
     // Verify callback was called with the thread ID and message
-    await expect(args.onReply).toHaveBeenCalledWith('thread-reply-test', replyText);
+    await expect(args.onReply).toHaveBeenCalledWith(
+      'thread-reply-test',
+      replyText,
+    );
   },
 };
 
@@ -241,8 +246,10 @@ export const ReplyWithButton: Story = {
     const canvas = within(canvasElement);
 
     // Find the reply textarea
-    const replyInput = canvas.getByRole('textbox', { name: /reply to thread/i });
-    
+    const replyInput = canvas.getByRole('textbox', {
+      name: /reply to thread/i,
+    });
+
     // Type a reply message
     const replyText = 'Clicking the button to reply.';
     await userEvent.type(replyInput, replyText);
@@ -252,7 +259,10 @@ export const ReplyWithButton: Story = {
     await userEvent.click(replyButton);
 
     // Verify callback was called
-    await expect(args.onReply).toHaveBeenCalledWith('thread-button-test', replyText);
+    await expect(args.onReply).toHaveBeenCalledWith(
+      'thread-button-test',
+      replyText,
+    );
   },
 };
 
@@ -284,7 +294,9 @@ export const ResolveAction: Story = {
     const canvas = within(canvasElement);
 
     // Find and click the Resolve button
-    const resolveButton = canvas.getByRole('button', { name: /mark thread as resolved/i });
+    const resolveButton = canvas.getByRole('button', {
+      name: /mark thread as resolved/i,
+    });
     await userEvent.click(resolveButton);
 
     // Verify the onResolve callback was called with the thread ID
@@ -324,7 +336,9 @@ export const ReplyButtonDisabledWhenEmpty: Story = {
     await expect(replyButton).toBeDisabled();
 
     // Type something
-    const replyInput = canvas.getByRole('textbox', { name: /reply to thread/i });
+    const replyInput = canvas.getByRole('textbox', {
+      name: /reply to thread/i,
+    });
     await userEvent.type(replyInput, 'Some text');
 
     // Now button should be enabled

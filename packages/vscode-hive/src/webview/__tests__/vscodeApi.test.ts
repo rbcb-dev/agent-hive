@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getVsCodeApi, postMessage, addMessageListener, notifyReady } from '../vscodeApi';
+import {
+  getVsCodeApi,
+  postMessage,
+  addMessageListener,
+  notifyReady,
+} from '../vscodeApi';
 
 // Mock acquireVsCodeApi
 const mockPostMessage = vi.fn();
@@ -48,7 +53,10 @@ describe('vscodeApi', () => {
       const message = {
         type: 'addComment' as const,
         entityId: 'entity-1',
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 10 },
+        },
         body: 'Test comment',
         annotationType: 'comment',
       };
@@ -57,7 +65,11 @@ describe('vscodeApi', () => {
     });
 
     it('sends reply message', () => {
-      const message = { type: 'reply' as const, threadId: 'thread-1', body: 'Test reply' };
+      const message = {
+        type: 'reply' as const,
+        threadId: 'thread-1',
+        body: 'Test reply',
+      };
       postMessage(message);
       expect(mockPostMessage).toHaveBeenCalledWith(message);
     });
@@ -69,7 +81,11 @@ describe('vscodeApi', () => {
     });
 
     it('sends submit message', () => {
-      const message = { type: 'submit' as const, verdict: 'approve', summary: 'LGTM' };
+      const message = {
+        type: 'submit' as const,
+        verdict: 'approve',
+        summary: 'LGTM',
+      };
       postMessage(message);
       expect(mockPostMessage).toHaveBeenCalledWith(message);
     });
@@ -80,7 +96,7 @@ describe('vscodeApi', () => {
       const handler = vi.fn();
       const removeListener = addMessageListener(handler);
       expect(typeof removeListener).toBe('function');
-      
+
       // Cleanup
       removeListener();
     });
@@ -95,7 +111,10 @@ describe('vscodeApi', () => {
       });
       window.dispatchEvent(event);
 
-      expect(handler).toHaveBeenCalledWith({ type: 'sessionData', session: {} });
+      expect(handler).toHaveBeenCalledWith({
+        type: 'sessionData',
+        session: {},
+      });
     });
   });
 

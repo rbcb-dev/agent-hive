@@ -1,10 +1,10 @@
 /**
  * Main App component - Hive Review UI
- * 
+ *
  * This component now uses custom hooks for state management:
  * - useReviewSession: Manages session state, scope, file/thread selection, and extension messaging
  * - useFileContentCache: Manages file content caching with TTL
- * 
+ *
  * Layout:
  * Uses antd Layout components with HiveThemeProvider for theming:
  * - Layout: Root container with minHeight 100vh
@@ -54,7 +54,7 @@ export function isMarkdownFile(filePath: string): boolean {
  */
 function extractContentFromDiff(file: DiffFile): string {
   const lines: string[] = [];
-  
+
   for (const hunk of file.hunks) {
     for (const line of hunk.lines) {
       // Include context and added lines (the "new" state)
@@ -63,7 +63,7 @@ function extractContentFromDiff(file: DiffFile): string {
       }
     }
   }
-  
+
   return lines.join('\n');
 }
 
@@ -100,7 +100,7 @@ export function App(): React.ReactElement {
           message.uri,
           message.content,
           message.language,
-          message.warning
+          message.warning,
         );
       } else if (message.type === 'fileError') {
         fileContentCache.setError(message.uri, message.error);
@@ -111,25 +111,38 @@ export function App(): React.ReactElement {
   }, [fileContentCache]);
 
   // Wrapper for CodeViewer's thread click callback
-  const handleCodeViewerThreadClick = useCallback((clickedThreads: ReviewThread[]) => {
-    if (clickedThreads.length > 0) {
-      handleSelectThread(clickedThreads[0].id);
-    }
-  }, [handleSelectThread]);
+  const handleCodeViewerThreadClick = useCallback(
+    (clickedThreads: ReviewThread[]) => {
+      if (clickedThreads.length > 0) {
+        handleSelectThread(clickedThreads[0].id);
+      }
+    },
+    [handleSelectThread],
+  );
 
   // Sidebar collapse state
   const [collapsed, setCollapsed] = useState(false);
 
   // Determine if selected file is markdown and extract content
-  const isSelectedFileMarkdown = selectedFile ? isMarkdownFile(selectedFile) : false;
-  const markdownContent = (selectedFileData && isSelectedFileMarkdown) 
-    ? extractContentFromDiff(selectedFileData)
-    : null;
+  const isSelectedFileMarkdown = selectedFile
+    ? isMarkdownFile(selectedFile)
+    : false;
+  const markdownContent =
+    selectedFileData && isSelectedFileMarkdown
+      ? extractContentFromDiff(selectedFileData)
+      : null;
 
   return (
     <HiveThemeProvider mode="light">
       <Layout style={{ minHeight: '100vh' }}>
-        <Header style={{ padding: '0 16px', display: 'flex', alignItems: 'center', background: 'var(--ant-color-bg-container)' }}>
+        <Header
+          style={{
+            padding: '0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--ant-color-bg-container)',
+          }}
+        >
           <ScopeTabs
             scopes={SCOPES}
             activeScope={activeScope}
@@ -137,14 +150,17 @@ export function App(): React.ReactElement {
           />
         </Header>
         <Layout hasSider>
-          <Sider 
-            width={280} 
-            collapsible 
+          <Sider
+            width={280}
+            collapsible
             collapsed={collapsed}
             onCollapse={setCollapsed}
             style={{ background: 'var(--ant-color-bg-container)' }}
           >
-            <nav role="navigation" style={{ padding: collapsed ? '8px' : '16px' }}>
+            <nav
+              role="navigation"
+              style={{ padding: collapsed ? '8px' : '16px' }}
+            >
               <div className="sidebar-section">
                 {!collapsed && <h3>Files</h3>}
                 <FileNavigator
@@ -168,8 +184,8 @@ export function App(): React.ReactElement {
             <Content style={{ padding: 16, overflow: 'auto' }} role="main">
               <div className="content-area">
                 {activeScope === 'code' && isSelectedFileMarkdown && (
-                  <MarkdownViewer 
-                    content={markdownContent} 
+                  <MarkdownViewer
+                    content={markdownContent}
                     filePath={selectedFile || undefined}
                   />
                 )}
@@ -190,7 +206,7 @@ export function App(): React.ReactElement {
                       </Button>
                     </div>
                     {scopeContent.language === 'markdown' ? (
-                      <MarkdownViewer 
+                      <MarkdownViewer
                         content={scopeContent.content}
                         filePath={scopeContent.uri}
                       />
@@ -221,11 +237,13 @@ export function App(): React.ReactElement {
             </Content>
           </Layout>
         </Layout>
-        <div style={{ padding: 16, borderTop: '1px solid var(--ant-color-border)' }}>
-          <ReviewSummary
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
+        <div
+          style={{
+            padding: 16,
+            borderTop: '1px solid var(--ant-color-border)',
+          }}
+        >
+          <ReviewSummary onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         </div>
       </Layout>
     </HiveThemeProvider>

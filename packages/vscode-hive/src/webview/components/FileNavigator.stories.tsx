@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn, expect, within, userEvent } from 'storybook/test';
 
 import { FileNavigator } from './FileNavigator';
-import { createMockReviewThread, createMockAnnotation } from '../__stories__/mocks';
+import {
+  createMockReviewThread,
+  createMockAnnotation,
+} from '../__stories__/mocks';
 
 const meta = {
   title: 'Components/FileNavigator',
@@ -16,7 +19,8 @@ const meta = {
       description: 'List of file paths to display in tree view',
     },
     threads: {
-      description: 'Review threads used to compute comment count badges per file',
+      description:
+        'Review threads used to compute comment count badges per file',
     },
     selectedFile: {
       description: 'Currently selected file path',
@@ -53,7 +57,7 @@ const createThreadsForFile = (uri: string, count: number) => {
           body: `Comment ${i + 1} on ${uri}`,
         }),
       ],
-    })
+    }),
   );
 };
 
@@ -166,7 +170,9 @@ export const FileSelectionInteraction: Story = {
     await userEvent.click(buttonFile);
 
     // Verify callback was called with full path
-    await expect(args.onSelectFile).toHaveBeenCalledWith('src/components/Button.tsx');
+    await expect(args.onSelectFile).toHaveBeenCalledWith(
+      'src/components/Button.tsx',
+    );
   },
 };
 
@@ -187,7 +193,9 @@ export const FolderToggleInteraction: Story = {
     await expect(canvas.getByText('Button.tsx')).toBeVisible();
 
     // Find the 'components' folder and click to collapse
-    const componentsFolderNode = canvas.getByText('components').closest('[data-testid="folder-node"]');
+    const componentsFolderNode = canvas
+      .getByText('components')
+      .closest('[data-testid="folder-node"]');
     await expect(componentsFolderNode).toBeInTheDocument();
     await userEvent.click(componentsFolderNode!);
 
@@ -219,17 +227,27 @@ export const CommentBadgeInteraction: Story = {
     const canvas = within(canvasElement);
 
     // Find Button.tsx and verify its badge shows 3
-    const buttonItem = canvas.getByText('Button.tsx').closest('[data-testid="file-item"]');
-    const buttonBadge = buttonItem?.querySelector('[data-testid="thread-count"]');
+    const buttonItem = canvas
+      .getByText('Button.tsx')
+      .closest('[data-testid="file-item"]');
+    const buttonBadge = buttonItem?.querySelector(
+      '[data-testid="thread-count"]',
+    );
     await expect(buttonBadge).toHaveTextContent('3');
 
     // Find helpers.ts and verify its badge shows 2
-    const helpersItem = canvas.getByText('helpers.ts').closest('[data-testid="file-item"]');
-    const helpersBadge = helpersItem?.querySelector('[data-testid="thread-count"]');
+    const helpersItem = canvas
+      .getByText('helpers.ts')
+      .closest('[data-testid="file-item"]');
+    const helpersBadge = helpersItem?.querySelector(
+      '[data-testid="thread-count"]',
+    );
     await expect(helpersBadge).toHaveTextContent('2');
 
     // Input.tsx should have no badge (0 threads)
-    const inputItem = canvas.getByText('Input.tsx').closest('[data-testid="file-item"]');
+    const inputItem = canvas
+      .getByText('Input.tsx')
+      .closest('[data-testid="file-item"]');
     const inputBadge = inputItem?.querySelector('[data-testid="thread-count"]');
     await expect(inputBadge).toBeNull();
   },
@@ -241,19 +259,19 @@ export const CommentBadgeInteraction: Story = {
 export const FileIcons: Story = {
   args: {
     files: [
-      'src/components/Button.tsx',     // .tsx -> file-code
-      'src/utils/helpers.ts',          // .ts -> file-code
-      'src/index.js',                  // .js -> file-code
-      'src/main.py',                   // .py -> file-code
-      'package.json',                  // .json -> file-text
-      'config.yaml',                   // .yaml -> file-text
-      'README.md',                     // .md -> markdown
-      'bun.lock',                      // .lock -> lock
-      '.env',                          // .env -> gear
-      'data.csv',                      // .csv -> file-text
-      'styles.css',                    // .css -> file-code
-      'template.html',                 // .html -> file-code
-      'unknown.xyz',                   // unknown -> file (default)
+      'src/components/Button.tsx', // .tsx -> file-code
+      'src/utils/helpers.ts', // .ts -> file-code
+      'src/index.js', // .js -> file-code
+      'src/main.py', // .py -> file-code
+      'package.json', // .json -> file-text
+      'config.yaml', // .yaml -> file-text
+      'README.md', // .md -> markdown
+      'bun.lock', // .lock -> lock
+      '.env', // .env -> gear
+      'data.csv', // .csv -> file-text
+      'styles.css', // .css -> file-code
+      'template.html', // .html -> file-code
+      'unknown.xyz', // unknown -> file (default)
     ],
     threads: [],
     selectedFile: null,
@@ -264,27 +282,45 @@ export const FileIcons: Story = {
 
     // Verify different file types have icons
     // TypeScript file should have file-code icon
-    const tsxFile = canvas.getByText('Button.tsx').closest('[data-testid="file-item"]');
-    await expect(tsxFile?.querySelector('.codicon-file-code')).toBeInTheDocument();
+    const tsxFile = canvas
+      .getByText('Button.tsx')
+      .closest('[data-testid="file-item"]');
+    await expect(
+      tsxFile?.querySelector('.codicon-file-code'),
+    ).toBeInTheDocument();
 
     // JSON file should have file-text icon
-    const jsonFile = canvas.getByText('package.json').closest('[data-testid="file-item"]');
-    await expect(jsonFile?.querySelector('.codicon-file-text')).toBeInTheDocument();
+    const jsonFile = canvas
+      .getByText('package.json')
+      .closest('[data-testid="file-item"]');
+    await expect(
+      jsonFile?.querySelector('.codicon-file-text'),
+    ).toBeInTheDocument();
 
     // Markdown file should have markdown icon
-    const mdFile = canvas.getByText('README.md').closest('[data-testid="file-item"]');
-    await expect(mdFile?.querySelector('.codicon-markdown')).toBeInTheDocument();
+    const mdFile = canvas
+      .getByText('README.md')
+      .closest('[data-testid="file-item"]');
+    await expect(
+      mdFile?.querySelector('.codicon-markdown'),
+    ).toBeInTheDocument();
 
     // Lock file should have lock icon
-    const lockFile = canvas.getByText('bun.lock').closest('[data-testid="file-item"]');
+    const lockFile = canvas
+      .getByText('bun.lock')
+      .closest('[data-testid="file-item"]');
     await expect(lockFile?.querySelector('.codicon-lock')).toBeInTheDocument();
 
     // Env file should have gear icon
-    const envFile = canvas.getByText('.env').closest('[data-testid="file-item"]');
+    const envFile = canvas
+      .getByText('.env')
+      .closest('[data-testid="file-item"]');
     await expect(envFile?.querySelector('.codicon-gear')).toBeInTheDocument();
 
     // Folder should have folder icon
-    const folder = canvas.getByText('src').closest('[data-testid="folder-node"]');
+    const folder = canvas
+      .getByText('src')
+      .closest('[data-testid="folder-node"]');
     await expect(folder?.querySelector('.codicon-folder')).toBeInTheDocument();
   },
 };

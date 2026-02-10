@@ -28,7 +28,18 @@ export type {
  */
 export type WebviewToExtensionMessage =
   | { type: 'ready' }
-  | { type: 'addComment'; threadId?: string; entityId: string; uri?: string; range: { start: { line: number; character: number }; end: { line: number; character: number } }; body: string; annotationType: string }
+  | {
+      type: 'addComment';
+      threadId?: string;
+      entityId: string;
+      uri?: string;
+      range: {
+        start: { line: number; character: number };
+        end: { line: number; character: number };
+      };
+      body: string;
+      annotationType: string;
+    }
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
   | { type: 'submit'; verdict: string; summary: string }
@@ -41,12 +52,22 @@ export type WebviewToExtensionMessage =
  * Messages sent from extension to webview
  */
 export type ExtensionToWebviewMessage =
-   | { type: 'sessionData'; session: import('hive-core').ReviewSession }
-   | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
-   | { type: 'error'; message: string }
-   | { type: 'scopeChanged'; scope: string; scopeContent?: { uri: string; content: string; language: string } }
-   | { type: 'fileContent'; uri: string; content: string; language?: string; warning?: string }
-   | { type: 'fileError'; uri: string; error: string };
+  | { type: 'sessionData'; session: import('hive-core').ReviewSession }
+  | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
+  | { type: 'error'; message: string }
+  | {
+      type: 'scopeChanged';
+      scope: string;
+      scopeContent?: { uri: string; content: string; language: string };
+    }
+  | {
+      type: 'fileContent';
+      uri: string;
+      content: string;
+      language?: string;
+      warning?: string;
+    }
+  | { type: 'fileError'; uri: string; error: string };
 
 /**
  * File tree item for navigation

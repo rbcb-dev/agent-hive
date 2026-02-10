@@ -56,7 +56,11 @@ export interface BudgetedContext {
  * Truncation event for observability.
  */
 export interface TruncationEvent {
-  type: 'tasks_dropped' | 'summary_truncated' | 'context_truncated' | 'context_names_only';
+  type:
+    | 'tasks_dropped'
+    | 'summary_truncated'
+    | 'context_truncated'
+    | 'context_names_only';
   message: string;
   count?: number;
   /** Names of affected items */
@@ -131,7 +135,10 @@ const TRUNCATION_MARKER = '...[truncated]';
 /**
  * Truncate a string to max length with marker.
  */
-function truncateWithMarker(str: string, maxLength: number): { result: string; truncated: boolean } {
+function truncateWithMarker(
+  str: string,
+  maxLength: number,
+): { result: string; truncated: boolean } {
   if (str.length <= maxLength) {
     return { result: str, truncated: false };
   }
@@ -162,10 +169,11 @@ function truncateWithMarker(str: string, maxLength: number): { result: string; t
  */
 export function applyTaskBudget(
   tasks: TaskInput[],
-  config: BudgetConfig = {}
+  config: BudgetConfig = {},
 ): TaskBudgetResult {
   const maxTasks = config.maxTasks ?? DEFAULT_BUDGET.maxTasks;
-  const maxSummaryChars = config.maxSummaryChars ?? DEFAULT_BUDGET.maxSummaryChars;
+  const maxSummaryChars =
+    config.maxSummaryChars ?? DEFAULT_BUDGET.maxSummaryChars;
   const feature = config.feature;
 
   const truncationEvents: TruncationEvent[] = [];
@@ -182,7 +190,7 @@ export function applyTaskBudget(
 
   if (tasks.length > maxTasks) {
     const dropCount = tasks.length - maxTasks;
-    droppedTasks.push(...tasks.slice(0, dropCount).map(t => t.name));
+    droppedTasks.push(...tasks.slice(0, dropCount).map((t) => t.name));
     selectedTasks = tasks.slice(dropCount);
 
     truncationEvents.push({
@@ -201,8 +209,11 @@ export function applyTaskBudget(
   }
 
   // Truncate summaries if needed
-  const budgetedTasks: BudgetedTask[] = selectedTasks.map(task => {
-    const { result, truncated } = truncateWithMarker(task.summary, maxSummaryChars);
+  const budgetedTasks: BudgetedTask[] = selectedTasks.map((task) => {
+    const { result, truncated } = truncateWithMarker(
+      task.summary,
+      maxSummaryChars,
+    );
 
     if (truncated) {
       truncationEvents.push({
@@ -241,10 +252,12 @@ export function applyTaskBudget(
  */
 export function applyContextBudget(
   files: ContextInput[],
-  config: BudgetConfig = {}
+  config: BudgetConfig = {},
 ): ContextBudgetResult {
-  const maxContextChars = config.maxContextChars ?? DEFAULT_BUDGET.maxContextChars;
-  const maxTotalContextChars = config.maxTotalContextChars ?? DEFAULT_BUDGET.maxTotalContextChars;
+  const maxContextChars =
+    config.maxContextChars ?? DEFAULT_BUDGET.maxContextChars;
+  const maxTotalContextChars =
+    config.maxTotalContextChars ?? DEFAULT_BUDGET.maxTotalContextChars;
   const feature = config.feature;
 
   const truncationEvents: TruncationEvent[] = [];
@@ -270,7 +283,7 @@ export function applyContextBudget(
       truncationEvents.push({
         type: 'context_names_only',
         message: `Switched to name-only listing after ${totalChars} chars (budget: ${maxTotalContextChars})`,
-        affected: files.slice(files.indexOf(file)).map(f => f.name),
+        affected: files.slice(files.indexOf(file)).map((f) => f.name),
       });
     }
 
@@ -288,7 +301,10 @@ export function applyContextBudget(
     }
 
     // Truncate individual file if needed
-    const { result, truncated } = truncateWithMarker(file.content, maxContextChars);
+    const { result, truncated } = truncateWithMarker(
+      file.content,
+      maxContextChars,
+    );
 
     if (truncated) {
       truncationEvents.push({

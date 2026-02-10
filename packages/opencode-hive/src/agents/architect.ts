@@ -129,6 +129,7 @@ Each task MUST declare dependencies with **Depends on**:
 
 export const architectBeeAgent = {
   name: 'Architect (Planner)',
-  description: 'Lean planner. Classifies intent, interviews, writes plans. NEVER executes.',
+  description:
+    'Lean planner. Classifies intent, interviews, writes plans. NEVER executes.',
   prompt: ARCHITECT_BEE_PROMPT,
 };

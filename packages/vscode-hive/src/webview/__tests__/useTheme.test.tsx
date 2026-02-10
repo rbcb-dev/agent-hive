@@ -1,6 +1,6 @@
 /**
  * Tests for useTheme hook
- * 
+ *
  * Verifies:
  * - Returns theme mode from context
  * - Throws helpful error when called outside provider
@@ -49,7 +49,7 @@ describe('useTheme', () => {
   it('throws helpful error when called outside provider', () => {
     // Suppress console.error for this test since we expect an error
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     expect(() => {
       renderHook(() => useTheme());
     }).toThrow(/useTheme must be used within a HiveThemeProvider/);
@@ -66,7 +66,7 @@ describe('useTheme', () => {
     const { rerender } = render(
       <HiveThemeProvider mode="light">
         <TestComponent />
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
@@ -74,7 +74,7 @@ describe('useTheme', () => {
     rerender(
       <HiveThemeProvider mode="dark">
         <TestComponent />
-      </HiveThemeProvider>
+      </HiveThemeProvider>,
     );
 
     expect(screen.getByTestId('theme-value')).toHaveTextContent('dark');

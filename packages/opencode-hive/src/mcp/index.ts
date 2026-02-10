@@ -11,7 +11,9 @@ const allBuiltinMcps: Record<string, McpConfig> = {
   ast_grep: astGrepMcp,
 };
 
-export const createBuiltinMcps = (disabledMcps: string[] = []): Record<string, McpConfig> => {
+export const createBuiltinMcps = (
+  disabledMcps: string[] = [],
+): Record<string, McpConfig> => {
   const disabled = new Set(disabledMcps);
   return Object.fromEntries(
     Object.entries(allBuiltinMcps).filter(([name]) => !disabled.has(name)),

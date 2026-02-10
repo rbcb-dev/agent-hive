@@ -24,7 +24,10 @@ export function getFeaturesPath(projectRoot: string): string {
   return path.join(getHivePath(projectRoot), FEATURES_DIR);
 }
 
-export function getFeaturePath(projectRoot: string, featureName: string): string {
+export function getFeaturePath(
+  projectRoot: string,
+  featureName: string,
+): string {
   return path.join(getFeaturesPath(projectRoot), featureName);
 }
 
@@ -32,15 +35,24 @@ export function getPlanPath(projectRoot: string, featureName: string): string {
   return path.join(getFeaturePath(projectRoot, featureName), PLAN_FILE);
 }
 
-export function getCommentsPath(projectRoot: string, featureName: string): string {
+export function getCommentsPath(
+  projectRoot: string,
+  featureName: string,
+): string {
   return path.join(getFeaturePath(projectRoot, featureName), COMMENTS_FILE);
 }
 
-export function getFeatureJsonPath(projectRoot: string, featureName: string): string {
+export function getFeatureJsonPath(
+  projectRoot: string,
+  featureName: string,
+): string {
   return path.join(getFeaturePath(projectRoot, featureName), FEATURE_FILE);
 }
 
-export function getContextPath(projectRoot: string, featureName: string): string {
+export function getContextPath(
+  projectRoot: string,
+  featureName: string,
+): string {
   return path.join(getFeaturePath(projectRoot, featureName), CONTEXT_DIR);
 }
 
@@ -48,47 +60,114 @@ export function getTasksPath(projectRoot: string, featureName: string): string {
   return path.join(getFeaturePath(projectRoot, featureName), TASKS_DIR);
 }
 
-export function getTaskPath(projectRoot: string, featureName: string, taskFolder: string): string {
+export function getTaskPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+): string {
   return path.join(getTasksPath(projectRoot, featureName), taskFolder);
 }
 
-export function getTaskStatusPath(projectRoot: string, featureName: string, taskFolder: string): string {
-  return path.join(getTaskPath(projectRoot, featureName, taskFolder), STATUS_FILE);
+export function getTaskStatusPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+): string {
+  return path.join(
+    getTaskPath(projectRoot, featureName, taskFolder),
+    STATUS_FILE,
+  );
 }
 
-export function getTaskReportPath(projectRoot: string, featureName: string, taskFolder: string): string {
-  return path.join(getTaskPath(projectRoot, featureName, taskFolder), REPORT_FILE);
+export function getTaskReportPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+): string {
+  return path.join(
+    getTaskPath(projectRoot, featureName, taskFolder),
+    REPORT_FILE,
+  );
 }
 
-export function getTaskSpecPath(projectRoot: string, featureName: string, taskFolder: string): string {
-  return path.join(getTaskPath(projectRoot, featureName, taskFolder), 'spec.md');
+export function getTaskSpecPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+): string {
+  return path.join(
+    getTaskPath(projectRoot, featureName, taskFolder),
+    'spec.md',
+  );
 }
 
-export function getApprovedPath(projectRoot: string, featureName: string): string {
+export function getApprovedPath(
+  projectRoot: string,
+  featureName: string,
+): string {
   return path.join(getFeaturePath(projectRoot, featureName), APPROVED_FILE);
 }
 
 const SUBTASKS_DIR = 'subtasks';
 const SPEC_FILE = 'spec.md';
 
-export function getSubtasksPath(projectRoot: string, featureName: string, taskFolder: string): string {
-  return path.join(getTaskPath(projectRoot, featureName, taskFolder), SUBTASKS_DIR);
+export function getSubtasksPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+): string {
+  return path.join(
+    getTaskPath(projectRoot, featureName, taskFolder),
+    SUBTASKS_DIR,
+  );
 }
 
-export function getSubtaskPath(projectRoot: string, featureName: string, taskFolder: string, subtaskFolder: string): string {
-  return path.join(getSubtasksPath(projectRoot, featureName, taskFolder), subtaskFolder);
+export function getSubtaskPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+  subtaskFolder: string,
+): string {
+  return path.join(
+    getSubtasksPath(projectRoot, featureName, taskFolder),
+    subtaskFolder,
+  );
 }
 
-export function getSubtaskStatusPath(projectRoot: string, featureName: string, taskFolder: string, subtaskFolder: string): string {
-  return path.join(getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder), STATUS_FILE);
+export function getSubtaskStatusPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+  subtaskFolder: string,
+): string {
+  return path.join(
+    getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder),
+    STATUS_FILE,
+  );
 }
 
-export function getSubtaskSpecPath(projectRoot: string, featureName: string, taskFolder: string, subtaskFolder: string): string {
-  return path.join(getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder), SPEC_FILE);
+export function getSubtaskSpecPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+  subtaskFolder: string,
+): string {
+  return path.join(
+    getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder),
+    SPEC_FILE,
+  );
 }
 
-export function getSubtaskReportPath(projectRoot: string, featureName: string, taskFolder: string, subtaskFolder: string): string {
-  return path.join(getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder), REPORT_FILE);
+export function getSubtaskReportPath(
+  projectRoot: string,
+  featureName: string,
+  taskFolder: string,
+  subtaskFolder: string,
+): string {
+  return path.join(
+    getSubtaskPath(projectRoot, featureName, taskFolder, subtaskFolder),
+    REPORT_FILE,
+  );
 }
 
 export function ensureDir(dirPath: string): void {
@@ -156,7 +235,7 @@ function isLockStale(lockPath: string, staleTTL: number): boolean {
 /**
  * Acquire an exclusive lock on a file.
  * Uses exclusive file creation (O_EXCL) for atomic lock acquisition.
- * 
+ *
  * @param filePath - Path to the file to lock
  * @param options - Lock acquisition options
  * @returns A release function to call when done
@@ -164,7 +243,7 @@ function isLockStale(lockPath: string, staleTTL: number): boolean {
  */
 export async function acquireLock(
   filePath: string,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): Promise<() => void> {
   const opts = { ...DEFAULT_LOCK_OPTIONS, ...options };
   const lockPath = getLockPath(filePath);
@@ -178,10 +257,13 @@ export async function acquireLock(
   while (true) {
     try {
       // Attempt exclusive create (O_CREAT | O_EXCL | O_WRONLY)
-      const fd = fs.openSync(lockPath, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
+      const fd = fs.openSync(
+        lockPath,
+        fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY,
+      );
       fs.writeSync(fd, lockContent);
       fs.closeSync(fd);
-      
+
       // Lock acquired - return release function
       return () => {
         try {
@@ -210,12 +292,12 @@ export async function acquireLock(
       if (Date.now() - startTime >= opts.timeout) {
         throw new Error(
           `Failed to acquire lock on ${filePath} after ${opts.timeout}ms. ` +
-          `Lock file: ${lockPath}`
+            `Lock file: ${lockPath}`,
         );
       }
 
       // Wait and retry with exponential backoff
-      await new Promise(resolve => setTimeout(resolve, opts.retryInterval));
+      await new Promise((resolve) => setTimeout(resolve, opts.retryInterval));
     }
   }
 }
@@ -225,7 +307,7 @@ export async function acquireLock(
  */
 export function acquireLockSync(
   filePath: string,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): () => void {
   const opts = { ...DEFAULT_LOCK_OPTIONS, ...options };
   const lockPath = getLockPath(filePath);
@@ -238,10 +320,13 @@ export function acquireLockSync(
 
   while (true) {
     try {
-      const fd = fs.openSync(lockPath, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
+      const fd = fs.openSync(
+        lockPath,
+        fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY,
+      );
       fs.writeSync(fd, lockContent);
       fs.closeSync(fd);
-      
+
       return () => {
         try {
           fs.unlinkSync(lockPath);
@@ -267,7 +352,7 @@ export function acquireLockSync(
       if (Date.now() - startTime >= opts.timeout) {
         throw new Error(
           `Failed to acquire lock on ${filePath} after ${opts.timeout}ms. ` +
-          `Lock file: ${lockPath}`
+            `Lock file: ${lockPath}`,
         );
       }
 
@@ -283,16 +368,16 @@ export function acquireLockSync(
 /**
  * Write a file atomically using write-to-temp-then-rename pattern.
  * This ensures no partial writes are visible to readers.
- * 
+ *
  * @param filePath - Destination file path
  * @param content - Content to write
  */
 export function writeAtomic(filePath: string, content: string): void {
   ensureDir(path.dirname(filePath));
-  
+
   // Generate unique temp file in same directory (for same-filesystem rename)
   const tempPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
-  
+
   try {
     fs.writeFileSync(tempPath, content);
     fs.renameSync(tempPath, filePath);
@@ -317,7 +402,7 @@ export function writeJsonAtomic<T>(filePath: string, data: T): void {
 /**
  * Write JSON with exclusive lock (async version).
  * Ensures only one process writes at a time and writes are atomic.
- * 
+ *
  * @param filePath - Path to JSON file
  * @param data - Data to write
  * @param options - Lock options
@@ -325,7 +410,7 @@ export function writeJsonAtomic<T>(filePath: string, data: T): void {
 export async function writeJsonLocked<T>(
   filePath: string,
   data: T,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): Promise<void> {
   const release = await acquireLock(filePath, options);
   try {
@@ -341,7 +426,7 @@ export async function writeJsonLocked<T>(
 export function writeJsonLockedSync<T>(
   filePath: string,
   data: T,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): void {
   const release = acquireLockSync(filePath, options);
   try {
@@ -359,18 +444,18 @@ export function writeJsonLockedSync<T>(
  */
 export function deepMerge<T extends Record<string, unknown>>(
   target: T,
-  patch: Partial<T>
+  patch: Partial<T>,
 ): T {
   const result = { ...target };
-  
+
   for (const key of Object.keys(patch) as Array<keyof T>) {
     const patchValue = patch[key];
-    
+
     // Skip undefined values (don't overwrite)
     if (patchValue === undefined) {
       continue;
     }
-    
+
     // If both are plain objects (not arrays, not null), deep merge
     if (
       patchValue !== null &&
@@ -382,21 +467,21 @@ export function deepMerge<T extends Record<string, unknown>>(
     ) {
       result[key] = deepMerge(
         result[key] as Record<string, unknown>,
-        patchValue as Record<string, unknown>
+        patchValue as Record<string, unknown>,
       ) as T[keyof T];
     } else {
       // Direct assignment for primitives, arrays, null
       result[key] = patchValue as T[keyof T];
     }
   }
-  
+
   return result;
 }
 
 /**
  * Read-modify-write JSON with lock protection.
  * Reads current content, applies patch via deep merge, writes atomically.
- * 
+ *
  * @param filePath - Path to JSON file
  * @param patch - Partial update to merge
  * @param options - Lock options
@@ -405,12 +490,15 @@ export function deepMerge<T extends Record<string, unknown>>(
 export async function patchJsonLocked<T extends object>(
   filePath: string,
   patch: Partial<T>,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): Promise<T> {
   const release = await acquireLock(filePath, options);
   try {
     const current = readJson<T>(filePath) || ({} as T);
-    const merged = deepMerge(current as Record<string, unknown>, patch as Record<string, unknown>) as T;
+    const merged = deepMerge(
+      current as Record<string, unknown>,
+      patch as Record<string, unknown>,
+    ) as T;
     writeJsonAtomic(filePath, merged);
     return merged;
   } finally {
@@ -424,12 +512,15 @@ export async function patchJsonLocked<T extends object>(
 export function patchJsonLockedSync<T extends object>(
   filePath: string,
   patch: Partial<T>,
-  options: LockOptions = {}
+  options: LockOptions = {},
 ): T {
   const release = acquireLockSync(filePath, options);
   try {
     const current = readJson<T>(filePath) || ({} as T);
-    const merged = deepMerge(current as Record<string, unknown>, patch as Record<string, unknown>) as T;
+    const merged = deepMerge(
+      current as Record<string, unknown>,
+      patch as Record<string, unknown>,
+    ) as T;
     writeJsonAtomic(filePath, merged);
     return merged;
   } finally {

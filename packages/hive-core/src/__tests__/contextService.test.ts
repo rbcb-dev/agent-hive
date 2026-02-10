@@ -17,7 +17,11 @@ function setupFeature(featureName: string): void {
   fs.mkdirSync(featurePath, { recursive: true });
   fs.writeFileSync(
     path.join(featurePath, 'feature.json'),
-    JSON.stringify({ name: featureName, status: 'executing', createdAt: new Date().toISOString() })
+    JSON.stringify({
+      name: featureName,
+      status: 'executing',
+      createdAt: new Date().toISOString(),
+    }),
   );
 }
 
@@ -62,12 +66,17 @@ describe('ContextService', () => {
       // Verify archived files exist
       const archiveFiles = fs.readdirSync(result.archivePath);
       expect(archiveFiles.length).toBe(2);
-      expect(archiveFiles.some(f => f.endsWith('_research.md'))).toBe(true);
-      expect(archiveFiles.some(f => f.endsWith('_decisions.md'))).toBe(true);
+      expect(archiveFiles.some((f) => f.endsWith('_research.md'))).toBe(true);
+      expect(archiveFiles.some((f) => f.endsWith('_decisions.md'))).toBe(true);
 
       // Verify content preserved
-      const researchArchive = archiveFiles.find(f => f.endsWith('_research.md'))!;
-      const content = fs.readFileSync(path.join(result.archivePath, researchArchive), 'utf-8');
+      const researchArchive = archiveFiles.find((f) =>
+        f.endsWith('_research.md'),
+      )!;
+      const content = fs.readFileSync(
+        path.join(result.archivePath, researchArchive),
+        'utf-8',
+      );
       expect(content).toBe('Research findings here');
     });
 
@@ -91,13 +100,27 @@ describe('ContextService', () => {
       service.write(featureName, 'first', 'a'.repeat(100));
       service.write(featureName, 'second', 'b'.repeat(200));
       service.write(featureName, 'third', 'c'.repeat(300));
-      
+
       // Manually adjust timestamps to ensure ordering
-      const contextPath = path.join(TEST_DIR, '.hive', 'features', featureName, 'context');
+      const contextPath = path.join(
+        TEST_DIR,
+        '.hive',
+        'features',
+        featureName,
+        'context',
+      );
       const now = Date.now();
-      
-      fs.utimesSync(path.join(contextPath, 'first.md'), (now - 2000) / 1000, (now - 2000) / 1000); // oldest
-      fs.utimesSync(path.join(contextPath, 'second.md'), (now - 1000) / 1000, (now - 1000) / 1000); // middle
+
+      fs.utimesSync(
+        path.join(contextPath, 'first.md'),
+        (now - 2000) / 1000,
+        (now - 2000) / 1000,
+      ); // oldest
+      fs.utimesSync(
+        path.join(contextPath, 'second.md'),
+        (now - 1000) / 1000,
+        (now - 1000) / 1000,
+      ); // middle
       fs.utimesSync(path.join(contextPath, 'third.md'), now / 1000, now / 1000); // newest
 
       const result = service.stats(featureName);

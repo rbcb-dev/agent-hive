@@ -1,6 +1,6 @@
 /**
  * Layout - Ant Design Layout wrapper
- * 
+ *
  * Application layout structure with Header, Content, Footer, and Sider.
  */
 

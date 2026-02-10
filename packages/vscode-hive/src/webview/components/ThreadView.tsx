@@ -18,11 +18,17 @@ export interface ThreadViewProps {
   compact?: boolean;
 }
 
-function AnnotationItem({ annotation }: { annotation: ReviewAnnotation }): React.ReactElement {
+function AnnotationItem({
+  annotation,
+}: {
+  annotation: ReviewAnnotation;
+}): React.ReactElement {
   const isLLM = annotation.author.type === 'llm';
 
   return (
-    <div className={`thread-view-annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}>
+    <div
+      className={`thread-view-annotation ${isLLM ? 'annotation-llm' : 'annotation-human'}`}
+    >
       <div className="annotation-header">
         <span className="annotation-author">{annotation.author.name}</span>
         {isLLM ? <span className="annotation-badge">AI</span> : null}
@@ -34,7 +40,9 @@ function AnnotationItem({ annotation }: { annotation: ReviewAnnotation }): React
       {annotation.suggestion ? (
         <div className="annotation-suggestion">
           <span className="suggestion-label">Suggestion:</span>
-          <pre className="suggestion-code">{annotation.suggestion.replacement}</pre>
+          <pre className="suggestion-code">
+            {annotation.suggestion.replacement}
+          </pre>
         </div>
       ) : null}
     </div>
@@ -71,13 +79,12 @@ export function ThreadView({
     'thread-view',
     isResolved ? 'thread-view-resolved' : '',
     compact ? 'thread-view-compact' : '',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div
-      className={classNames}
-      data-testid="thread-view"
-    >
+    <div className={classNames} data-testid="thread-view">
       <div className="thread-view-header">
         {!isResolved ? (
           <Button

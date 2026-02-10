@@ -1,6 +1,6 @@
 /**
  * Typography - Ant Design Typography wrapper
- * 
+ *
  * Text rendering components with styling variants.
  */
 

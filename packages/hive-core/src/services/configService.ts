@@ -12,7 +12,7 @@ import type { SandboxConfig } from './dockerSandboxService.js';
 
 /**
  * ConfigService manages user config at ~/.config/opencode/agent_hive.json
- * 
+ *
  * This is USER config (not project-scoped):
  * - VSCode extension reads/writes this
  * - OpenCode plugin reads this to enable features
@@ -103,14 +103,16 @@ export class ConfigService {
    */
   set(updates: Partial<HiveConfig>): HiveConfig {
     const current = this.get();
-    
+
     const merged: HiveConfig = {
       ...current,
       ...updates,
-      agents: updates.agents ? {
-        ...current.agents,
-        ...updates.agents,
-      } : current.agents,
+      agents: updates.agents
+        ? {
+            ...current.agents,
+            ...updates.agents,
+          }
+        : current.agents,
     };
 
     // Ensure config directory exists
@@ -118,7 +120,7 @@ export class ConfigService {
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(this.configPath, JSON.stringify(merged, null, 2));
     return merged;
   }
@@ -144,20 +146,37 @@ export class ConfigService {
    * Get agent-specific model config
    */
   getAgentConfig(
-    agent: 'hive-master' | 'architect-planner' | 'swarm-orchestrator' | 'scout-researcher' | 'forager-worker' | 'hygienic-reviewer',
-  ): { model?: string; temperature?: number; skills?: string[]; autoLoadSkills?: string[]; variant?: string } {
+    agent:
+      | 'hive-master'
+      | 'architect-planner'
+      | 'swarm-orchestrator'
+      | 'scout-researcher'
+      | 'forager-worker'
+      | 'hygienic-reviewer',
+  ): {
+    model?: string;
+    temperature?: number;
+    skills?: string[];
+    autoLoadSkills?: string[];
+    variant?: string;
+  } {
     const config = this.get();
     const agentConfig = config.agents?.[agent] ?? {};
-    const defaultAutoLoadSkills = DEFAULT_HIVE_CONFIG.agents?.[agent]?.autoLoadSkills ?? [];
+    const defaultAutoLoadSkills =
+      DEFAULT_HIVE_CONFIG.agents?.[agent]?.autoLoadSkills ?? [];
     const userAutoLoadSkills = agentConfig.autoLoadSkills ?? [];
-    const isPlannerAgent = agent === 'hive-master' || agent === 'architect-planner';
+    const isPlannerAgent =
+      agent === 'hive-master' || agent === 'architect-planner';
     const effectiveUserAutoLoadSkills = isPlannerAgent
       ? userAutoLoadSkills
       : userAutoLoadSkills.filter((skill) => skill !== 'onboarding');
     const effectiveDefaultAutoLoadSkills = isPlannerAgent
       ? defaultAutoLoadSkills
       : defaultAutoLoadSkills.filter((skill) => skill !== 'onboarding');
-    const combinedAutoLoadSkills = [...effectiveDefaultAutoLoadSkills, ...effectiveUserAutoLoadSkills];
+    const combinedAutoLoadSkills = [
+      ...effectiveDefaultAutoLoadSkills,
+      ...effectiveUserAutoLoadSkills,
+    ];
     const uniqueAutoLoadSkills = Array.from(new Set(combinedAutoLoadSkills));
     const disabledSkills = config.disableSkills ?? [];
     const effectiveAutoLoadSkills = uniqueAutoLoadSkills.filter(
@@ -202,23 +221,25 @@ export class ConfigService {
     const config = this.get();
     const mode = config.sandbox ?? 'none';
     const image = config.dockerImage;
-    const persistent = config.persistentContainers ?? (mode === 'docker');
+    const persistent = config.persistentContainers ?? mode === 'docker';
 
-   return { mode, ...(image && { image }), persistent };
-   }
+    return { mode, ...(image && { image }), persistent };
+  }
 
-   /**
-    * Get review panel configuration, merged with defaults.
-    */
-   getReviewConfig(): Required<ReviewConfig> & { notifications: Required<ReviewNotificationsConfig> } {
-     const config = this.get();
-     return {
-       ...DEFAULT_REVIEW_CONFIG,
-       ...config.review,
-       notifications: {
-         ...DEFAULT_REVIEW_NOTIFICATIONS,
-         ...config.review?.notifications,
-       },
-     };
-   }
- }
+  /**
+   * Get review panel configuration, merged with defaults.
+   */
+  getReviewConfig(): Required<ReviewConfig> & {
+    notifications: Required<ReviewNotificationsConfig>;
+  } {
+    const config = this.get();
+    return {
+      ...DEFAULT_REVIEW_CONFIG,
+      ...config.review,
+      notifications: {
+        ...DEFAULT_REVIEW_NOTIFICATIONS,
+        ...config.review?.notifications,
+      },
+    };
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * SuggestionPreview component - Shows diff preview and apply button for code suggestions
  * Uses antd Alert with Button action for consistent UI.
- * 
+ *
  * Features:
  * - Markdown rendering for annotation body
  * - Toggleable diff view (split vs unified)
@@ -33,33 +33,40 @@ export interface SuggestionPreviewProps {
 /**
  * Convert old code and replacement to a DiffFile for unified view
  */
-function createDiffFile(uri: string, oldCode: string, newCode: string, startLine: number): DiffFile {
+function createDiffFile(
+  uri: string,
+  oldCode: string,
+  newCode: string,
+  startLine: number,
+): DiffFile {
   const oldLines = oldCode.split('\n');
   const newLines = newCode.split('\n');
-  
+
   return {
     path: uri,
     status: 'M',
     additions: newLines.length,
     deletions: oldLines.length,
-    hunks: [{
-      oldStart: startLine,
-      oldLines: oldLines.length,
-      newStart: startLine,
-      newLines: newLines.length,
-      lines: [
-        // Add old lines as removals
-        ...oldLines.map((content) => ({
-          type: 'remove' as const,
-          content,
-        })),
-        // Add new lines as additions
-        ...newLines.map((content) => ({
-          type: 'add' as const,
-          content,
-        })),
-      ],
-    }],
+    hunks: [
+      {
+        oldStart: startLine,
+        oldLines: oldLines.length,
+        newStart: startLine,
+        newLines: newLines.length,
+        lines: [
+          // Add old lines as removals
+          ...oldLines.map((content) => ({
+            type: 'remove' as const,
+            content,
+          })),
+          // Add new lines as additions
+          ...newLines.map((content) => ({
+            type: 'add' as const,
+            content,
+          })),
+        ],
+      },
+    ],
   };
 }
 
@@ -75,7 +82,7 @@ export function SuggestionPreview({
 }: SuggestionPreviewProps): React.ReactElement | null {
   // Default to split view mode
   const [diffMode, setDiffMode] = useState<DiffViewMode>('split');
-  
+
   // Don't render if annotation has no suggestion
   if (!annotation.suggestion) {
     return null;
@@ -90,14 +97,14 @@ export function SuggestionPreview({
 
   const isDisabled = isApplying || hasConflict;
   const alertType = hasConflict ? 'warning' : 'info';
-  
+
   // Get language from file path for syntax highlighting
   const language = getLanguageId(uri);
 
   // Create DiffFile for unified view
   const diffFile = useMemo(
     () => createDiffFile(uri, oldCode, replacement, lineNumber),
-    [uri, oldCode, replacement, lineNumber]
+    [uri, oldCode, replacement, lineNumber],
   );
 
   // Handle diff mode toggle
@@ -145,7 +152,10 @@ export function SuggestionPreview({
       {hasConflict && (
         <div className="suggestion-conflict-warning" role="alert">
           <span className="conflict-icon">⚠️</span>
-          <span>Conflict detected: File has changed since this suggestion was created.</span>
+          <span>
+            Conflict detected: File has changed since this suggestion was
+            created.
+          </span>
         </div>
       )}
 
@@ -159,11 +169,19 @@ export function SuggestionPreview({
         <Flex gap="middle" className="suggestion-split-diff">
           <div style={{ flex: 1 }}>
             <Typography.Text type="secondary">Before:</Typography.Text>
-            <CodeViewer code={oldCode} language={language} showLineNumbers={false} />
+            <CodeViewer
+              code={oldCode}
+              language={language}
+              showLineNumbers={false}
+            />
           </div>
           <div style={{ flex: 1 }}>
             <Typography.Text type="secondary">After:</Typography.Text>
-            <CodeViewer code={replacement} language={language} showLineNumbers={false} />
+            <CodeViewer
+              code={replacement}
+              language={language}
+              showLineNumbers={false}
+            />
           </div>
         </Flex>
       )}

@@ -69,7 +69,10 @@ describe('useFileContentCache', () => {
     });
 
     expect(result.current.isLoading('src/test.ts')).toBe(true);
-    expect(postMessage).toHaveBeenCalledWith({ type: 'requestFile', uri: 'src/test.ts' });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'requestFile',
+      uri: 'src/test.ts',
+    });
   });
 
   it('clears loading state when content is set', () => {

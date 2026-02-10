@@ -1,6 +1,12 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { getHivePath, getFeaturesPath, getFeaturePath, readJson, normalizePath } from './paths.js';
+import {
+  getHivePath,
+  getFeaturesPath,
+  getFeaturePath,
+  readJson,
+  normalizePath,
+} from './paths.js';
 import { FeatureJson } from '../types.js';
 
 export interface DetectionResult {
@@ -21,7 +27,9 @@ export function detectContext(cwd: string): DetectionResult {
   };
 
   const normalizedCwd = normalizePath(cwd);
-  const worktreeMatch = normalizedCwd.match(/(.+)\/\.hive\/\.worktrees\/([^/]+)\/([^/]+)/);
+  const worktreeMatch = normalizedCwd.match(
+    /(.+)\/\.hive\/\.worktrees\/([^/]+)\/([^/]+)/,
+  );
   if (worktreeMatch) {
     result.mainProjectRoot = worktreeMatch[1];
     result.feature = worktreeMatch[2];
@@ -40,10 +48,14 @@ export function detectContext(cwd: string): DetectionResult {
       if (gitdirMatch) {
         const gitdir = gitdirMatch[1];
         const normalizedGitdir = normalizePath(gitdir);
-        const worktreePathMatch = normalizedGitdir.match(/(.+)\/\.git\/worktrees\/(.+)/);
+        const worktreePathMatch = normalizedGitdir.match(
+          /(.+)\/\.git\/worktrees\/(.+)/,
+        );
         if (worktreePathMatch) {
           const mainRepo = worktreePathMatch[1];
-          const cwdWorktreeMatch = normalizedCwd.match(/\.hive\/\.worktrees\/([^/]+)\/([^/]+)/);
+          const cwdWorktreeMatch = normalizedCwd.match(
+            /\.hive\/\.worktrees\/([^/]+)\/([^/]+)/,
+          );
           if (cwdWorktreeMatch) {
             result.mainProjectRoot = mainRepo;
             result.feature = cwdWorktreeMatch[1];
@@ -64,12 +76,16 @@ export function listFeatures(projectRoot: string): string[] {
   const featuresPath = getFeaturesPath(projectRoot);
   if (!fs.existsSync(featuresPath)) return [];
 
-  return fs.readdirSync(featuresPath, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  return fs
+    .readdirSync(featuresPath, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
 }
 
-export function getFeatureData(projectRoot: string, featureName: string): FeatureJson | null {
+export function getFeatureData(
+  projectRoot: string,
+  featureName: string,
+): FeatureJson | null {
   const featurePath = getFeaturePath(projectRoot, featureName);
   const featureJsonPath = path.join(featurePath, 'feature.json');
   return readJson<FeatureJson>(featureJsonPath);

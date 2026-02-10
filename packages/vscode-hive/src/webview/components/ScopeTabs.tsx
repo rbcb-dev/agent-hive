@@ -1,6 +1,6 @@
 /**
  * ScopeTabs component - Tab navigation for review scopes
- * 
+ *
  * Uses antd Segmented component for modern, accessible tab-like switching.
  * Provides keyboard navigation (arrow keys) and animated selection indicator.
  */
@@ -21,7 +21,11 @@ export interface ScopeTabsProps {
   onScopeChange: (scope: string) => void;
 }
 
-export function ScopeTabs({ scopes, activeScope, onScopeChange }: ScopeTabsProps): React.ReactElement {
+export function ScopeTabs({
+  scopes,
+  activeScope,
+  onScopeChange,
+}: ScopeTabsProps): React.ReactElement {
   // Convert scopes to Segmented options format
   const options: SegmentedOption[] = scopes.map((scope) => ({
     label: scope.icon ? (

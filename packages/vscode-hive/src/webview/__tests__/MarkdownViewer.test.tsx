@@ -21,7 +21,21 @@ const mockHighlighter = {
 vi.mock('../lib/shiki-bundle', () => ({
   getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
   normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
-  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  SUPPORTED_LANGUAGES: [
+    'typescript',
+    'javascript',
+    'tsx',
+    'jsx',
+    'json',
+    'markdown',
+    'html',
+    'css',
+    'yaml',
+    'shell',
+    'python',
+    'rust',
+    'go',
+  ],
   THEME_MAP: { light: 'github-light', dark: 'github-dark' },
   isLanguageSupported: vi.fn(() => true),
   resetHighlighter: vi.fn(),
@@ -30,9 +44,11 @@ vi.mock('../lib/shiki-bundle', () => ({
 describe('MarkdownViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockHighlighter.codeToHtml.mockImplementation((code: string, opts: { lang: string }) => {
-      return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
-    });
+    mockHighlighter.codeToHtml.mockImplementation(
+      (code: string, opts: { lang: string }) => {
+        return `<pre class="shiki"><code class="language-${opts.lang}">${code}</code></pre>`;
+      },
+    );
   });
 
   const mockMarkdownContent = `# Hello World
@@ -58,7 +74,12 @@ const x = 1;
 
   describe('when content is provided', () => {
     it('renders file path in header', async () => {
-      render(<MarkdownViewer content={mockMarkdownContent} filePath="docs/README.md" />);
+      render(
+        <MarkdownViewer
+          content={mockMarkdownContent}
+          filePath="docs/README.md"
+        />,
+      );
       expect(screen.getByText('docs/README.md')).toBeInTheDocument();
       // Wait for async rendering to complete to avoid act() warnings
       await waitFor(() => {
@@ -69,7 +90,9 @@ const x = 1;
     it('renders view toggle buttons', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       expect(screen.getByRole('button', { name: /raw/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /rendered/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /rendered/i }),
+      ).toBeInTheDocument();
       // Wait for async rendering to complete to avoid act() warnings
       await waitFor(() => {
         expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
@@ -80,7 +103,9 @@ const x = 1;
       render(<MarkdownViewer content={mockMarkdownContent} />);
       // Wait for async rendering to complete
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'Hello World',
+        );
       });
     });
 
@@ -95,10 +120,10 @@ const x = 1;
 
     it('toggles to raw view when Raw button clicked', () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      
+
       const rawButton = screen.getByRole('button', { name: /raw/i });
       fireEvent.click(rawButton);
-      
+
       // In raw view, we should see the markdown syntax characters
       expect(screen.getByText(/# Hello World/)).toBeInTheDocument();
       expect(screen.getByText(/\*\*bold\*\*/)).toBeInTheDocument();
@@ -106,33 +131,35 @@ const x = 1;
 
     it('toggles back to rendered view', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      
+
       // Switch to raw
       fireEvent.click(screen.getByRole('button', { name: /raw/i }));
-      
+
       // Switch back to rendered
       fireEvent.click(screen.getByRole('button', { name: /rendered/i }));
-      
+
       // Wait for async rendering to complete
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello World');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'Hello World',
+        );
       });
     });
 
     it('highlights active view button', () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
-      
+
       // Rendered should be active by default
       const renderedButton = screen.getByRole('button', { name: /rendered/i });
       expect(renderedButton).toHaveClass('active');
-      
+
       // Raw should not be active
       const rawButton = screen.getByRole('button', { name: /raw/i });
       expect(rawButton).not.toHaveClass('active');
-      
+
       // Click raw
       fireEvent.click(rawButton);
-      
+
       // Now raw should be active
       expect(rawButton).toHaveClass('active');
       expect(renderedButton).not.toHaveClass('active');
@@ -143,7 +170,7 @@ const x = 1;
     it('shows line numbers', () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       fireEvent.click(screen.getByRole('button', { name: /raw/i }));
-      
+
       // Should have line numbers (content has multiple lines)
       expect(screen.getByText('1')).toBeInTheDocument();
     });
@@ -151,7 +178,7 @@ const x = 1;
     it('preserves content for thread anchoring', () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       fireEvent.click(screen.getByRole('button', { name: /raw/i }));
-      
+
       // Each line should have a data attribute for anchoring
       const line1 = screen.getByTestId('line-1');
       expect(line1).toBeInTheDocument();
@@ -174,7 +201,7 @@ const x = 1;
 <img onerror="alert('xss')" src="invalid">
 `;
       render(<MarkdownViewer content={maliciousContent} />);
-      
+
       // Wait for async rendering to complete
       await waitFor(() => {
         const container = document.querySelector('.markdown-rendered');
@@ -225,17 +252,17 @@ function test() {
     it('calls onLineClick when a raw line is clicked', () => {
       const handleLineClick = vi.fn();
       render(
-        <MarkdownViewer 
-          content={mockMarkdownContent} 
+        <MarkdownViewer
+          content={mockMarkdownContent}
           onLineClick={handleLineClick}
-        />
+        />,
       );
-      
+
       fireEvent.click(screen.getByRole('button', { name: /raw/i }));
-      
+
       const line1 = screen.getByTestId('line-1');
       fireEvent.click(line1);
-      
+
       expect(handleLineClick).toHaveBeenCalledWith(1);
     });
   });
@@ -274,7 +301,7 @@ const x = 1;
       rawRender(
         <HiveThemeProvider mode="dark">
           <MarkdownViewer content={codeContent} />
-        </HiveThemeProvider>
+        </HiveThemeProvider>,
       );
       // Wait for async rendering to complete
       await waitFor(() => {
@@ -300,22 +327,28 @@ const x: number = 1;
     it('shows loading state initially', async () => {
       render(<MarkdownViewer content={mockMarkdownContent} />);
       // Should show loading initially (before async completes)
-      expect(document.querySelector('.markdown-rendered-loading')).toBeInTheDocument();
+      expect(
+        document.querySelector('.markdown-rendered-loading'),
+      ).toBeInTheDocument();
       // Wait for async rendering to complete to avoid act() warnings
       await waitFor(() => {
-        expect(document.querySelector('.markdown-rendered-loading')).not.toBeInTheDocument();
+        expect(
+          document.querySelector('.markdown-rendered-loading'),
+        ).not.toBeInTheDocument();
       });
     });
 
     it('throws error when used outside HiveThemeProvider', () => {
       // Suppress console.error for this test since we expect an error
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       // Render without wrapper - should throw
       expect(() => {
         rawRender(<MarkdownViewer content="# Hello" />);
       }).toThrow(/useTheme must be used within a HiveThemeProvider/);
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -323,21 +356,21 @@ const x: number = 1;
   describe('maxHeight prop', () => {
     it('applies maxHeight and overflow styles when provided as number', async () => {
       render(<MarkdownViewer content="# Test" maxHeight={400} />);
-      
+
       const viewer = document.querySelector('.markdown-viewer');
       expect(viewer).toHaveStyle({ maxHeight: '400px', overflow: 'auto' });
     });
 
     it('applies maxHeight and overflow styles when provided as string', async () => {
       render(<MarkdownViewer content="# Test" maxHeight="50vh" />);
-      
+
       const viewer = document.querySelector('.markdown-viewer');
       expect(viewer).toHaveStyle({ maxHeight: '50vh', overflow: 'auto' });
     });
 
     it('does not apply maxHeight styles when not provided', async () => {
       render(<MarkdownViewer content="# Test" />);
-      
+
       const viewer = document.querySelector('.markdown-viewer');
       expect(viewer).not.toHaveStyle({ maxHeight: '400px' });
       expect(viewer).not.toHaveStyle({ overflow: 'auto' });
@@ -361,9 +394,11 @@ const x: number = 1;
 const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
-      
+
       // Wait for the copy button to appear (added by useEffect after html renders)
-      const copyButton = await screen.findByRole('button', { name: /copy code/i });
+      const copyButton = await screen.findByRole('button', {
+        name: /copy code/i,
+      });
       expect(copyButton).toBeInTheDocument();
     });
 
@@ -372,14 +407,18 @@ const x = 1;
 const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
-      
+
       // Wait for the copy button to appear (added by useEffect after html renders)
-      const copyButton = await screen.findByRole('button', { name: /copy code/i });
+      const copyButton = await screen.findByRole('button', {
+        name: /copy code/i,
+      });
       fireEvent.click(copyButton);
-      
+
       // Should have called clipboard.writeText with the code content
       await waitFor(() => {
-        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1;');
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+          'const x = 1;',
+        );
       });
     });
 
@@ -388,11 +427,13 @@ const x = 1;
 const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
-      
+
       // Wait for the copy button to appear (added by useEffect after html renders)
-      const copyButton = await screen.findByRole('button', { name: /copy code/i });
+      const copyButton = await screen.findByRole('button', {
+        name: /copy code/i,
+      });
       fireEvent.click(copyButton);
-      
+
       // Should show copied state
       await waitFor(() => {
         expect(copyButton).toHaveTextContent('Copied!');
@@ -402,14 +443,16 @@ const x = 1;
     it('does NOT show copy button on inline code', async () => {
       const inlineCodeContent = `This is some \`inline code\` in a paragraph.`;
       render(<MarkdownViewer content={inlineCodeContent} />);
-      
+
       // Wait for rendering to complete
       await waitFor(() => {
         expect(screen.getByText(/inline code/)).toBeInTheDocument();
       });
-      
+
       // Should NOT have any copy buttons for inline code
-      expect(screen.queryByRole('button', { name: /copy code/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /copy code/i }),
+      ).not.toBeInTheDocument();
     });
 
     it('shows copy buttons for multiple code blocks', async () => {
@@ -421,10 +464,12 @@ const a = 1;
 x = 2
 \`\`\``;
       render(<MarkdownViewer content={multiCodeContent} />);
-      
+
       // Wait for copy buttons to appear (added by useEffect after html renders)
       await waitFor(() => {
-        const copyButtons = screen.getAllByRole('button', { name: /copy code/i });
+        const copyButtons = screen.getAllByRole('button', {
+          name: /copy code/i,
+        });
         expect(copyButtons).toHaveLength(2);
       });
     });
@@ -436,15 +481,17 @@ function hello() {
 }
 \`\`\``;
       render(<MarkdownViewer content={multiLineCode} />);
-      
+
       // Wait for the copy button to appear (added by useEffect after html renders)
-      const copyButton = await screen.findByRole('button', { name: /copy code/i });
+      const copyButton = await screen.findByRole('button', {
+        name: /copy code/i,
+      });
       fireEvent.click(copyButton);
-      
+
       // Should have called clipboard.writeText with multi-line content
       await waitFor(() => {
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-          'function hello() {\n  console.log("world");\n}'
+          'function hello() {\n  console.log("world");\n}',
         );
       });
     });
@@ -453,7 +500,9 @@ function hello() {
       // Mock clipboard failure
       Object.defineProperty(navigator, 'clipboard', {
         value: {
-          writeText: vi.fn().mockRejectedValue(new Error('Clipboard not available')),
+          writeText: vi
+            .fn()
+            .mockRejectedValue(new Error('Clipboard not available')),
         },
         writable: true,
         configurable: true,
@@ -467,11 +516,13 @@ function hello() {
 const x = 1;
 \`\`\``;
       render(<MarkdownViewer content={codeContent} />);
-      
+
       // Wait for the copy button to appear (added by useEffect after html renders)
-      const copyButton = await screen.findByRole('button', { name: /copy code/i });
+      const copyButton = await screen.findByRole('button', {
+        name: /copy code/i,
+      });
       fireEvent.click(copyButton);
-      
+
       // Should have called the fallback after clipboard fails
       await waitFor(() => {
         expect(execCommandMock).toHaveBeenCalledWith('copy');

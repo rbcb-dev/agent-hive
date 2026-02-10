@@ -58,7 +58,11 @@ function createTempDir(): string {
   return dir;
 }
 
-function createSkillFile(baseDir: string, relativePath: string, content: string): void {
+function createSkillFile(
+  baseDir: string,
+  relativePath: string,
+  content: string,
+): void {
   const fullPath = path.join(baseDir, relativePath);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, content, 'utf-8');
@@ -131,52 +135,104 @@ describe('loadFileSkill - search path order', () => {
 
   it('finds skill in project .opencode/skills first', async () => {
     // Create skill in all 4 locations
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(homeDir, '.config/opencode/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(projectRoot, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(homeDir, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      homeDir,
+      '.config/opencode/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      projectRoot,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      homeDir,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
     expect(result.found).toBe(true);
-    expect(result.source).toBe(path.join(projectRoot, '.opencode/skills/test-skill/SKILL.md'));
+    expect(result.source).toBe(
+      path.join(projectRoot, '.opencode/skills/test-skill/SKILL.md'),
+    );
   });
 
   it('falls back to global .config/opencode/skills', async () => {
     // Create skill in global opencode and both claude locations
-    createSkillFile(homeDir, '.config/opencode/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(projectRoot, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(homeDir, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
+    createSkillFile(
+      homeDir,
+      '.config/opencode/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      projectRoot,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      homeDir,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
     expect(result.found).toBe(true);
-    expect(result.source).toBe(path.join(homeDir, '.config/opencode/skills/test-skill/SKILL.md'));
+    expect(result.source).toBe(
+      path.join(homeDir, '.config/opencode/skills/test-skill/SKILL.md'),
+    );
   });
 
   it('falls back to project .claude/skills', async () => {
     // Create skill in project claude and global claude
-    createSkillFile(projectRoot, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
-    createSkillFile(homeDir, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
+    createSkillFile(
+      projectRoot,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
+    createSkillFile(
+      homeDir,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
     expect(result.found).toBe(true);
-    expect(result.source).toBe(path.join(projectRoot, '.claude/skills/test-skill/SKILL.md'));
+    expect(result.source).toBe(
+      path.join(projectRoot, '.claude/skills/test-skill/SKILL.md'),
+    );
   });
 
   it('falls back to global .claude/skills', async () => {
     // Create skill only in global claude
-    createSkillFile(homeDir, '.claude/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
+    createSkillFile(
+      homeDir,
+      '.claude/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
     expect(result.found).toBe(true);
-    expect(result.source).toBe(path.join(homeDir, '.claude/skills/test-skill/SKILL.md'));
+    expect(result.source).toBe(
+      path.join(homeDir, '.claude/skills/test-skill/SKILL.md'),
+    );
   });
 
   it('returns not found when skill does not exist in any location', async () => {
-    const result = await loadFileSkill('nonexistent-skill', projectRoot, homeDir);
+    const result = await loadFileSkill(
+      'nonexistent-skill',
+      projectRoot,
+      homeDir,
+    );
 
     expect(result.found).toBe(false);
     expect(result.error).toContain('not found');
@@ -204,7 +260,11 @@ describe('loadFileSkill - frontmatter parsing', () => {
   });
 
   it('parses valid YAML frontmatter and returns skill definition', async () => {
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', VALID_SKILL_CONTENT);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      VALID_SKILL_CONTENT,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
@@ -217,7 +277,11 @@ describe('loadFileSkill - frontmatter parsing', () => {
   });
 
   it('returns error when frontmatter name does not match skill ID', async () => {
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', SKILL_WITH_MISMATCHED_NAME);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      SKILL_WITH_MISMATCHED_NAME,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
@@ -226,7 +290,11 @@ describe('loadFileSkill - frontmatter parsing', () => {
   });
 
   it('returns error when frontmatter is missing name field', async () => {
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', SKILL_MISSING_NAME);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      SKILL_MISSING_NAME,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
@@ -235,7 +303,11 @@ describe('loadFileSkill - frontmatter parsing', () => {
   });
 
   it('returns error when frontmatter is missing description field', async () => {
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', SKILL_MISSING_DESCRIPTION);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      SKILL_MISSING_DESCRIPTION,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
@@ -244,7 +316,11 @@ describe('loadFileSkill - frontmatter parsing', () => {
   });
 
   it('returns error when file has no frontmatter', async () => {
-    createSkillFile(projectRoot, '.opencode/skills/test-skill/SKILL.md', INVALID_FRONTMATTER);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/test-skill/SKILL.md',
+      INVALID_FRONTMATTER,
+    );
 
     const result = await loadFileSkill('test-skill', projectRoot, homeDir);
 
@@ -286,9 +362,17 @@ description: Test whitespace preservation
 Trailing newlines follow
 
 `;
-    createSkillFile(projectRoot, '.opencode/skills/whitespace-skill/SKILL.md', bodyWithWhitespace);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/whitespace-skill/SKILL.md',
+      bodyWithWhitespace,
+    );
 
-    const result = await loadFileSkill('whitespace-skill', projectRoot, homeDir);
+    const result = await loadFileSkill(
+      'whitespace-skill',
+      projectRoot,
+      homeDir,
+    );
 
     expect(result.found).toBe(true);
     expect(result.skill!.template).toContain('   Indented content');
@@ -324,7 +408,11 @@ description: "A skill with 'quotes' in it"
 ---
 # Quoted Skill
 `;
-    createSkillFile(projectRoot, '.opencode/skills/quoted-skill/SKILL.md', quotedContent);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/quoted-skill/SKILL.md',
+      quotedContent,
+    );
 
     const result = await loadFileSkill('quoted-skill', projectRoot, homeDir);
 
@@ -340,7 +428,11 @@ description: 'Another "quoted" skill'
 ---
 # Single Quoted
 `;
-    createSkillFile(projectRoot, '.opencode/skills/single-quoted/SKILL.md', quotedContent);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/single-quoted/SKILL.md',
+      quotedContent,
+    );
 
     const result = await loadFileSkill('single-quoted', projectRoot, homeDir);
 
@@ -356,7 +448,11 @@ description: Skill with valid special chars
 ---
 # Valid ID
 `;
-    createSkillFile(projectRoot, '.opencode/skills/my-skill_v2/SKILL.md', content);
+    createSkillFile(
+      projectRoot,
+      '.opencode/skills/my-skill_v2/SKILL.md',
+      content,
+    );
 
     const result = await loadFileSkill('my-skill_v2', projectRoot, homeDir);
 
@@ -366,7 +462,10 @@ description: Skill with valid special chars
 
   it('does not throw on unreadable file', async () => {
     // Create a directory where a file is expected (unreadable as file)
-    fs.mkdirSync(path.join(projectRoot, '.opencode/skills/dir-skill/SKILL.md'), { recursive: true });
+    fs.mkdirSync(
+      path.join(projectRoot, '.opencode/skills/dir-skill/SKILL.md'),
+      { recursive: true },
+    );
 
     const result = await loadFileSkill('dir-skill', projectRoot, homeDir);
 

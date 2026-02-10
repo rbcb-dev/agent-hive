@@ -19,7 +19,21 @@ const mockHighlighter = {
 vi.mock('../lib/shiki-bundle', () => ({
   getHighlighter: vi.fn(() => Promise.resolve(mockHighlighter)),
   normalizeLanguage: vi.fn((lang: string) => lang.toLowerCase()),
-  SUPPORTED_LANGUAGES: ['typescript', 'javascript', 'tsx', 'jsx', 'json', 'markdown', 'html', 'css', 'yaml', 'shell', 'python', 'rust', 'go'],
+  SUPPORTED_LANGUAGES: [
+    'typescript',
+    'javascript',
+    'tsx',
+    'jsx',
+    'json',
+    'markdown',
+    'html',
+    'css',
+    'yaml',
+    'shell',
+    'python',
+    'rust',
+    'go',
+  ],
   THEME_MAP: { light: 'github-light', dark: 'github-dark' },
   isLanguageSupported: vi.fn(() => true),
   resetHighlighter: vi.fn(),
@@ -29,7 +43,9 @@ describe('CodeViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockHighlighter.codeToTokens.mockImplementation((code: string) => ({
-      tokens: code.split('\n').map((line) => [{ content: line, color: '#000' }]),
+      tokens: code
+        .split('\n')
+        .map((line) => [{ content: line, color: '#000' }]),
     }));
   });
 
@@ -39,7 +55,7 @@ describe('CodeViewer', () => {
         <CodeViewer
           code={'const x = 1;\nconst y = 2;'}
           language="typescript"
-        />
+        />,
       );
 
       // Wait for async highlighting to complete
@@ -50,23 +66,13 @@ describe('CodeViewer', () => {
     });
 
     it('renders empty state when no code provided', () => {
-      render(
-        <CodeViewer
-          code=""
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="" language="typescript" />);
 
       expect(screen.getByText(/no code to display/i)).toBeInTheDocument();
     });
 
     it('renders with code-viewer class', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         const viewer = screen.getByTestId('code-viewer');
@@ -77,12 +83,7 @@ describe('CodeViewer', () => {
 
   describe('language support', () => {
     it('accepts typescript language', async () => {
-      render(
-        <CodeViewer
-          code="const x: number = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x: number = 1;" language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('code-viewer')).toBeInTheDocument();
@@ -90,12 +91,7 @@ describe('CodeViewer', () => {
     });
 
     it('accepts javascript language', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="javascript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="javascript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('code-viewer')).toBeInTheDocument();
@@ -103,12 +99,7 @@ describe('CodeViewer', () => {
     });
 
     it('accepts json language', async () => {
-      render(
-        <CodeViewer
-          code='{"key": "value"}'
-          language="json"
-        />
-      );
+      render(<CodeViewer code='{"key": "value"}' language="json" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('code-viewer')).toBeInTheDocument();
@@ -116,12 +107,7 @@ describe('CodeViewer', () => {
     });
 
     it('accepts markdown language', async () => {
-      render(
-        <CodeViewer
-          code="# Heading"
-          language="markdown"
-        />
-      );
+      render(<CodeViewer code="# Heading" language="markdown" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('code-viewer')).toBeInTheDocument();
@@ -129,12 +115,7 @@ describe('CodeViewer', () => {
     });
 
     it('falls back to plaintext for unknown language', async () => {
-      render(
-        <CodeViewer
-          code="some text"
-          language="unknown-lang"
-        />
-      );
+      render(<CodeViewer code="some text" language="unknown-lang" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('code-viewer')).toBeInTheDocument();
@@ -149,7 +130,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2'}
           language="typescript"
           startLine={10}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -164,7 +145,7 @@ describe('CodeViewer', () => {
           code={'const x = 1;\nconst y = 2;'}
           language="typescript"
           showLineNumbers={false}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -182,7 +163,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           highlightLines={[2]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -199,7 +180,7 @@ describe('CodeViewer', () => {
           code={'unchanged\nadded\nremoved'}
           language="typescript"
           lineTypes={{ 2: 'add', 3: 'remove' }}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -214,12 +195,7 @@ describe('CodeViewer', () => {
   describe('theme support', () => {
     it('renders with light theme from context by default', async () => {
       // test-utils wrapper uses light mode by default
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         const viewer = screen.getByTestId('code-viewer');
@@ -231,11 +207,8 @@ describe('CodeViewer', () => {
       // Use rawRender to provide custom wrapper with dark mode
       rawRender(
         <HiveThemeProvider mode="dark">
-          <CodeViewer
-            code="const x = 1;"
-            language="typescript"
-          />
-        </HiveThemeProvider>
+          <CodeViewer code="const x = 1;" language="typescript" />
+        </HiveThemeProvider>,
       );
 
       await waitFor(() => {
@@ -246,30 +219,22 @@ describe('CodeViewer', () => {
 
     it('throws error when used outside HiveThemeProvider', async () => {
       // Suppress console.error for this test since we expect an error
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       // Render without wrapper - should throw
       expect(() => {
-        rawRender(
-          <CodeViewer
-            code="const x = 1;"
-            language="typescript"
-          />
-        );
+        rawRender(<CodeViewer code="const x = 1;" language="typescript" />);
       }).toThrow(/useTheme must be used within a HiveThemeProvider/);
-      
+
       consoleSpy.mockRestore();
     });
   });
 
   describe('accessibility', () => {
     it('has proper role and aria-label', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         const viewer = screen.getByTestId('code-viewer');
@@ -279,12 +244,7 @@ describe('CodeViewer', () => {
     });
 
     it('marks lines as presentation role', async () => {
-      render(
-        <CodeViewer
-          code={'line 1\nline 2'}
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code={'line 1\nline 2'} language="typescript" />);
 
       await waitFor(() => {
         const lines = screen.getAllByRole('presentation');
@@ -298,7 +258,10 @@ describe('CodeViewer', () => {
       id: 'thread-1',
       entityId: 'entity-1',
       uri: 'src/example.ts',
-      range: { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } },
+      range: {
+        start: { line: 1, character: 0 },
+        end: { line: 1, character: 10 },
+      },
       status: 'open',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
@@ -320,7 +283,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[mockThread]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -344,7 +307,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[thread1, thread2]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -363,7 +326,7 @@ describe('CodeViewer', () => {
           language="typescript"
           threads={[mockThread]}
           onThreadClick={handleThreadClick}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -380,7 +343,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -399,7 +362,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[resolvedThread]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -415,7 +378,7 @@ describe('CodeViewer', () => {
           language="typescript"
           threads={[mockThread]}
           onThreadClick={vi.fn()}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -433,12 +396,18 @@ describe('CodeViewer', () => {
       const thread1: ReviewThread = {
         ...mockThread,
         id: 'thread-1',
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 10 },
+        },
       };
       const thread2: ReviewThread = {
         ...mockThread,
         id: 'thread-2',
-        range: { start: { line: 2, character: 0 }, end: { line: 2, character: 10 } },
+        range: {
+          start: { line: 2, character: 0 },
+          end: { line: 2, character: 10 },
+        },
       };
 
       render(
@@ -446,7 +415,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[thread1, thread2]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -467,7 +436,7 @@ describe('CodeViewer', () => {
           onThreadClick={vi.fn()}
           onThreadReply={handleReply}
           onThreadResolve={handleResolve}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -493,7 +462,7 @@ describe('CodeViewer', () => {
           language="typescript"
           threads={[mockThread]}
           onThreadClick={vi.fn()}
-        />
+        />,
       );
 
       // Open the thread
@@ -519,7 +488,7 @@ describe('CodeViewer', () => {
           code={'line 1\nline 2\nline 3'}
           language="typescript"
           threads={[mockThread]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -541,12 +510,7 @@ describe('CodeViewer', () => {
     });
 
     it('renders copy button in the code viewer', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('copy-button')).toBeInTheDocument();
@@ -555,12 +519,7 @@ describe('CodeViewer', () => {
 
     it('copies code to clipboard when copy button is clicked', async () => {
       const testCode = 'const x = 1;\nconst y = 2;';
-      render(
-        <CodeViewer
-          code={testCode}
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code={testCode} language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('copy-button')).toBeInTheDocument();
@@ -574,12 +533,7 @@ describe('CodeViewer', () => {
     });
 
     it('shows "Copied!" feedback after successful copy', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('copy-button')).toBeInTheDocument();
@@ -593,29 +547,22 @@ describe('CodeViewer', () => {
     });
 
     it('has proper attributes for accessibility', async () => {
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('copy-button')).toBeInTheDocument();
       });
 
       const copyButton = screen.getByTestId('copy-button');
-      expect(copyButton).toHaveAttribute('aria-label', 'Copy code to clipboard');
+      expect(copyButton).toHaveAttribute(
+        'aria-label',
+        'Copy code to clipboard',
+      );
       expect(copyButton).toHaveAttribute('type', 'button');
     });
 
     it('does not render copy button when code is empty', () => {
-      render(
-        <CodeViewer
-          code=""
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="" language="typescript" />);
 
       expect(screen.queryByTestId('copy-button')).not.toBeInTheDocument();
     });
@@ -632,12 +579,7 @@ describe('CodeViewer', () => {
       const execCommandMock = vi.fn().mockReturnValue(true);
       document.execCommand = execCommandMock;
 
-      render(
-        <CodeViewer
-          code="const x = 1;"
-          language="typescript"
-        />
-      );
+      render(<CodeViewer code="const x = 1;" language="typescript" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('copy-button')).toBeInTheDocument();

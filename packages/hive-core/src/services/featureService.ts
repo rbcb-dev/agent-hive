@@ -12,14 +12,21 @@ import {
   writeJson,
   fileExists,
 } from '../utils/paths.js';
-import { FeatureJson, FeatureStatusType, TaskInfo, FeatureInfo, CommentsJson, TaskStatus } from '../types.js';
+import {
+  FeatureJson,
+  FeatureStatusType,
+  TaskInfo,
+  FeatureInfo,
+  CommentsJson,
+  TaskStatus,
+} from '../types.js';
 
 export class FeatureService {
   constructor(private projectRoot: string) {}
 
   create(name: string, ticket?: string): FeatureJson {
     const featurePath = getFeaturePath(this.projectRoot, name);
-    
+
     if (fileExists(featurePath)) {
       throw new Error(`Feature '${name}' already exists`);
     }
@@ -47,10 +54,11 @@ export class FeatureService {
   list(): string[] {
     const featuresPath = getFeaturesPath(this.projectRoot);
     if (!fileExists(featuresPath)) return [];
-    
-    return fs.readdirSync(featuresPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
+
+    return fs
+      .readdirSync(featuresPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
   }
 
   getActive(): FeatureJson | null {
@@ -69,7 +77,7 @@ export class FeatureService {
     if (!feature) throw new Error(`Feature '${name}' not found`);
 
     feature.status = status;
-    
+
     if (status === 'approved' && !feature.approvedAt) {
       feature.approvedAt = new Date().toISOString();
     }
@@ -87,7 +95,9 @@ export class FeatureService {
 
     const tasks = this.getTasks(name);
     const hasPlan = fileExists(getPlanPath(this.projectRoot, name));
-    const comments = readJson<CommentsJson>(getCommentsPath(this.projectRoot, name));
+    const comments = readJson<CommentsJson>(
+      getCommentsPath(this.projectRoot, name),
+    );
     const commentCount = comments?.threads?.length || 0;
 
     return {
@@ -103,16 +113,17 @@ export class FeatureService {
     const tasksPath = getTasksPath(this.projectRoot, featureName);
     if (!fileExists(tasksPath)) return [];
 
-    const folders = fs.readdirSync(tasksPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name)
+    const folders = fs
+      .readdirSync(tasksPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
       .sort();
 
-    return folders.map(folder => {
+    return folders.map((folder) => {
       const statusPath = `${tasksPath}/${folder}/status.json`;
       const status = readJson<TaskStatus>(statusPath);
       const name = folder.replace(/^\d+-/, '');
-      
+
       return {
         folder,
         name,
@@ -127,7 +138,7 @@ export class FeatureService {
   complete(name: string): FeatureJson {
     const feature = this.get(name);
     if (!feature) throw new Error(`Feature '${name}' not found`);
-    
+
     if (feature.status === 'completed') {
       throw new Error(`Feature '${name}' is already completed`);
     }

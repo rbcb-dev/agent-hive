@@ -50,11 +50,15 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
-      expect(screen.getByText('This looks good but could be improved')).toBeInTheDocument();
-      expect(screen.getByText('I agree, we should refactor this')).toBeInTheDocument();
+      expect(
+        screen.getByText('This looks good but could be improved'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('I agree, we should refactor this'),
+      ).toBeInTheDocument();
     });
 
     it('displays author names', () => {
@@ -63,7 +67,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -76,7 +80,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const aiBadges = screen.getAllByText('AI');
@@ -104,7 +108,7 @@ describe('ThreadView', () => {
           thread={threadWithSuggestion}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       expect(screen.getByText('const x = 1;')).toBeInTheDocument();
@@ -118,7 +122,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       expect(screen.getByPlaceholderText(/reply/i)).toBeInTheDocument();
@@ -130,12 +134,12 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const input = screen.getByPlaceholderText(/reply/i);
       fireEvent.change(input, { target: { value: 'My reply text' } });
-      
+
       const replyButton = screen.getByRole('button', { name: /^reply$/i });
       fireEvent.click(replyButton);
 
@@ -148,10 +152,12 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
-      const input = screen.getByPlaceholderText(/reply/i) as HTMLTextAreaElement;
+      const input = screen.getByPlaceholderText(
+        /reply/i,
+      ) as HTMLTextAreaElement;
       fireEvent.change(input, { target: { value: 'My reply text' } });
       fireEvent.click(screen.getByRole('button', { name: /^reply$/i }));
 
@@ -164,7 +170,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const replyButton = screen.getByRole('button', { name: /^reply$/i });
@@ -177,7 +183,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const input = screen.getByPlaceholderText(/reply/i);
@@ -195,10 +201,12 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /resolve/i }),
+      ).toBeInTheDocument();
     });
 
     it('calls onResolve when resolve button clicked', () => {
@@ -207,7 +215,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
@@ -221,10 +229,12 @@ describe('ThreadView', () => {
           thread={resolvedThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
-      expect(screen.queryByRole('button', { name: /resolve/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /resolve/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -236,7 +246,7 @@ describe('ThreadView', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           compact
-        />
+        />,
       );
 
       const container = screen.getByTestId('thread-view');
@@ -250,7 +260,7 @@ describe('ThreadView', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           compact={false}
-        />
+        />,
       );
 
       const container = screen.getByTestId('thread-view');
@@ -264,10 +274,12 @@ describe('ThreadView', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           compact
-        />
+        />,
       );
 
-      const textarea = screen.getByPlaceholderText(/reply/i) as HTMLTextAreaElement;
+      const textarea = screen.getByPlaceholderText(
+        /reply/i,
+      ) as HTMLTextAreaElement;
       expect(textarea.rows).toBe(2);
     });
 
@@ -278,10 +290,12 @@ describe('ThreadView', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           compact={false}
-        />
+        />,
       );
 
-      const textarea = screen.getByPlaceholderText(/reply/i) as HTMLTextAreaElement;
+      const textarea = screen.getByPlaceholderText(
+        /reply/i,
+      ) as HTMLTextAreaElement;
       expect(textarea.rows).toBe(3);
     });
   });
@@ -294,7 +308,7 @@ describe('ThreadView', () => {
           thread={resolvedThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const container = screen.getByTestId('thread-view');
@@ -309,10 +323,12 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /mark thread as resolved/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /mark thread as resolved/i }),
+      ).toBeInTheDocument();
     });
 
     it('has labeled reply input', () => {
@@ -321,7 +337,7 @@ describe('ThreadView', () => {
           thread={mockThread}
           onReply={mockOnReply}
           onResolve={mockOnResolve}
-        />
+        />,
       );
 
       const input = screen.getByPlaceholderText(/reply/i);

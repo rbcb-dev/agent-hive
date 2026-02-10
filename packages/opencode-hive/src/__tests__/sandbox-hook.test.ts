@@ -4,14 +4,14 @@ import { DockerSandboxService } from 'hive-core';
 
 /**
  * Tests for tool.execute.before hook bash interception with Docker sandboxing
- * 
+ *
  * The hook should:
  * - Only intercept bash tool calls
  * - Only wrap commands with explicit workdir inside .hive/.worktrees/
  * - Respect sandbox config mode ('none' = no wrapping, 'docker' = wrap)
  * - Support HOST: prefix escape hatch
  * - Clear workdir after wrapping (docker runs on host)
- * 
+ *
  * Note: These tests simulate the hook logic. The actual hook is in index.ts
  */
 
@@ -27,32 +27,38 @@ describe('tool.execute.before bash interception hook logic', () => {
     input: { tool: string; sessionID: string; callID: string },
     output: { args: any },
     sandboxConfig: { mode: 'none' | 'docker'; image?: string },
-    directory: string
+    directory: string,
   ) => {
-    if (input.tool !== "bash") return;
-    
+    if (input.tool !== 'bash') return;
+
     if (sandboxConfig.mode === 'none') return;
-    
+
     const command = output.args?.command?.trim();
     if (!command) return;
-    
+
     // Escape hatch: HOST: prefix (case-insensitive)
     if (/^HOST:\s*/i.test(command)) {
       const strippedCommand = command.replace(/^HOST:\s*/i, '');
-      console.warn(`[hive:sandbox] HOST bypass: ${strippedCommand.slice(0, 80)}${strippedCommand.length > 80 ? '...' : ''}`);
+      console.warn(
+        `[hive:sandbox] HOST bypass: ${strippedCommand.slice(0, 80)}${strippedCommand.length > 80 ? '...' : ''}`,
+      );
       output.args.command = strippedCommand;
       return;
     }
-    
+
     // Only wrap commands with explicit workdir inside hive worktrees
     const workdir = output.args?.workdir;
     if (!workdir) return;
-    
+
     const hiveWorktreeBase = path.join(directory, '.hive', '.worktrees');
     if (!workdir.startsWith(hiveWorktreeBase)) return;
-    
+
     // Wrap command using static method
-    const wrapped = DockerSandboxService.wrapCommand(workdir, command, sandboxConfig);
+    const wrapped = DockerSandboxService.wrapCommand(
+      workdir,
+      command,
+      sandboxConfig,
+    );
     output.args.command = wrapped;
     output.args.workdir = undefined; // docker command runs on host
   };
@@ -60,7 +66,7 @@ describe('tool.execute.before bash interception hook logic', () => {
   describe('sandbox mode: docker', () => {
     test('wraps bash command with explicit workdir inside .hive/.worktrees/', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -85,7 +91,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('passes through bash command without workdir', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -107,7 +113,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('passes through bash command with workdir outside .hive/.worktrees/', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -132,7 +138,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('strips HOST: prefix and bypasses wrapping', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -157,7 +163,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('strips HOST: prefix with case insensitivity', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -178,7 +184,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('logs console.warn with [hive:sandbox] prefix when HOST: is used', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -210,7 +216,7 @@ describe('tool.execute.before bash interception hook logic', () => {
     test('truncates long commands in HOST: audit log', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
       const longCommand = 'HOST: echo ' + 'a'.repeat(100); // 106 chars after "HOST: "
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -246,7 +252,7 @@ describe('tool.execute.before bash interception hook logic', () => {
   describe('sandbox mode: none', () => {
     test('passes through bash command unchanged', () => {
       const sandboxConfig = { mode: 'none' as const };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -273,7 +279,7 @@ describe('tool.execute.before bash interception hook logic', () => {
   describe('non-bash tools', () => {
     test('ignores read tool', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'read',
         sessionID: 'test-session',
@@ -293,7 +299,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('ignores write tool', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'write',
         sessionID: 'test-session',
@@ -317,7 +323,7 @@ describe('tool.execute.before bash interception hook logic', () => {
   describe('edge cases', () => {
     test('handles empty command', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -341,7 +347,7 @@ describe('tool.execute.before bash interception hook logic', () => {
 
     test('handles missing args', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',
@@ -352,12 +358,14 @@ describe('tool.execute.before bash interception hook logic', () => {
       };
 
       // Should not throw, just return early
-      expect(() => executeHook(input, output, sandboxConfig, mockDirectory)).not.toThrow();
+      expect(() =>
+        executeHook(input, output, sandboxConfig, mockDirectory),
+      ).not.toThrow();
     });
 
     test('handles command with special characters', () => {
       const sandboxConfig = { mode: 'docker' as const, image: 'node:22-slim' };
-      
+
       const input = {
         tool: 'bash',
         sessionID: 'test-session',

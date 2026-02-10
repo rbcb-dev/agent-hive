@@ -1,6 +1,6 @@
 /**
  * Collapse - Ant Design Collapse wrapper
- * 
+ *
  * Accordion/collapsible panel component using items-based API.
  */
 

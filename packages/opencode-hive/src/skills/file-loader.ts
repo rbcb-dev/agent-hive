@@ -46,8 +46,10 @@ function validateSkillId(skillId: string): string | undefined {
  */
 function stripQuotes(value: string): string {
   const trimmed = value.trim();
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
     return trimmed.slice(1, -1);
   }
   return trimmed;
@@ -59,7 +61,9 @@ function stripQuotes(value: string): string {
  * @param content - The file content
  * @returns Parsed frontmatter or null if invalid
  */
-function parseFrontmatter(content: string): { name: string; description: string; body: string } | null {
+function parseFrontmatter(
+  content: string,
+): { name: string; description: string; body: string } | null {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) return null;
 
@@ -92,7 +96,11 @@ function parseFrontmatter(content: string): { name: string; description: string;
  * @param homeDir - The user's home directory
  * @returns Array of paths to search in priority order
  */
-function getSearchPaths(skillId: string, projectRoot: string, homeDir: string): string[] {
+function getSearchPaths(
+  skillId: string,
+  projectRoot: string,
+  homeDir: string,
+): string[] {
   return [
     path.join(projectRoot, '.opencode', 'skills', skillId, 'SKILL.md'),
     path.join(homeDir, '.config', 'opencode', 'skills', skillId, 'SKILL.md'),
@@ -130,7 +138,7 @@ async function tryReadFile(filePath: string): Promise<string | null> {
 export async function loadFileSkill(
   skillId: string,
   projectRoot: string,
-  homeDir: string
+  homeDir: string,
 ): Promise<SkillLoadResult> {
   // Validate skill ID
   const validationError = validateSkillId(skillId);

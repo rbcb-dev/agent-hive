@@ -1,6 +1,6 @@
 /**
  * Flex - Ant Design Flex wrapper
- * 
+ *
  * Provides a flexible layout container with gap, alignment, and direction controls.
  */
 
@@ -15,7 +15,13 @@ export interface FlexProps {
   /** Alignment along the cross axis */
   align?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
   /** Alignment along the main axis */
-  justify?: 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+  justify?:
+    | 'start'
+    | 'center'
+    | 'end'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly';
   /** Allow items to wrap to multiple lines */
   wrap?: boolean;
   /** Flex children */

@@ -8,69 +8,53 @@ import { ReviewSummary } from '../components/ReviewSummary';
 
 describe('ReviewSummary', () => {
   it('renders verdict selector with codicons', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     // Check that verdict buttons render with text
     expect(screen.getByText('Approve')).toBeInTheDocument();
     expect(screen.getByText('Request Changes')).toBeInTheDocument();
     expect(screen.getByText('Comment')).toBeInTheDocument();
-    
+
     // Check that codicons are rendered
     const approveBtn = screen.getByText('Approve').closest('label');
     expect(approveBtn?.querySelector('.codicon-check')).toBeInTheDocument();
-    
-    const requestChangesBtn = screen.getByText('Request Changes').closest('label');
-    expect(requestChangesBtn?.querySelector('.codicon-request-changes')).toBeInTheDocument();
-    
+
+    const requestChangesBtn = screen
+      .getByText('Request Changes')
+      .closest('label');
+    expect(
+      requestChangesBtn?.querySelector('.codicon-request-changes'),
+    ).toBeInTheDocument();
+
     const commentBtn = screen.getByText('Comment').closest('label');
     expect(commentBtn?.querySelector('.codicon-comment')).toBeInTheDocument();
   });
 
   it('renders summary textarea', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     expect(screen.getByPlaceholderText(/summary/i)).toBeInTheDocument();
   });
 
   it('calls onSubmit with verdict and summary when submitted', () => {
     const onSubmit = vi.fn();
-    render(
-      <ReviewSummary
-        onSubmit={onSubmit}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={onSubmit} isSubmitting={false} />);
 
     // Select verdict
     fireEvent.click(screen.getByText('Approve'));
-    
+
     // Enter summary
     const textarea = screen.getByPlaceholderText(/summary/i);
     fireEvent.change(textarea, { target: { value: 'LGTM!' } });
-    
+
     // Submit
     fireEvent.click(screen.getByText('Submit Review'));
-    
+
     expect(onSubmit).toHaveBeenCalledWith('approve', 'LGTM!');
   });
 
   it('disables submit button when no verdict selected', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     // antd Button wraps text in span, so we need to get the parent button
     const submitButton = screen.getByText('Submit Review').closest('button');
@@ -78,12 +62,7 @@ describe('ReviewSummary', () => {
   });
 
   it('enables submit button when verdict is selected', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     fireEvent.click(screen.getByText('Approve'));
     // antd Button wraps text in span, so we need to get the parent button
@@ -92,61 +71,47 @@ describe('ReviewSummary', () => {
   });
 
   it('disables all inputs when submitting', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={true}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={true} />);
 
     const textarea = screen.getByPlaceholderText(/summary/i);
     expect(textarea).toBeDisabled();
-    
+
     // antd Button wraps text in span, so we need to get the parent button
     const submitButton = screen.getByText('Submitting…').closest('button');
     expect(submitButton).toBeDisabled();
   });
 
   it('highlights selected verdict', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     const approveLabel = screen.getByText('Approve');
     fireEvent.click(approveLabel);
-    
+
     // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
-    expect(approveLabel.closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
+    expect(approveLabel.closest('label')).toHaveClass(
+      'ant-radio-button-wrapper-checked',
+    );
   });
 
   it('renders submit button with send codicon', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     const submitButton = screen.getByText('Submit Review').closest('button');
     expect(submitButton?.querySelector('.codicon-send')).toBeInTheDocument();
   });
 
   it('allows changing verdict', () => {
-    render(
-      <ReviewSummary
-        onSubmit={() => {}}
-        isSubmitting={false}
-      />
-    );
+    render(<ReviewSummary onSubmit={() => {}} isSubmitting={false} />);
 
     fireEvent.click(screen.getByText('Approve'));
     fireEvent.click(screen.getByText('Request Changes'));
-    
+
     // antd RadioGroup with button style uses ant-radio-button-wrapper-checked class
-    expect(screen.getByText('Request Changes').closest('label')).toHaveClass('ant-radio-button-wrapper-checked');
-    expect(screen.getByText('Approve').closest('label')).not.toHaveClass('ant-radio-button-wrapper-checked');
+    expect(screen.getByText('Request Changes').closest('label')).toHaveClass(
+      'ant-radio-button-wrapper-checked',
+    );
+    expect(screen.getByText('Approve').closest('label')).not.toHaveClass(
+      'ant-radio-button-wrapper-checked',
+    );
   });
 });

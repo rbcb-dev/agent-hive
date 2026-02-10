@@ -74,21 +74,33 @@ describe('Hive (Hybrid) prompt', () => {
 describe('Architect (Planner) prompt', () => {
   describe('delegation planning alignment', () => {
     it('allows read-only research delegation to Scout', () => {
-      expect(ARCHITECT_BEE_PROMPT).toContain('read-only research delegation to Scout is allowed');
+      expect(ARCHITECT_BEE_PROMPT).toContain(
+        'read-only research delegation to Scout is allowed',
+      );
     });
 
     it('permits research and review delegation via task()', () => {
-      expect(ARCHITECT_BEE_PROMPT).toContain('You may use task() to delegate read-only research to Scout and plan review to Hygienic.');
-      expect(ARCHITECT_BEE_PROMPT).toContain('Never use task() to delegate implementation or coding work.');
+      expect(ARCHITECT_BEE_PROMPT).toContain(
+        'You may use task() to delegate read-only research to Scout and plan review to Hygienic.',
+      );
+      expect(ARCHITECT_BEE_PROMPT).toContain(
+        'Never use task() to delegate implementation or coding work.',
+      );
     });
 
     it('does NOT contain the blanket prohibition "Delegate work or spawn workers"', () => {
-      expect(ARCHITECT_BEE_PROMPT).not.toContain('Delegate work or spawn workers');
+      expect(ARCHITECT_BEE_PROMPT).not.toContain(
+        'Delegate work or spawn workers',
+      );
     });
 
     it('contains the Canonical Delegation Threshold block', () => {
-      expect(ARCHITECT_BEE_PROMPT).toContain('### Canonical Delegation Threshold');
-      expect(ARCHITECT_BEE_PROMPT).toContain('cannot name the file path upfront');
+      expect(ARCHITECT_BEE_PROMPT).toContain(
+        '### Canonical Delegation Threshold',
+      );
+      expect(ARCHITECT_BEE_PROMPT).toContain(
+        'cannot name the file path upfront',
+      );
       expect(ARCHITECT_BEE_PROMPT).toContain('expect to inspect 2+ files');
       expect(ARCHITECT_BEE_PROMPT).toContain('open-ended');
       expect(ARCHITECT_BEE_PROMPT).toContain('Local `read/grep/glob`');
@@ -117,11 +129,15 @@ describe('Architect (Planner) prompt', () => {
 describe('Swarm (Orchestrator) prompt', () => {
   describe('delegation planning alignment', () => {
     it('does NOT contain "Cancel background tasks before completion"', () => {
-      expect(SWARM_BEE_PROMPT).not.toContain('Cancel background tasks before completion');
+      expect(SWARM_BEE_PROMPT).not.toContain(
+        'Cancel background tasks before completion',
+      );
     });
 
     it('contains the replacement cancel rule about stale tasks', () => {
-      expect(SWARM_BEE_PROMPT).toContain('Cancel background tasks only when stale or no longer needed');
+      expect(SWARM_BEE_PROMPT).toContain(
+        'Cancel background tasks only when stale or no longer needed',
+      );
     });
 
     it('explains task() is BLOCKING for delegation', () => {
@@ -163,8 +179,12 @@ describe('Forager (Worker/Coder) prompt', () => {
 
   it('adds resolve-before-blocking guidance', () => {
     expect(FORAGER_BEE_PROMPT).toContain('## Resolve Before Blocking');
-    expect(FORAGER_BEE_PROMPT).toContain('Default to exploration, questions are LAST resort');
-    expect(FORAGER_BEE_PROMPT).toContain('Context inference: Before asking "what does X do?", READ X first.');
+    expect(FORAGER_BEE_PROMPT).toContain(
+      'Default to exploration, questions are LAST resort',
+    );
+    expect(FORAGER_BEE_PROMPT).toContain(
+      'Context inference: Before asking "what does X do?", READ X first.',
+    );
   });
 
   it('adds a completion checklist before reporting done', () => {
@@ -173,8 +193,12 @@ describe('Forager (Worker/Coder) prompt', () => {
   });
 
   it('expands the orient step with explicit pre-flight actions', () => {
-    expect(FORAGER_BEE_PROMPT).toContain('Read the referenced files and surrounding code');
-    expect(FORAGER_BEE_PROMPT).toContain('Search for similar patterns in the codebase');
+    expect(FORAGER_BEE_PROMPT).toContain(
+      'Read the referenced files and surrounding code',
+    );
+    expect(FORAGER_BEE_PROMPT).toContain(
+      'Search for similar patterns in the codebase',
+    );
   });
 
   it('contains Docker Sandbox section in Iron Laws', () => {

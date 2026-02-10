@@ -10,7 +10,7 @@ describe('tools template', () => {
       '..',
       'templates',
       'context',
-      'tools.md'
+      'tools.md',
     );
     const toolsTemplate = readFileSync(toolsTemplatePath, 'utf-8');
 

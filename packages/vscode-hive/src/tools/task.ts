@@ -9,7 +9,8 @@ export function getTaskTools(workspaceRoot: string): ToolRegistration[] {
     {
       name: 'hive_tasks_sync',
       displayName: 'Sync Hive Tasks',
-      modelDescription: 'Generate tasks from approved plan.md by parsing ### numbered headers. Creates task folders with status.json. Returns summary of created/removed/kept tasks. Use after hive_plan_approve.',
+      modelDescription:
+        'Generate tasks from approved plan.md by parsing ### numbered headers. Creates task folders with status.json. Returns summary of created/removed/kept tasks. Use after hive_plan_approve.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -33,15 +34,16 @@ export function getTaskTools(workspaceRoot: string): ToolRegistration[] {
             'Use hive_worktree_create to begin work on a task.',
             'Tasks should be executed in order unless explicitly parallelizable.',
             'Read context files before starting implementation.',
-            'Update via hive_task_update when work progresses.'
-          ]
+            'Update via hive_task_update when work progresses.',
+          ],
         });
       },
     },
     {
       name: 'hive_task_create',
       displayName: 'Create Manual Task',
-      modelDescription: 'Create a task manually, not from the plan. Use for ad-hoc work or tasks discovered during execution.',
+      modelDescription:
+        'Create a task manually, not from the plan. Use for ad-hoc work or tasks discovered during execution.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -61,7 +63,11 @@ export function getTaskTools(workspaceRoot: string): ToolRegistration[] {
         required: ['feature', 'name'],
       },
       invoke: async (input, _token) => {
-        const { feature, name, order } = input as { feature: string; name: string; order?: number };
+        const { feature, name, order } = input as {
+          feature: string;
+          name: string;
+          order?: number;
+        };
         const folder = taskService.create(feature, name, order);
         return `Created task "${folder}" with status: pending\nReminder: run hive_worktree_create to work in its worktree, and ensure any subagents work in that worktree too.`;
       },
@@ -69,7 +75,8 @@ export function getTaskTools(workspaceRoot: string): ToolRegistration[] {
     {
       name: 'hive_task_update',
       displayName: 'Update Hive Task',
-      modelDescription: 'Update a task status (pending/in_progress/done/cancelled) or add a work summary. Returns plain text confirmation. Does NOT merge - use hive_merge for integration.',
+      modelDescription:
+        'Update a task status (pending/in_progress/done/cancelled) or add a work summary. Returns plain text confirmation. Does NOT merge - use hive_merge for integration.',
       inputSchema: {
         type: 'object',
         properties: {

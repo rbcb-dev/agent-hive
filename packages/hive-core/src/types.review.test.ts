@@ -1,6 +1,6 @@
 /**
  * Type tests for Review types
- * 
+ *
  * This file verifies that Review types exist and have the correct structure.
  * If this file compiles, the types are correct.
  */
@@ -27,17 +27,32 @@ import type {
 describe('Review Types', () => {
   describe('Type Aliases', () => {
     it('ReviewScope accepts valid values', () => {
-      const scopes: ReviewScope[] = ['feature', 'task', 'context', 'plan', 'code'];
+      const scopes: ReviewScope[] = [
+        'feature',
+        'task',
+        'context',
+        'plan',
+        'code',
+      ];
       expect(scopes).toHaveLength(5);
     });
 
     it('ReviewStatus accepts valid values', () => {
-      const statuses: ReviewStatus[] = ['in_progress', 'approved', 'changes_requested', 'commented'];
+      const statuses: ReviewStatus[] = [
+        'in_progress',
+        'approved',
+        'changes_requested',
+        'commented',
+      ];
       expect(statuses).toHaveLength(4);
     });
 
     it('ReviewVerdict accepts valid values', () => {
-      const verdicts: ReviewVerdict[] = ['approve', 'request_changes', 'comment'];
+      const verdicts: ReviewVerdict[] = [
+        'approve',
+        'request_changes',
+        'comment',
+      ];
       expect(verdicts).toHaveLength(3);
     });
 
@@ -47,7 +62,13 @@ describe('Review Types', () => {
     });
 
     it('AnnotationType accepts valid values', () => {
-      const types: AnnotationType[] = ['comment', 'suggestion', 'task', 'question', 'approval'];
+      const types: AnnotationType[] = [
+        'comment',
+        'suggestion',
+        'task',
+        'question',
+        'approval',
+      ];
       expect(types).toHaveLength(5);
     });
   });
@@ -204,7 +225,15 @@ describe('Review Types', () => {
     });
 
     it('DiffFile status accepts all valid values', () => {
-      const statuses: DiffFile['status'][] = ['A', 'M', 'D', 'R', 'C', 'U', 'B'];
+      const statuses: DiffFile['status'][] = [
+        'A',
+        'M',
+        'D',
+        'R',
+        'C',
+        'U',
+        'B',
+      ];
       expect(statuses).toHaveLength(7);
     });
 
@@ -309,7 +338,12 @@ describe('Review Types', () => {
         schemaVersion: 1,
         activeSessionId: 'session-1',
         sessions: [
-          { id: 'session-1', scope: 'feature', status: 'in_progress', updatedAt: '2024-01-01T00:00:00Z' },
+          {
+            id: 'session-1',
+            scope: 'feature',
+            status: 'in_progress',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
         ],
       };
       expect(index.activeSessionId).toBe('session-1');

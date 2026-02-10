@@ -21,10 +21,14 @@ const VIRTUAL_LIST_THRESHOLD = 50;
 
 function getStatusColor(status: ThreadSummary['status']): string {
   switch (status) {
-    case 'open': return 'var(--vscode-charts-yellow, #cca700)';
-    case 'resolved': return 'var(--vscode-charts-green, #388a34)';
-    case 'outdated': return 'var(--vscode-descriptionForeground, #999999)';
-    default: return 'var(--vscode-foreground)';
+    case 'open':
+      return 'var(--vscode-charts-yellow, #cca700)';
+    case 'resolved':
+      return 'var(--vscode-charts-green, #388a34)';
+    case 'outdated':
+      return 'var(--vscode-descriptionForeground, #999999)';
+    default:
+      return 'var(--vscode-foreground)';
   }
 }
 
@@ -34,7 +38,11 @@ interface ThreadItemProps {
   onSelect: () => void;
 }
 
-function ThreadItem({ thread, selected, onSelect }: ThreadItemProps): React.ReactElement {
+function ThreadItem({
+  thread,
+  selected,
+  onSelect,
+}: ThreadItemProps): React.ReactElement {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onSelect();
@@ -61,7 +69,11 @@ function ThreadItem({ thread, selected, onSelect }: ThreadItemProps): React.Reac
           onKeyDown={handleKeyDown}
           style={{ outline: 'none' }}
         >
-          <Flex justify="space-between" align="center" className="thread-header">
+          <Flex
+            justify="space-between"
+            align="center"
+            className="thread-header"
+          >
             {thread.uri && (
               <Text className="thread-file" style={{ fontSize: 12 }}>
                 {thread.uri}
@@ -92,7 +104,11 @@ function ThreadItem({ thread, selected, onSelect }: ThreadItemProps): React.Reac
   );
 }
 
-export function ThreadList({ threads, selectedThread, onSelectThread }: ThreadListProps): React.ReactElement {
+export function ThreadList({
+  threads,
+  selectedThread,
+  onSelectThread,
+}: ThreadListProps): React.ReactElement {
   if (threads.length === 0) {
     return (
       <div className="thread-list thread-list-empty">

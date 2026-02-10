@@ -33,7 +33,7 @@ export class ReviewService {
     feature: string,
     scope: ReviewScope,
     baseRef?: string,
-    headRef?: string
+    headRef?: string,
   ): Promise<ReviewSession> {
     const reviewDir = this.getReviewDir(feature);
     ensureDir(reviewDir);
@@ -115,7 +115,7 @@ export class ReviewService {
   async submitSession(
     sessionId: string,
     verdict: ReviewVerdict,
-    summary: string
+    summary: string,
   ): Promise<ReviewSession> {
     const session = await this.getSession(sessionId);
     if (!session) {
@@ -147,7 +147,7 @@ export class ReviewService {
 
     // Update index
     const index = await this.loadIndex(session.featureName);
-    const indexEntry = index.sessions.find(s => s.id === sessionId);
+    const indexEntry = index.sessions.find((s) => s.id === sessionId);
     if (indexEntry) {
       indexEntry.status = status;
       indexEntry.updatedAt = now;
@@ -165,7 +165,7 @@ export class ReviewService {
     entityId: string,
     uri: string | null,
     range: Range,
-    annotation: Omit<ReviewAnnotation, 'id' | 'createdAt' | 'updatedAt'>
+    annotation: Omit<ReviewAnnotation, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<ReviewThread> {
     const session = await this.getSession(sessionId);
     if (!session) {
@@ -205,7 +205,11 @@ export class ReviewService {
   /**
    * Reply to an existing thread
    */
-  async replyToThread(threadId: string, body: string, agentId?: string): Promise<ReviewAnnotation> {
+  async replyToThread(
+    threadId: string,
+    body: string,
+    agentId?: string,
+  ): Promise<ReviewAnnotation> {
     const { session, thread } = await this.findThread(threadId);
 
     const now = new Date().toISOString();
@@ -215,7 +219,11 @@ export class ReviewService {
       id: annotationId,
       type: 'comment',
       body,
-      author: { type: agentId ? 'llm' : 'human', name: agentId ? 'Agent' : 'user', agentId },
+      author: {
+        type: agentId ? 'llm' : 'human',
+        name: agentId ? 'Agent' : 'user',
+        agentId,
+      },
       createdAt: now,
       updatedAt: now,
     };
@@ -245,13 +253,16 @@ export class ReviewService {
     return thread;
   }
 
-    /**
+  /**
    * Mark a suggestion annotation as applied
    */
-  async markSuggestionApplied(threadId: string, annotationId: string): Promise<ReviewAnnotation> {
+  async markSuggestionApplied(
+    threadId: string,
+    annotationId: string,
+  ): Promise<ReviewAnnotation> {
     const { session, thread } = await this.findThread(threadId);
 
-    const annotation = thread.annotations.find(a => a.id === annotationId);
+    const annotation = thread.annotations.find((a) => a.id === annotationId);
     if (!annotation) {
       throw new Error(`Annotation not found: ${annotationId}`);
     }
@@ -320,7 +331,10 @@ export class ReviewService {
     writeJson(indexPath, index);
   }
 
-  private async loadSession(sessionId: string, feature?: string): Promise<ReviewSession> {
+  private async loadSession(
+    sessionId: string,
+    feature?: string,
+  ): Promise<ReviewSession> {
     // If feature is provided, load directly
     if (feature) {
       const sessionPath = this.getSessionPath(feature, sessionId);
@@ -352,14 +366,16 @@ export class ReviewService {
   /**
    * Find a thread by ID across all sessions
    */
-  private async findThread(threadId: string): Promise<{ session: ReviewSession; thread: ReviewThread }> {
+  private async findThread(
+    threadId: string,
+  ): Promise<{ session: ReviewSession; thread: ReviewThread }> {
     const features = await this.listFeatures();
 
     for (const feature of features) {
       const index = await this.loadIndex(feature);
       for (const sessionEntry of index.sessions) {
         const session = await this.loadSession(sessionEntry.id, feature);
-        const thread = session.threads.find(t => t.id === threadId);
+        const thread = session.threads.find((t) => t.id === threadId);
         if (thread) {
           return { session, thread };
         }
@@ -377,8 +393,9 @@ export class ReviewService {
     if (!fileExists(featuresPath)) return [];
 
     const fs = await import('fs');
-    return fs.readdirSync(featuresPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
+    return fs
+      .readdirSync(featuresPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
   }
 }

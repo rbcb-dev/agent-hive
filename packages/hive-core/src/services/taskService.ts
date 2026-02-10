@@ -22,7 +22,17 @@ import {
   fileExists,
   LockOptions,
 } from '../utils/paths.js';
-import { TaskStatus, TaskStatusType, TaskOrigin, TasksSyncResult, TaskInfo, Subtask, SubtaskType, SubtaskStatus, WorkerSession } from '../types.js';
+import {
+  TaskStatus,
+  TaskStatusType,
+  TaskOrigin,
+  TasksSyncResult,
+  TaskInfo,
+  Subtask,
+  SubtaskType,
+  SubtaskStatus,
+  WorkerSession,
+} from '../types.js';
 
 /** Current schema version for TaskStatus */
 export const TASK_STATUS_SCHEMA_VERSION = 1;
@@ -55,18 +65,18 @@ export class TaskService {
   sync(featureName: string): TasksSyncResult {
     const planPath = getPlanPath(this.projectRoot, featureName);
     const planContent = readText(planPath);
-    
+
     if (!planContent) {
       throw new Error(`No plan.md found for feature '${featureName}'`);
     }
 
     const planTasks = this.parseTasksFromPlan(planContent);
-    
+
     // Validate dependency graph before proceeding
     this.validateDependencyGraph(planTasks, featureName);
-    
+
     const existingTasks = this.list(featureName);
-    
+
     const result: TasksSyncResult = {
       created: [],
       removed: [],
@@ -74,7 +84,7 @@ export class TaskService {
       manual: [],
     };
 
-    const existingByName = new Map(existingTasks.map(t => [t.folder, t]));
+    const existingByName = new Map(existingTasks.map((t) => [t.folder, t]));
 
     for (const existing of existingTasks) {
       if (existing.origin === 'manual') {
@@ -93,7 +103,7 @@ export class TaskService {
         continue;
       }
 
-      const stillInPlan = planTasks.some(p => p.folder === existing.folder);
+      const stillInPlan = planTasks.some((p) => p.folder === existing.folder);
       if (!stillInPlan) {
         this.deleteTask(featureName, existing.folder);
         result.removed.push(existing.folder);
@@ -120,7 +130,7 @@ export class TaskService {
   create(featureName: string, name: string, order?: number): string {
     const tasksPath = getTasksPath(this.projectRoot, featureName);
     const existingFolders = this.listFolders(featureName);
-    
+
     // Auto-increment: finds max existing index + 1
     const nextOrder = order ?? this.getNextOrder(existingFolders);
     // Zero-pad to 2 digits for correct alphabetical sorting (01, 02, ... 99)
@@ -139,7 +149,12 @@ export class TaskService {
     return folder;
   }
 
-  private createFromPlan(featureName: string, task: ParsedTask, allTasks: ParsedTask[], planContent: string): void {
+  private createFromPlan(
+    featureName: string,
+    task: ParsedTask,
+    allTasks: ParsedTask[],
+    planContent: string,
+  ): void {
     const taskPath = getTaskPath(this.projectRoot, featureName, task.folder);
     ensureDir(taskPath);
 
@@ -152,7 +167,10 @@ export class TaskService {
       planTitle: task.name,
       dependsOn,
     };
-    writeJson(getTaskStatusPath(this.projectRoot, featureName, task.folder), status);
+    writeJson(
+      getTaskStatusPath(this.projectRoot, featureName, task.folder),
+      status,
+    );
 
     const specContent = this.buildSpecContent({
       featureName,
@@ -162,7 +180,10 @@ export class TaskService {
       planContent,
     });
 
-    writeText(getTaskSpecPath(this.projectRoot, featureName, task.folder), specContent);
+    writeText(
+      getTaskSpecPath(this.projectRoot, featureName, task.folder),
+      specContent,
+    );
   }
 
   buildSpecContent(params: {
@@ -174,16 +195,27 @@ export class TaskService {
     contextFiles?: Array<{ name: string; content: string }>;
     completedTasks?: Array<{ name: string; summary: string }>;
   }): string {
-    const { featureName, task, dependsOn, allTasks, planContent, contextFiles = [], completedTasks = [] } = params;
+    const {
+      featureName,
+      task,
+      dependsOn,
+      allTasks,
+      planContent,
+      contextFiles = [],
+      completedTasks = [],
+    } = params;
 
-    const getTaskType = (planSection: string | null, taskName: string): string | null => {
+    const getTaskType = (
+      planSection: string | null,
+      taskName: string,
+    ): string | null => {
       if (!planSection) {
         return null;
       }
 
-      const fileTypeMatches = Array.from(planSection.matchAll(/-\s*(Create|Modify|Test):/gi)).map(
-        match => match[1].toLowerCase()
-      );
+      const fileTypeMatches = Array.from(
+        planSection.matchAll(/-\s*(Create|Modify|Test):/gi),
+      ).map((match) => match[1].toLowerCase());
       const fileTypes = new Set(fileTypeMatches);
 
       if (fileTypes.size === 0) {
@@ -214,7 +246,7 @@ export class TaskService {
 
     if (dependsOn.length > 0) {
       for (const dep of dependsOn) {
-        const depTask = allTasks.find(t => t.folder === dep);
+        const depTask = allTasks.find((t) => t.folder === dep);
         if (depTask) {
           specLines.push(`- **${depTask.order}. ${depTask.name}** (${dep})`);
         } else {
@@ -243,28 +275,39 @@ export class TaskService {
 
     if (contextFiles.length > 0) {
       const contextCompiled = contextFiles
-        .map(f => `## ${f.name}\n\n${f.content}`)
+        .map((f) => `## ${f.name}\n\n${f.content}`)
         .join('\n\n---\n\n');
       specLines.push('## Context', '', contextCompiled, '');
     }
 
     if (completedTasks.length > 0) {
-      const completedLines = completedTasks.map(t => `- ${t.name}: ${t.summary}`);
+      const completedLines = completedTasks.map(
+        (t) => `- ${t.name}: ${t.summary}`,
+      );
       specLines.push('## Completed Tasks', '', ...completedLines, '');
     }
 
     return specLines.join('\n');
   }
 
-  private extractPlanSection(planContent: string | null, task: { name: string; order: number; folder: string }): string | null {
+  private extractPlanSection(
+    planContent: string | null,
+    task: { name: string; order: number; folder: string },
+  ): string | null {
     if (!planContent) return null;
 
     const escapedTitle = task.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const titleRegex = new RegExp(`###\\s*\\d+\\.\\s*${escapedTitle}[\\s\\S]*?(?=###|$)`, 'i');
+    const titleRegex = new RegExp(
+      `###\\s*\\d+\\.\\s*${escapedTitle}[\\s\\S]*?(?=###|$)`,
+      'i',
+    );
     let taskMatch = planContent.match(titleRegex);
 
     if (!taskMatch && task.order > 0) {
-      const orderRegex = new RegExp(`###\\s*${task.order}\\.\\s*[^\\n]+[\\s\\S]*?(?=###|$)`, 'i');
+      const orderRegex = new RegExp(
+        `###\\s*${task.order}\\.\\s*[^\\n]+[\\s\\S]*?(?=###|$)`,
+        'i',
+      );
       taskMatch = planContent.match(orderRegex);
     }
 
@@ -277,7 +320,10 @@ export class TaskService {
    * - If dependsOnNumbers is [] (explicit "none"), return empty array.
    * - Otherwise, map numbers to corresponding task folders.
    */
-  private resolveDependencies(task: ParsedTask, allTasks: ParsedTask[]): string[] {
+  private resolveDependencies(
+    task: ParsedTask,
+    allTasks: ParsedTask[],
+  ): string[] {
     // Explicit "none" - no dependencies
     if (task.dependsOnNumbers !== null && task.dependsOnNumbers.length === 0) {
       return [];
@@ -286,7 +332,7 @@ export class TaskService {
     // Explicit dependency numbers provided
     if (task.dependsOnNumbers !== null) {
       return task.dependsOnNumbers
-        .map(num => allTasks.find(t => t.order === num)?.folder)
+        .map((num) => allTasks.find((t) => t.order === num)?.folder)
         .filter((folder): folder is string => folder !== undefined);
     }
 
@@ -295,49 +341,54 @@ export class TaskService {
       return [];
     }
 
-    const previousTask = allTasks.find(t => t.order === task.order - 1);
+    const previousTask = allTasks.find((t) => t.order === task.order - 1);
     return previousTask ? [previousTask.folder] : [];
   }
 
   /**
    * Validate the dependency graph for errors before creating tasks.
    * Throws descriptive errors pointing the operator to fix plan.md.
-   * 
+   *
    * Checks for:
    * - Unknown task numbers in dependencies
    * - Self-dependencies
    * - Cycles (using DFS topological sort)
    */
-  private validateDependencyGraph(tasks: ParsedTask[], featureName: string): void {
-    const taskNumbers = new Set(tasks.map(t => t.order));
-    
+  private validateDependencyGraph(
+    tasks: ParsedTask[],
+    featureName: string,
+  ): void {
+    const taskNumbers = new Set(tasks.map((t) => t.order));
+
     // Validate each task's dependencies
     for (const task of tasks) {
       if (task.dependsOnNumbers === null) {
         // Implicit dependencies - no validation needed
         continue;
       }
-      
+
       for (const depNum of task.dependsOnNumbers) {
         // Check for self-dependency
         if (depNum === task.order) {
           throw new Error(
             `Invalid dependency graph in plan.md: Self-dependency detected for task ${task.order} ("${task.name}"). ` +
-            `A task cannot depend on itself. Please fix the "Depends on:" line in plan.md.`
+              `A task cannot depend on itself. Please fix the "Depends on:" line in plan.md.`,
           );
         }
-        
+
         // Check for unknown task number
         if (!taskNumbers.has(depNum)) {
           throw new Error(
             `Invalid dependency graph in plan.md: Unknown task number ${depNum} referenced in dependencies for task ${task.order} ("${task.name}"). ` +
-            `Available task numbers are: ${Array.from(taskNumbers).sort((a, b) => a - b).join(', ')}. ` +
-            `Please fix the "Depends on:" line in plan.md.`
+              `Available task numbers are: ${Array.from(taskNumbers)
+                .sort((a, b) => a - b)
+                .join(', ')}. ` +
+              `Please fix the "Depends on:" line in plan.md.`,
           );
         }
       }
     }
-    
+
     // Check for cycles using DFS
     this.detectCycles(tasks);
   }
@@ -348,8 +399,8 @@ export class TaskService {
    */
   private detectCycles(tasks: ParsedTask[]): void {
     // Build adjacency list: task order -> [dependency orders]
-    const taskByOrder = new Map(tasks.map(t => [t.order, t]));
-    
+    const taskByOrder = new Map(tasks.map((t) => [t.order, t]));
+
     // Build dependency graph with resolved implicit dependencies
     const getDependencies = (task: ParsedTask): number[] => {
       if (task.dependsOnNumbers !== null) {
@@ -361,35 +412,35 @@ export class TaskService {
       }
       return [task.order - 1];
     };
-    
+
     // Track visited state: 0 = unvisited, 1 = in current path, 2 = fully processed
     const visited = new Map<number, number>();
     const path: number[] = [];
-    
+
     const dfs = (taskOrder: number): void => {
       const state = visited.get(taskOrder);
-      
+
       if (state === 2) {
         // Already fully processed, no cycle through here
         return;
       }
-      
+
       if (state === 1) {
         // Found a cycle! Build the cycle path for the error message
         const cycleStart = path.indexOf(taskOrder);
         const cyclePath = [...path.slice(cycleStart), taskOrder];
         const cycleDesc = cyclePath.join(' -> ');
-        
+
         throw new Error(
           `Invalid dependency graph in plan.md: Cycle detected in task dependencies: ${cycleDesc}. ` +
-          `Tasks cannot have circular dependencies. Please fix the "Depends on:" lines in plan.md.`
+            `Tasks cannot have circular dependencies. Please fix the "Depends on:" lines in plan.md.`,
         );
       }
-      
+
       // Mark as in current path
       visited.set(taskOrder, 1);
       path.push(taskOrder);
-      
+
       const task = taskByOrder.get(taskOrder);
       if (task) {
         const deps = getDependencies(task);
@@ -397,12 +448,12 @@ export class TaskService {
           dfs(depOrder);
         }
       }
-      
+
       // Mark as fully processed
       path.pop();
       visited.set(taskOrder, 2);
     };
-    
+
     // Run DFS from each node
     for (const task of tasks) {
       if (!visited.has(task.order)) {
@@ -420,7 +471,7 @@ export class TaskService {
   /**
    * Update task status with locked atomic write.
    * Uses file locking to prevent race conditions between concurrent updates.
-   * 
+   *
    * @param featureName - Feature name
    * @param taskFolder - Task folder name
    * @param updates - Fields to update (status, summary, baseCommit)
@@ -431,11 +482,15 @@ export class TaskService {
     featureName: string,
     taskFolder: string,
     updates: Partial<Pick<TaskStatus, 'status' | 'summary' | 'baseCommit'>>,
-    lockOptions?: LockOptions
+    lockOptions?: LockOptions,
   ): TaskStatus {
-    const statusPath = getTaskStatusPath(this.projectRoot, featureName, taskFolder);
+    const statusPath = getTaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     const current = readJson<TaskStatus>(statusPath);
-    
+
     if (!current) {
       throw new Error(`Task '${taskFolder}' not found`);
     }
@@ -461,11 +516,11 @@ export class TaskService {
   /**
    * Patch only background-owned fields without clobbering completion-owned fields.
    * Safe for concurrent use by background workers.
-   * 
+   *
    * Uses deep merge for workerSession to allow partial updates like:
    * - patchBackgroundFields(..., { workerSession: { lastHeartbeatAt: '...' } })
    *   will update only lastHeartbeatAt, preserving other workerSession fields.
-   * 
+   *
    * @param featureName - Feature name
    * @param taskFolder - Task folder name
    * @param patch - Background-owned fields to update
@@ -476,23 +531,27 @@ export class TaskService {
     featureName: string,
     taskFolder: string,
     patch: BackgroundPatchFields,
-    lockOptions?: LockOptions
+    lockOptions?: LockOptions,
   ): TaskStatus {
-    const statusPath = getTaskStatusPath(this.projectRoot, featureName, taskFolder);
-    
+    const statusPath = getTaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
+
     // Build the patch object, only including fields that are defined
     const safePatch: Partial<TaskStatus> = {
       schemaVersion: TASK_STATUS_SCHEMA_VERSION,
     };
-    
+
     if (patch.idempotencyKey !== undefined) {
       safePatch.idempotencyKey = patch.idempotencyKey;
     }
-    
+
     if (patch.workerSession !== undefined) {
       safePatch.workerSession = patch.workerSession as WorkerSession;
     }
-    
+
     // Use patchJsonLockedSync which does deep merge
     return patchJsonLockedSync<TaskStatus>(statusPath, safePatch, lockOptions);
   }
@@ -501,14 +560,22 @@ export class TaskService {
    * Get raw TaskStatus including all fields (for internal use or debugging).
    */
   getRawStatus(featureName: string, taskFolder: string): TaskStatus | null {
-    const statusPath = getTaskStatusPath(this.projectRoot, featureName, taskFolder);
+    const statusPath = getTaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     return readJson<TaskStatus>(statusPath);
   }
 
   get(featureName: string, taskFolder: string): TaskInfo | null {
-    const statusPath = getTaskStatusPath(this.projectRoot, featureName, taskFolder);
+    const statusPath = getTaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     const status = readJson<TaskStatus>(statusPath);
-    
+
     if (!status) return null;
 
     return {
@@ -524,12 +591,16 @@ export class TaskService {
   list(featureName: string): TaskInfo[] {
     const folders = this.listFolders(featureName);
     return folders
-      .map(folder => this.get(featureName, folder))
+      .map((folder) => this.get(featureName, folder))
       .filter((t): t is TaskInfo => t !== null);
   }
 
   writeReport(featureName: string, taskFolder: string, report: string): string {
-    const reportPath = getTaskReportPath(this.projectRoot, featureName, taskFolder);
+    const reportPath = getTaskReportPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     writeText(reportPath, report);
     return reportPath;
   }
@@ -538,9 +609,10 @@ export class TaskService {
     const tasksPath = getTasksPath(this.projectRoot, featureName);
     if (!fileExists(tasksPath)) return [];
 
-    return fs.readdirSync(tasksPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name)
+    return fs
+      .readdirSync(tasksPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
       .sort();
   }
 
@@ -553,47 +625,50 @@ export class TaskService {
 
   private getNextOrder(existingFolders: string[]): number {
     if (existingFolders.length === 0) return 1;
-    
+
     const orders = existingFolders
-      .map(f => parseInt(f.split('-')[0], 10))
-      .filter(n => !isNaN(n));
-    
+      .map((f) => parseInt(f.split('-')[0], 10))
+      .filter((n) => !isNaN(n));
+
     return Math.max(...orders, 0) + 1;
   }
 
   private parseTasksFromPlan(content: string): ParsedTask[] {
     const tasks: ParsedTask[] = [];
     const lines = content.split('\n');
-    
+
     let currentTask: ParsedTask | null = null;
     let descriptionLines: string[] = [];
-    
+
     // Regex to match "Depends on:" or "**Depends on**:" with optional markdown
     // Strips markdown formatting (**, *, etc.) and captures the value
     const dependsOnRegex = /^\s*\*{0,2}Depends\s+on\*{0,2}\s*:\s*(.+)$/i;
-    
+
     for (const line of lines) {
       // Check for task header: ### N. Task Name
       const taskMatch = line.match(/^###\s+(\d+)\.\s+(.+)$/);
-      
+
       if (taskMatch) {
         // Save previous task if exists
         if (currentTask) {
           currentTask.description = descriptionLines.join('\n').trim();
           tasks.push(currentTask);
         }
-        
+
         const order = parseInt(taskMatch[1], 10);
         const rawName = taskMatch[2].trim();
-        const folderName = rawName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const folderName = rawName
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
         const folder = `${String(order).padStart(2, '0')}-${folderName}`;
-        
+
         currentTask = {
           folder,
           order,
           name: rawName,
           description: '',
-          dependsOnNumbers: null,  // null = not specified, use implicit
+          dependsOnNumbers: null, // null = not specified, use implicit
         };
         descriptionLines = [];
       } else if (currentTask) {
@@ -614,8 +689,8 @@ export class TaskService {
               // Parse comma-separated numbers
               const numbers = value
                 .split(/[,\s]+/)
-                .map(s => parseInt(s.trim(), 10))
-                .filter(n => !isNaN(n));
+                .map((s) => parseInt(s.trim(), 10))
+                .filter((n) => !isNaN(n));
               currentTask.dependsOnNumbers = numbers;
             }
           }
@@ -623,7 +698,7 @@ export class TaskService {
         }
       }
     }
-    
+
     // Don't forget the last task
     if (currentTask) {
       currentTask.description = descriptionLines.join('\n').trim();
@@ -633,8 +708,17 @@ export class TaskService {
     return tasks;
   }
 
-  createSubtask(featureName: string, taskFolder: string, name: string, type?: SubtaskType): Subtask {
-    const subtasksPath = getSubtasksPath(this.projectRoot, featureName, taskFolder);
+  createSubtask(
+    featureName: string,
+    taskFolder: string,
+    name: string,
+    type?: SubtaskType,
+  ): Subtask {
+    const subtasksPath = getSubtasksPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     ensureDir(subtasksPath);
 
     const existingFolders = this.listSubtaskFolders(featureName, taskFolder);
@@ -642,7 +726,12 @@ export class TaskService {
     const nextOrder = existingFolders.length + 1;
     const subtaskId = `${taskOrder}.${nextOrder}`;
     const folderName = `${nextOrder}-${this.slugify(name)}`;
-    const subtaskPath = getSubtaskPath(this.projectRoot, featureName, taskFolder, folderName);
+    const subtaskPath = getSubtaskPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      folderName,
+    );
 
     ensureDir(subtaskPath);
 
@@ -651,10 +740,21 @@ export class TaskService {
       type,
       createdAt: new Date().toISOString(),
     };
-    writeJson(getSubtaskStatusPath(this.projectRoot, featureName, taskFolder, folderName), subtaskStatus);
+    writeJson(
+      getSubtaskStatusPath(
+        this.projectRoot,
+        featureName,
+        taskFolder,
+        folderName,
+      ),
+      subtaskStatus,
+    );
 
     const specContent = `# Subtask: ${name}\n\n**Type:** ${type || 'custom'}\n**ID:** ${subtaskId}\n\n## Instructions\n\n_Add detailed instructions here_\n`;
-    writeText(getSubtaskSpecPath(this.projectRoot, featureName, taskFolder, folderName), specContent);
+    writeText(
+      getSubtaskSpecPath(this.projectRoot, featureName, taskFolder, folderName),
+      specContent,
+    );
 
     return {
       id: subtaskId,
@@ -666,13 +766,29 @@ export class TaskService {
     };
   }
 
-  updateSubtask(featureName: string, taskFolder: string, subtaskId: string, status: TaskStatusType): Subtask {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  updateSubtask(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+    status: TaskStatusType,
+  ): Subtask {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) {
-      throw new Error(`Subtask '${subtaskId}' not found in task '${taskFolder}'`);
+      throw new Error(
+        `Subtask '${subtaskId}' not found in task '${taskFolder}'`,
+      );
     }
 
-    const statusPath = getSubtaskStatusPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const statusPath = getSubtaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     const current = readJson<SubtaskStatus>(statusPath);
     if (!current) {
       throw new Error(`Subtask status not found for '${subtaskId}'`);
@@ -702,10 +818,15 @@ export class TaskService {
     const taskOrder = parseInt(taskFolder.split('-')[0], 10);
 
     return folders.map((folder, index) => {
-      const statusPath = getSubtaskStatusPath(this.projectRoot, featureName, taskFolder, folder);
+      const statusPath = getSubtaskStatusPath(
+        this.projectRoot,
+        featureName,
+        taskFolder,
+        folder,
+      );
       const status = readJson<SubtaskStatus>(statusPath);
       const name = folder.replace(/^\d+-/, '');
-      const subtaskOrder = parseInt(folder.split('-')[0], 10) || (index + 1);
+      const subtaskOrder = parseInt(folder.split('-')[0], 10) || index + 1;
 
       return {
         id: `${taskOrder}.${subtaskOrder}`,
@@ -719,23 +840,51 @@ export class TaskService {
     });
   }
 
-  deleteSubtask(featureName: string, taskFolder: string, subtaskId: string): void {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  deleteSubtask(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+  ): void {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) {
-      throw new Error(`Subtask '${subtaskId}' not found in task '${taskFolder}'`);
+      throw new Error(
+        `Subtask '${subtaskId}' not found in task '${taskFolder}'`,
+      );
     }
 
-    const subtaskPath = getSubtaskPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const subtaskPath = getSubtaskPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     if (fileExists(subtaskPath)) {
       fs.rmSync(subtaskPath, { recursive: true });
     }
   }
 
-  getSubtask(featureName: string, taskFolder: string, subtaskId: string): Subtask | null {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  getSubtask(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+  ): Subtask | null {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) return null;
 
-    const statusPath = getSubtaskStatusPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const statusPath = getSubtaskStatusPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     const status = readJson<SubtaskStatus>(statusPath);
     if (!status) return null;
 
@@ -754,61 +903,134 @@ export class TaskService {
     };
   }
 
-  writeSubtaskSpec(featureName: string, taskFolder: string, subtaskId: string, content: string): string {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  writeSubtaskSpec(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+    content: string,
+  ): string {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) {
-      throw new Error(`Subtask '${subtaskId}' not found in task '${taskFolder}'`);
+      throw new Error(
+        `Subtask '${subtaskId}' not found in task '${taskFolder}'`,
+      );
     }
 
-    const specPath = getSubtaskSpecPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const specPath = getSubtaskSpecPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     writeText(specPath, content);
     return specPath;
   }
 
-  writeSubtaskReport(featureName: string, taskFolder: string, subtaskId: string, content: string): string {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  writeSubtaskReport(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+    content: string,
+  ): string {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) {
-      throw new Error(`Subtask '${subtaskId}' not found in task '${taskFolder}'`);
+      throw new Error(
+        `Subtask '${subtaskId}' not found in task '${taskFolder}'`,
+      );
     }
 
-    const reportPath = getSubtaskReportPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const reportPath = getSubtaskReportPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     writeText(reportPath, content);
     return reportPath;
   }
 
-  readSubtaskSpec(featureName: string, taskFolder: string, subtaskId: string): string | null {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  readSubtaskSpec(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+  ): string | null {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) return null;
 
-    const specPath = getSubtaskSpecPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const specPath = getSubtaskSpecPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     return readText(specPath);
   }
 
-  readSubtaskReport(featureName: string, taskFolder: string, subtaskId: string): string | null {
-    const subtaskFolder = this.findSubtaskFolder(featureName, taskFolder, subtaskId);
+  readSubtaskReport(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+  ): string | null {
+    const subtaskFolder = this.findSubtaskFolder(
+      featureName,
+      taskFolder,
+      subtaskId,
+    );
     if (!subtaskFolder) return null;
 
-    const reportPath = getSubtaskReportPath(this.projectRoot, featureName, taskFolder, subtaskFolder);
+    const reportPath = getSubtaskReportPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+      subtaskFolder,
+    );
     return readText(reportPath);
   }
 
-  private listSubtaskFolders(featureName: string, taskFolder: string): string[] {
-    const subtasksPath = getSubtasksPath(this.projectRoot, featureName, taskFolder);
+  private listSubtaskFolders(
+    featureName: string,
+    taskFolder: string,
+  ): string[] {
+    const subtasksPath = getSubtasksPath(
+      this.projectRoot,
+      featureName,
+      taskFolder,
+    );
     if (!fileExists(subtasksPath)) return [];
 
-    return fs.readdirSync(subtasksPath, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name)
+    return fs
+      .readdirSync(subtasksPath, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
       .sort();
   }
 
-  private findSubtaskFolder(featureName: string, taskFolder: string, subtaskId: string): string | null {
+  private findSubtaskFolder(
+    featureName: string,
+    taskFolder: string,
+    subtaskId: string,
+  ): string | null {
     const folders = this.listSubtaskFolders(featureName, taskFolder);
     const subtaskOrder = subtaskId.split('.')[1];
-    return folders.find(f => f.startsWith(`${subtaskOrder}-`)) || null;
+    return folders.find((f) => f.startsWith(`${subtaskOrder}-`)) || null;
   }
 
   private slugify(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
   }
 }

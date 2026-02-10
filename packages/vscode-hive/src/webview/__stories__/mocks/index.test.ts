@@ -9,11 +9,7 @@ import {
   createMockAnnotation,
   createMockFileTreeItem,
 } from './index';
-import type {
-  ReviewThread,
-  DiffFile,
-  ReviewAnnotation,
-} from 'hive-core';
+import type { ReviewThread, DiffFile, ReviewAnnotation } from 'hive-core';
 import type { FileTreeItem } from '../../types';
 
 describe('createMockReviewThread', () => {
@@ -229,8 +225,16 @@ describe('createMockFileTreeItem', () => {
   });
 
   it('supports all file statuses', () => {
-    const statuses: FileTreeItem['status'][] = ['A', 'M', 'D', 'R', 'C', 'U', 'B'];
-    
+    const statuses: FileTreeItem['status'][] = [
+      'A',
+      'M',
+      'D',
+      'R',
+      'C',
+      'U',
+      'B',
+    ];
+
     for (const status of statuses) {
       const item = createMockFileTreeItem({ status });
       expect(item.status).toBe(status);

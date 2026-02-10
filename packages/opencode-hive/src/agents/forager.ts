@@ -157,6 +157,7 @@ When sandbox mode is active, ALL bash commands automatically run inside a Docker
 
 export const foragerBeeAgent = {
   name: 'Forager (Worker/Coder)',
-  description: 'Lean worker. Executes directly, never delegates. Isolated worktree.',
+  description:
+    'Lean worker. Executes directly, never delegates. Isolated worktree.',
   prompt: FORAGER_BEE_PROMPT,
 };

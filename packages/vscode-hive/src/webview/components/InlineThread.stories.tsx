@@ -52,7 +52,10 @@ type Story = StoryObj<typeof meta>;
 const singleAnnotationThread = createMockReviewThread({
   id: 'thread-default',
   uri: 'src/components/Example.tsx',
-  range: { start: { line: 10, character: 0 }, end: { line: 10, character: 50 } },
+  range: {
+    start: { line: 10, character: 0 },
+    end: { line: 10, character: 50 },
+  },
   annotations: [
     createMockAnnotation({
       id: 'ann-1',
@@ -79,7 +82,7 @@ const threadWithReplies = createMockReviewThread({
     }),
     createMockAnnotation({
       id: 'ann-3',
-      body: 'Good idea! I\'ll implement that in the next iteration.',
+      body: "Good idea! I'll implement that in the next iteration.",
       author: { type: 'human', name: 'Bob' },
     }),
   ],
@@ -143,7 +146,8 @@ export const WithReplies: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows a thread with multiple annotations forming a conversation. Note the AI badge on the LLM author.',
+        story:
+          'Shows a thread with multiple annotations forming a conversation. Note the AI badge on the LLM author.',
       },
     },
   },
@@ -162,7 +166,8 @@ export const Resolved: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'A resolved thread shows a "Resolved" status and hides the resolve button.',
+        story:
+          'A resolved thread shows a "Resolved" status and hides the resolve button.',
       },
     },
   },
@@ -181,7 +186,8 @@ export const WithSuggestion: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Annotations of type "suggestion" display the proposed code replacement.',
+        story:
+          'Annotations of type "suggestion" display the proposed code replacement.',
       },
     },
   },
@@ -246,9 +252,12 @@ export const ReplyInteraction: Story = {
 
     // Find the reply input
     const replyInput = canvas.getByPlaceholderText(/reply/i);
-    
+
     // Type a reply
-    await userEvent.type(replyInput, 'Thanks for the feedback, I\'ll update this.');
+    await userEvent.type(
+      replyInput,
+      "Thanks for the feedback, I'll update this.",
+    );
 
     // Click the reply button
     const replyButton = canvas.getByRole('button', { name: /^reply$/i });
@@ -257,7 +266,7 @@ export const ReplyInteraction: Story = {
     // Verify callback was called with thread ID and reply text
     await expect(args.onReply).toHaveBeenCalledWith(
       'thread-default',
-      'Thanks for the feedback, I\'ll update this.'
+      "Thanks for the feedback, I'll update this.",
     );
 
     // Verify input was cleared after reply

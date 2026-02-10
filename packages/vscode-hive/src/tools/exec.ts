@@ -1,20 +1,24 @@
 import * as path from 'path';
-import { WorktreeService, TaskService, buildEffectiveDependencies } from 'hive-core';
+import {
+  WorktreeService,
+  TaskService,
+  buildEffectiveDependencies,
+} from 'hive-core';
 import type { ToolRegistration } from './base';
 
 /**
  * Check if a task's dependencies are satisfied.
- * 
+ *
  * Hybrid enforcement:
  * 1. If task has explicit dependsOn array, check all deps have status 'done'
  * 2. If task has no dependsOn (legacy/undefined), fall back to numeric sequential ordering
- * 
+ *
  * Only 'done' status satisfies a dependency - cancelled/failed/blocked/partial do NOT.
  */
 function checkDependencies(
   taskService: TaskService,
   feature: string,
-  taskFolder: string
+  taskFolder: string,
 ): { allowed: boolean; error?: string } {
   const taskStatus = taskService.getRawStatus(feature, taskFolder);
 
@@ -22,7 +26,7 @@ function checkDependencies(
     return { allowed: true };
   }
 
-  const tasks = taskService.list(feature).map(task => {
+  const tasks = taskService.list(feature).map((task) => {
     const status = taskService.getRawStatus(feature, task.folder);
     return {
       folder: task.folder,
@@ -50,19 +54,20 @@ function checkDependencies(
       });
     }
   }
-  
+
   if (unmetDeps.length > 0) {
     const depList = unmetDeps
-      .map(d => `"${d.folder}" (${d.status})`)
+      .map((d) => `"${d.folder}" (${d.status})`)
       .join(', ');
-    
+
     return {
       allowed: false,
-      error: `Dependency constraint: Task "${taskFolder}" cannot start - dependencies not done: ${depList}. ` +
+      error:
+        `Dependency constraint: Task "${taskFolder}" cannot start - dependencies not done: ${depList}. ` +
         `Only tasks with status 'done' satisfy dependencies.`,
     };
   }
-  
+
   return { allowed: true };
 }
 
@@ -77,7 +82,8 @@ export function getExecTools(workspaceRoot: string): ToolRegistration[] {
     {
       name: 'hive_worktree_create',
       displayName: 'Create Task Worktree',
-      modelDescription: 'Create a git worktree for a task. Isolates changes in a separate directory. Use when ready to implement a task.',
+      modelDescription:
+        'Create a git worktree for a task. Isolates changes in a separate directory. Use when ready to implement a task.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -88,7 +94,7 @@ export function getExecTools(workspaceRoot: string): ToolRegistration[] {
       },
       invoke: async (input) => {
         const { feature, task } = input as { feature: string; task: string };
-        
+
         // Check dependencies before creating worktree
         const depCheck = checkDependencies(taskService, feature, task);
         if (!depCheck.allowed) {
@@ -98,27 +104,28 @@ export function getExecTools(workspaceRoot: string): ToolRegistration[] {
             hints: [
               'Complete the required dependencies before starting this task.',
               'Use hive_status to see current task states.',
-            ]
+            ],
           });
         }
-        
+
         const worktree = await worktreeService.create(feature, task);
         return JSON.stringify({
           success: true,
           worktreePath: worktree.path,
           branch: worktree.branch,
-            message: `Worktree created. Work in ${worktree.path}. When done, use hive_worktree_commit.`,
+          message: `Worktree created. Work in ${worktree.path}. When done, use hive_worktree_commit.`,
           hints: [
             'Do all work inside this worktree. Ensure any subagents do the same.',
-            'Context files are in .hive/features/<feature>/context/ if you need background.'
-          ]
+            'Context files are in .hive/features/<feature>/context/ if you need background.',
+          ],
         });
       },
     },
     {
       name: 'hive_worktree_commit',
       displayName: 'Commit Task Worktree',
-      modelDescription: 'Commit changes in worktree and mark task done. Does NOT merge - use hive_merge for that. Use when task implementation is finished.',
+      modelDescription:
+        'Commit changes in worktree and mark task done. Does NOT merge - use hive_merge for that. Use when task implementation is finished.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -129,35 +136,44 @@ export function getExecTools(workspaceRoot: string): ToolRegistration[] {
         required: ['feature', 'task', 'summary'],
       },
       invoke: async (input) => {
-        const { feature, task, summary } = input as { feature: string; task: string; summary: string };
-        const result = await worktreeService.commitChanges(feature, task, summary);
-        
+        const { feature, task, summary } = input as {
+          feature: string;
+          task: string;
+          summary: string;
+        };
+        const result = await worktreeService.commitChanges(
+          feature,
+          task,
+          summary,
+        );
+
         // Mark task as done and create report if commit succeeded
         if (result.committed) {
           taskService.update(feature, task, { status: 'done', summary });
-          
+
           // Generate report
           const reportContent = `# Task Completion Report\n\n**Task:** ${task}\n**Status:** Done\n**Completed:** ${new Date().toISOString()}\n**Commit:** ${result.sha}\n\n## Summary\n\n${summary}\n`;
           taskService.writeReport(feature, task, reportContent);
         }
-        
+
         return JSON.stringify({
           success: true,
           commitHash: result.sha,
           committed: result.committed,
-          message: result.committed 
+          message: result.committed
             ? `Changes committed. Use hive_merge to integrate into main branch.`
             : result.message || 'No changes to commit',
-          hints: result.committed ? [
-            'Proceed to next task or use hive_merge to integrate changes.'
-          ] : []
+          hints: result.committed
+            ? ['Proceed to next task or use hive_merge to integrate changes.']
+            : [],
         });
       },
     },
     {
       name: 'hive_worktree_discard',
       displayName: 'Discard Task Worktree',
-      modelDescription: 'Discard all changes and remove worktree. Use when task approach is wrong and needs restart. This is destructive and irreversible.',
+      modelDescription:
+        'Discard all changes and remove worktree. Use when task approach is wrong and needs restart. This is destructive and irreversible.',
       destructive: true,
       inputSchema: {
         type: 'object',

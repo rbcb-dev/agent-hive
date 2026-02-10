@@ -52,11 +52,15 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      expect(screen.getByText('This looks good but could be improved')).toBeInTheDocument();
-      expect(screen.getByText('I agree, we should refactor this')).toBeInTheDocument();
+      expect(
+        screen.getByText('This looks good but could be improved'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('I agree, we should refactor this'),
+      ).toBeInTheDocument();
     });
 
     it('displays author names for each annotation', () => {
@@ -66,7 +70,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -80,7 +84,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       // Find the AI badge (should only appear once for Claude)
@@ -95,7 +99,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const container = screen.getByTestId('inline-thread');
@@ -111,10 +115,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /close/i }),
+      ).toBeInTheDocument();
     });
 
     it('calls onClose when close button is clicked', () => {
@@ -124,7 +130,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       fireEvent.click(screen.getByRole('button', { name: /close/i }));
@@ -140,7 +146,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       expect(screen.getByPlaceholderText(/reply/i)).toBeInTheDocument();
@@ -153,12 +159,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const input = screen.getByPlaceholderText(/reply/i);
       fireEvent.change(input, { target: { value: 'My reply text' } });
-      
+
       const replyButton = screen.getByRole('button', { name: /^reply$/i });
       fireEvent.click(replyButton);
 
@@ -172,10 +178,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      const input = screen.getByPlaceholderText(/reply/i) as HTMLTextAreaElement;
+      const input = screen.getByPlaceholderText(
+        /reply/i,
+      ) as HTMLTextAreaElement;
       fireEvent.change(input, { target: { value: 'My reply text' } });
       fireEvent.click(screen.getByRole('button', { name: /^reply$/i }));
 
@@ -189,7 +197,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const replyButton = screen.getByRole('button', { name: /^reply$/i });
@@ -205,10 +213,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /resolve/i }),
+      ).toBeInTheDocument();
     });
 
     it('calls onResolve with thread id when resolve button is clicked', () => {
@@ -218,7 +228,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
@@ -233,10 +243,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      expect(screen.queryByRole('button', { name: /resolve/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /resolve/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -249,7 +261,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const container = screen.getByTestId('inline-thread');
@@ -280,7 +292,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       expect(screen.getByText('const x = 1;')).toBeInTheDocument();
@@ -295,10 +307,12 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /close thread/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /close thread/i }),
+      ).toBeInTheDocument();
     });
 
     it('has labeled reply input', () => {
@@ -308,7 +322,7 @@ describe('InlineThread', () => {
           onReply={mockOnReply}
           onResolve={mockOnResolve}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const input = screen.getByPlaceholderText(/reply/i);

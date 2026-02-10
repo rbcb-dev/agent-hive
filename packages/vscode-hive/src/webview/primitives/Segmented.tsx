@@ -1,6 +1,6 @@
 /**
  * Segmented - Ant Design Segmented wrapper
- * 
+ *
  * Modern tab-like switcher component (NOT deprecated).
  * Use this instead of Tabs for simple option switching.
  */

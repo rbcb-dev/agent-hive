@@ -5,7 +5,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { marked, type Tokens } from 'marked';
-import { getHighlighter, THEME_MAP, normalizeLanguage } from './useCodeHighlighter';
+import {
+  getHighlighter,
+  THEME_MAP,
+  normalizeLanguage,
+} from './useCodeHighlighter';
 
 export interface UseMarkdownRendererOptions {
   markdown: string;
@@ -24,22 +28,28 @@ export interface UseMarkdownRendererResult {
  */
 function sanitizeHtml(html: string): string {
   // Remove script tags and their content
-  let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
+  let sanitized = html.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    '',
+  );
+
   // Remove event handlers (onclick, onerror, etc.)
   sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
   sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
-  
+
   // Remove javascript: URLs
-  sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
-  
+  sanitized = sanitized.replace(
+    /href\s*=\s*["']javascript:[^"']*["']/gi,
+    'href="#"',
+  );
+
   return sanitized;
 }
 
 /**
  * Hook for rendering markdown with optional syntax highlighting for code blocks.
  * Uses Shiki for code highlighting and sanitizes output to prevent XSS.
- * 
+ *
  * @param options - Configuration for rendering
  * @returns Rendered HTML and loading state
  */
@@ -72,8 +82,8 @@ export function useMarkdownRenderer({
 
           // Create custom renderer that uses Shiki for code blocks
           const renderer = new marked.Renderer();
-          
-          renderer.code = function({ text, lang }: Tokens.Code): string {
+
+          renderer.code = function ({ text, lang }: Tokens.Code): string {
             // Only highlight fenced code blocks with language
             if (lang) {
               const normalizedLang = normalizeLanguage(lang);
@@ -91,7 +101,7 @@ export function useMarkdownRenderer({
                 return `<pre><code class="language-${lang}">${escaped}</code></pre>`;
               }
             }
-            
+
             // No language specified - use plain code block
             const escaped = text
               .replace(/&/g, '&amp;')
@@ -107,7 +117,10 @@ export function useMarkdownRenderer({
           });
 
           // Parse markdown with custom renderer
-          const rawHtml = await marked.parse(markdown, { renderer, async: true });
+          const rawHtml = await marked.parse(markdown, {
+            renderer,
+            async: true,
+          });
           if (cancelled) return;
 
           // Sanitize output to prevent XSS
@@ -129,7 +142,7 @@ export function useMarkdownRenderer({
         }
       } catch (error) {
         if (cancelled) return;
-        
+
         // On error, fall back to basic markdown parsing without highlighting
         try {
           marked.setOptions({

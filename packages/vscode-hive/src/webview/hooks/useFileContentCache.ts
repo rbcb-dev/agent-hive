@@ -25,7 +25,12 @@ export interface UseFileContentCacheResult {
   /** Get cached content for a file (null if not cached or expired) */
   getContent: (uri: string) => FileContent | null;
   /** Store content for a file */
-  setContent: (uri: string, content: string, language?: string, warning?: string) => void;
+  setContent: (
+    uri: string,
+    content: string,
+    language?: string,
+    warning?: string,
+  ) => void;
   /** Check if a file is currently loading */
   isLoading: (uri: string) => boolean;
   /** Request file content from extension */
@@ -50,91 +55,101 @@ export function useFileContentCache(): UseFileContentCacheResult {
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState<Set<string>>(new Set());
 
-  const getContent = useCallback((uri: string): FileContent | null => {
-    const cached = cache.get(uri);
-    
-    if (!cached) {
-      return null;
-    }
-    
-    // Check if expired
-    if (Date.now() - cached.timestamp >= CACHE_TTL) {
-      return null;
-    }
-    
-    return {
-      content: cached.content,
-      language: cached.language,
-      warning: cached.warning,
-    };
-  }, [cache]);
+  const getContent = useCallback(
+    (uri: string): FileContent | null => {
+      const cached = cache.get(uri);
 
-  const setContent = useCallback((
-    uri: string, 
-    content: string, 
-    language?: string, 
-    warning?: string
-  ) => {
-    setCache(prev => {
-      const newCache = new Map(prev);
-      newCache.set(uri, {
-        content,
-        language,
-        warning,
-        timestamp: Date.now(),
+      if (!cached) {
+        return null;
+      }
+
+      // Check if expired
+      if (Date.now() - cached.timestamp >= CACHE_TTL) {
+        return null;
+      }
+
+      return {
+        content: cached.content,
+        language: cached.language,
+        warning: cached.warning,
+      };
+    },
+    [cache],
+  );
+
+  const setContent = useCallback(
+    (uri: string, content: string, language?: string, warning?: string) => {
+      setCache((prev) => {
+        const newCache = new Map(prev);
+        newCache.set(uri, {
+          content,
+          language,
+          warning,
+          timestamp: Date.now(),
+        });
+        return newCache;
       });
-      return newCache;
-    });
-    
-    // Clear error when content is set
-    setErrors(prev => {
-      const newErrors = new Map(prev);
-      newErrors.delete(uri);
-      return newErrors;
-    });
-    
-    // Clear loading state
-    setLoading(prev => {
-      const newLoading = new Set(prev);
-      newLoading.delete(uri);
-      return newLoading;
-    });
-  }, []);
 
-  const isLoading = useCallback((uri: string): boolean => {
-    return loading.has(uri);
-  }, [loading]);
+      // Clear error when content is set
+      setErrors((prev) => {
+        const newErrors = new Map(prev);
+        newErrors.delete(uri);
+        return newErrors;
+      });
 
-  const requestContent = useCallback((uri: string) => {
-    // Don't request if already loading
-    if (loading.has(uri)) {
-      return;
-    }
-    
-    // Mark as loading
-    setLoading(prev => {
-      const newLoading = new Set(prev);
-      newLoading.add(uri);
-      return newLoading;
-    });
-    
-    // Send request to extension
-    postMessage({ type: 'requestFile', uri });
-  }, [loading]);
+      // Clear loading state
+      setLoading((prev) => {
+        const newLoading = new Set(prev);
+        newLoading.delete(uri);
+        return newLoading;
+      });
+    },
+    [],
+  );
 
-  const getError = useCallback((uri: string): string | undefined => {
-    return errors.get(uri);
-  }, [errors]);
+  const isLoading = useCallback(
+    (uri: string): boolean => {
+      return loading.has(uri);
+    },
+    [loading],
+  );
+
+  const requestContent = useCallback(
+    (uri: string) => {
+      // Don't request if already loading
+      if (loading.has(uri)) {
+        return;
+      }
+
+      // Mark as loading
+      setLoading((prev) => {
+        const newLoading = new Set(prev);
+        newLoading.add(uri);
+        return newLoading;
+      });
+
+      // Send request to extension
+      postMessage({ type: 'requestFile', uri });
+    },
+    [loading],
+  );
+
+  const getError = useCallback(
+    (uri: string): string | undefined => {
+      return errors.get(uri);
+    },
+    [errors],
+  );
 
   const setError = useCallback((uri: string, error: string) => {
-    setErrors(prev => {
+    setErrors((prev) => {
       const newErrors = new Map(prev);
       newErrors.set(uri, error);
       return newErrors;
     });
-    
+
     // Clear loading state when error is set
-    setLoading(prev => {
+    setLoading((prev) => {
       const newLoading = new Set(prev);
       newLoading.delete(uri);
       return newLoading;
@@ -143,12 +158,12 @@ export function useFileContentCache(): UseFileContentCacheResult {
 
   const clearCache = useCallback((uri?: string) => {
     if (uri) {
-      setCache(prev => {
+      setCache((prev) => {
         const newCache = new Map(prev);
         newCache.delete(uri);
         return newCache;
       });
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = new Map(prev);
         newErrors.delete(uri);
         return newErrors;

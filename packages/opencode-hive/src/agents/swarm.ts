@@ -150,6 +150,7 @@ NEVER end with:
 
 export const swarmBeeAgent = {
   name: 'Swarm (Orchestrator)',
-  description: 'Lean orchestrator. Delegates by default, spawns workers, verifies, merges.',
+  description:
+    'Lean orchestrator. Delegates by default, spawns workers, verifies, merges.',
   prompt: SWARM_BEE_PROMPT,
 };

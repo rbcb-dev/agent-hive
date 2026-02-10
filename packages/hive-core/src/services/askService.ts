@@ -35,14 +35,14 @@ export class AskService {
 
   createAsk(feature: string, question: string): Ask {
     this.ensureAsksDir(feature);
-    
+
     const id = `ask_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const ask: Ask = {
       id,
       question,
       feature,
       timestamp: new Date().toISOString(),
-      answered: false
+      answered: false,
     };
 
     const asksDir = this.getAsksDir(feature);
@@ -61,7 +61,10 @@ export class AskService {
   }
 
   getAnswer(feature: string, askId: string): AskAnswer | null {
-    const answerPath = path.join(this.getAsksDir(feature), `${askId}-answer.json`);
+    const answerPath = path.join(
+      this.getAsksDir(feature),
+      `${askId}-answer.json`,
+    );
     if (!fs.existsSync(answerPath)) {
       return null;
     }
@@ -80,11 +83,11 @@ export class AskService {
     const answerData: AskAnswer = {
       id: askId,
       answer,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     fs.writeFileSync(answerPath, JSON.stringify(answerData, null, 2));
-    
+
     if (fs.existsSync(lockPath)) {
       fs.unlinkSync(lockPath);
     }
@@ -109,13 +112,16 @@ export class AskService {
           try {
             const ask = JSON.parse(fs.readFileSync(askPath, 'utf-8'));
             pending.push(ask);
-          } catch { /* skip malformed */ }
+          } catch {
+            /* skip malformed */
+          }
         }
       }
     }
 
-    return pending.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    return pending.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
   }
 

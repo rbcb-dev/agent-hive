@@ -1,6 +1,6 @@
 /**
  * Unit tests for the chat.message hook variant injection.
- * 
+ *
  * Tests:
  * - Applies configured variant to Hive agents
  * - Does not override already-set variant
@@ -9,7 +9,11 @@
  */
 
 import { describe, it, expect } from 'bun:test';
-import { normalizeVariant, createVariantHook, HIVE_AGENT_NAMES } from './variant-hook.js';
+import {
+  normalizeVariant,
+  createVariantHook,
+  HIVE_AGENT_NAMES,
+} from './variant-hook.js';
 
 // ============================================================================
 // normalizeVariant tests
@@ -58,7 +62,9 @@ describe('HIVE_AGENT_NAMES', () => {
 
 describe('createVariantHook', () => {
   // Mock ConfigService
-  const createMockConfigService = (agentVariants: Record<string, string | undefined>) => ({
+  const createMockConfigService = (
+    agentVariants: Record<string, string | undefined>,
+  ) => ({
     getAgentConfig: (agent: string) => ({
       variant: agentVariants[agent],
     }),
@@ -108,10 +114,7 @@ describe('createVariantHook', () => {
       for (const agentName of HIVE_AGENT_NAMES) {
         const output = createOutput(undefined);
 
-        await hook(
-          { sessionID: 'session-123', agent: agentName },
-          output,
-        );
+        await hook({ sessionID: 'session-123', agent: agentName }, output);
 
         expect(output.message.variant).toBeDefined();
       }
@@ -168,10 +171,7 @@ describe('createVariantHook', () => {
       for (const agentName of builtinAgents) {
         const output = createOutput(undefined);
 
-        await hook(
-          { sessionID: 'session-123', agent: agentName },
-          output,
-        );
+        await hook({ sessionID: 'session-123', agent: agentName }, output);
 
         expect(output.message.variant).toBeUndefined();
       }
@@ -188,10 +188,7 @@ describe('createVariantHook', () => {
 
       const output = createOutput(undefined);
 
-      await hook(
-        { sessionID: 'session-123', agent: undefined },
-        output,
-      );
+      await hook({ sessionID: 'session-123', agent: undefined }, output);
 
       // Should not crash, should not set variant (no agent to look up)
       expect(output.message.variant).toBeUndefined();
@@ -206,10 +203,7 @@ describe('createVariantHook', () => {
 
       const output = createOutput(undefined);
 
-      await hook(
-        { sessionID: 'session-123', agent: 'forager-worker' },
-        output,
-      );
+      await hook({ sessionID: 'session-123', agent: 'forager-worker' }, output);
 
       // Empty string should be treated as unset
       expect(output.message.variant).toBeUndefined();
@@ -224,10 +218,7 @@ describe('createVariantHook', () => {
 
       const output = createOutput(undefined);
 
-      await hook(
-        { sessionID: 'session-123', agent: 'forager-worker' },
-        output,
-      );
+      await hook({ sessionID: 'session-123', agent: 'forager-worker' }, output);
 
       // Whitespace-only should be treated as unset
       expect(output.message.variant).toBeUndefined();
@@ -242,10 +233,7 @@ describe('createVariantHook', () => {
 
       const output = createOutput(undefined);
 
-      await hook(
-        { sessionID: 'session-123', agent: 'forager-worker' },
-        output,
-      );
+      await hook({ sessionID: 'session-123', agent: 'forager-worker' }, output);
 
       // Undefined should be treated as unset
       expect(output.message.variant).toBeUndefined();
@@ -260,10 +248,7 @@ describe('createVariantHook', () => {
 
       const output = createOutput(undefined);
 
-      await hook(
-        { sessionID: 'session-123', agent: 'forager-worker' },
-        output,
-      );
+      await hook({ sessionID: 'session-123', agent: 'forager-worker' }, output);
 
       // Should be trimmed
       expect(output.message.variant).toBe('high');

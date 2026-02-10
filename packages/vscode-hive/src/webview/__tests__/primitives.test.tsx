@@ -1,6 +1,6 @@
 /**
  * Tests for primitives layer components
- * 
+ *
  * These tests verify that our primitive components correctly wrap antd components
  * while providing our own API surface. The primitives layer is the ONLY antd import boundary.
  */
@@ -46,7 +46,9 @@ describe('Primitives Layer', () => {
   describe('Button', () => {
     it('renders children', () => {
       renderWithTheme(<Button>Click me</Button>);
-      expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Click me' }),
+      ).toBeInTheDocument();
     });
 
     it('handles click events', () => {
@@ -99,7 +101,9 @@ describe('Primitives Layer', () => {
     });
 
     it('applies className', () => {
-      const { container } = renderWithTheme(<Card className="custom-card">Content</Card>);
+      const { container } = renderWithTheme(
+        <Card className="custom-card">Content</Card>,
+      );
       expect(container.querySelector('.custom-card')).toBeInTheDocument();
     });
   });
@@ -110,7 +114,7 @@ describe('Primitives Layer', () => {
         <Flex>
           <span>Child 1</span>
           <span>Child 2</span>
-        </Flex>
+        </Flex>,
       );
       expect(screen.getByText('Child 1')).toBeInTheDocument();
       expect(screen.getByText('Child 2')).toBeInTheDocument();
@@ -120,7 +124,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex vertical>
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -129,7 +133,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex gap="small">
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -138,7 +142,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex gap={16}>
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -147,7 +151,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex wrap>
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -156,7 +160,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex align="center">
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -165,7 +169,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Flex justify="space-between">
           <span>Item</span>
-        </Flex>
+        </Flex>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -177,7 +181,7 @@ describe('Primitives Layer', () => {
         <Space>
           <span>Item 1</span>
           <span>Item 2</span>
-        </Space>
+        </Space>,
       );
       expect(screen.getByText('Item 1')).toBeInTheDocument();
       expect(screen.getByText('Item 2')).toBeInTheDocument();
@@ -187,7 +191,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Space orientation="vertical">
           <span>Item</span>
-        </Space>
+        </Space>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -196,7 +200,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Space size="large">
           <span>Item</span>
-        </Space>
+        </Space>,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -342,7 +346,9 @@ describe('Primitives Layer', () => {
     it('handles value change', () => {
       const onChange = vi.fn();
       renderWithTheme(<TextArea onChange={onChange} />);
-      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Hello' } });
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: 'Hello' },
+      });
       expect(onChange).toHaveBeenCalled();
     });
 
@@ -379,8 +385,12 @@ describe('Primitives Layer', () => {
     });
 
     it('supports action', () => {
-      renderWithTheme(<Alert message="Alert" action={<button>Action</button>} />);
-      expect(screen.getByRole('button', { name: 'Action' })).toBeInTheDocument();
+      renderWithTheme(
+        <Alert message="Alert" action={<button>Action</button>} />,
+      );
+      expect(
+        screen.getByRole('button', { name: 'Action' }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -389,7 +399,7 @@ describe('Primitives Layer', () => {
       const { container } = renderWithTheme(
         <Layout>
           <div>Content</div>
-        </Layout>
+        </Layout>,
       );
       expect(screen.getByText('Content')).toBeInTheDocument();
     });
@@ -398,7 +408,7 @@ describe('Primitives Layer', () => {
       renderWithTheme(
         <Layout>
           <Layout.Header>Header content</Layout.Header>
-        </Layout>
+        </Layout>,
       );
       expect(screen.getByText('Header content')).toBeInTheDocument();
     });
@@ -407,7 +417,7 @@ describe('Primitives Layer', () => {
       renderWithTheme(
         <Layout>
           <Layout.Content>Main content</Layout.Content>
-        </Layout>
+        </Layout>,
       );
       expect(screen.getByText('Main content')).toBeInTheDocument();
     });
@@ -416,7 +426,7 @@ describe('Primitives Layer', () => {
       renderWithTheme(
         <Layout>
           <Layout.Sider>Sidebar</Layout.Sider>
-        </Layout>
+        </Layout>,
       );
       expect(screen.getByText('Sidebar')).toBeInTheDocument();
     });
@@ -425,7 +435,7 @@ describe('Primitives Layer', () => {
       renderWithTheme(
         <Layout>
           <Layout.Footer>Footer content</Layout.Footer>
-        </Layout>
+        </Layout>,
       );
       expect(screen.getByText('Footer content')).toBeInTheDocument();
     });
@@ -443,7 +453,9 @@ describe('Primitives Layer', () => {
     });
 
     it('renders Paragraph', () => {
-      renderWithTheme(<Typography.Paragraph>Paragraph text</Typography.Paragraph>);
+      renderWithTheme(
+        <Typography.Paragraph>Paragraph text</Typography.Paragraph>,
+      );
       expect(screen.getByText('Paragraph text')).toBeInTheDocument();
     });
 
@@ -453,7 +465,9 @@ describe('Primitives Layer', () => {
     });
 
     it('supports Text type (secondary)', () => {
-      renderWithTheme(<Typography.Text type="secondary">Secondary text</Typography.Text>);
+      renderWithTheme(
+        <Typography.Text type="secondary">Secondary text</Typography.Text>,
+      );
       expect(screen.getByText('Secondary text')).toBeInTheDocument();
     });
 
@@ -461,9 +475,11 @@ describe('Primitives Layer', () => {
       renderWithTheme(
         <Typography.Paragraph ellipsis={{ rows: 2 }}>
           Long text content that might be truncated
-        </Typography.Paragraph>
+        </Typography.Paragraph>,
       );
-      expect(screen.getByText('Long text content that might be truncated')).toBeInTheDocument();
+      expect(
+        screen.getByText('Long text content that might be truncated'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -482,7 +498,7 @@ describe('Primitives Layer', () => {
           itemKey="id"
         >
           {(item) => <div>{item.name}</div>}
-        </VirtualList>
+        </VirtualList>,
       );
       expect(screen.getByText('Item 0')).toBeInTheDocument();
     });
@@ -496,7 +512,7 @@ describe('Primitives Layer', () => {
           itemKey={(item) => item.id}
         >
           {(item) => <div>{item.name}</div>}
-        </VirtualList>
+        </VirtualList>,
       );
       expect(screen.getByText('Item 0')).toBeInTheDocument();
     });

@@ -1,6 +1,6 @@
 /**
  * Tests for DiffViewer component
- * 
+ *
  * Migrated to use react-diff-view internally while maintaining backward compatibility
  * with existing DiffFile-based API.
  */
@@ -41,7 +41,9 @@ describe('DiffViewer', () => {
 
     it('renders empty state when no file selected', () => {
       render(<DiffViewer file={null} />);
-      expect(screen.getByText('Select a file to view diff')).toBeInTheDocument();
+      expect(
+        screen.getByText('Select a file to view diff'),
+      ).toBeInTheDocument();
     });
 
     it('shows binary file message for binary files', () => {
@@ -64,7 +66,9 @@ describe('DiffViewer', () => {
   describe('diff content rendering with react-diff-view', () => {
     it('renders context lines', () => {
       render(<DiffViewer file={mockFile} />);
-      expect(screen.getByText('import React from "react";')).toBeInTheDocument();
+      expect(
+        screen.getByText('import React from "react";'),
+      ).toBeInTheDocument();
     });
 
     it('renders removed lines', () => {
@@ -103,7 +107,7 @@ describe('DiffViewer', () => {
     it('calls onLineClick when gutter is clicked', () => {
       const handleLineClick = vi.fn();
       render(<DiffViewer file={mockFile} onLineClick={handleLineClick} />);
-      
+
       // Find a gutter element and click it
       const gutters = document.querySelectorAll('.diff-gutter');
       if (gutters.length > 0) {
@@ -117,19 +121,19 @@ describe('DiffViewer', () => {
   describe('accessibility', () => {
     it('renders diff symbols for color-blind users', () => {
       render(<DiffViewer file={mockFile} />);
-      
+
       // react-diff-view adds visual indicators for add/delete
       // Check that diff content is present with appropriate styling
       const addedContent = screen.getByText('const newVar = 2;');
       const removedContent = screen.getByText('const oldVar = 1;');
-      
+
       expect(addedContent).toBeInTheDocument();
       expect(removedContent).toBeInTheDocument();
     });
 
     it('provides aria-labels for screen readers on diff lines', () => {
       render(<DiffViewer file={mockFile} />);
-      
+
       // react-diff-view uses table structure which is inherently accessible
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
@@ -167,7 +171,7 @@ describe('DiffViewer', () => {
       };
 
       render(<DiffViewer file={multiHunkFile} />);
-      
+
       expect(screen.getByText('line 1')).toBeInTheDocument();
       expect(screen.getByText('line 10')).toBeInTheDocument();
     });
@@ -229,7 +233,7 @@ describe('DiffViewer', () => {
   describe('width and layout', () => {
     it('renders diff-viewer with full width styling class', () => {
       render(<DiffViewer file={mockFile} />);
-      
+
       // The outer container should have diff-viewer class
       const container = document.querySelector('.diff-viewer');
       expect(container).toBeInTheDocument();
@@ -237,7 +241,7 @@ describe('DiffViewer', () => {
 
     it('renders diff table with 100% width from react-diff-view', () => {
       render(<DiffViewer file={mockFile} />);
-      
+
       // react-diff-view uses a table with class 'diff' that should have width: 100%
       const diffTable = document.querySelector('.diff');
       expect(diffTable).toBeInTheDocument();
@@ -246,12 +250,12 @@ describe('DiffViewer', () => {
 
     it('does not have conflicting diff-line styles that override react-diff-view', () => {
       render(<DiffViewer file={mockFile} />);
-      
+
       // react-diff-view uses .diff-line class for its own styling
       // Our CSS should NOT define a global .diff-line that conflicts
       // The CodeViewer line styling should use .code-viewer-line instead
       const diffLines = document.querySelectorAll('.diff-line');
-      
+
       // If react-diff-view renders diff lines, they should exist
       // and NOT have our custom display: flex styling that breaks table layout
       if (diffLines.length > 0) {

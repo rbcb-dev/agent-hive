@@ -1,6 +1,6 @@
 /**
  * FileIcon component - Shows file/folder icons using VS Code codicons
- * 
+ *
  * Uses @vscode/codicons for lightweight, VS Code-style icons.
  * Maps common file extensions to appropriate icon categories.
  */
@@ -32,7 +32,7 @@ const FILE_ICON_MAP: Record<string, string> = {
   swift: 'file-code',
   kt: 'file-code',
   scala: 'file-code',
-  
+
   // Data/Config - text/structured files
   json: 'file-text',
   yaml: 'file-text',
@@ -41,32 +41,32 @@ const FILE_ICON_MAP: Record<string, string> = {
   toml: 'file-text',
   ini: 'file-text',
   csv: 'file-text',
-  
+
   // Documentation - markdown
   md: 'markdown',
   mdx: 'markdown',
-  
+
   // Special files
   lock: 'lock',
   env: 'gear',
-  
+
   // Styles
   css: 'file-code',
   scss: 'file-code',
   sass: 'file-code',
   less: 'file-code',
-  
+
   // Templates
   html: 'file-code',
   htm: 'file-code',
   vue: 'file-code',
   svelte: 'file-code',
-  
+
   // Shell scripts
   sh: 'terminal',
   bash: 'terminal',
   zsh: 'terminal',
-  
+
   // Default
   default: 'file',
 };
@@ -87,13 +87,13 @@ function getExtension(filename: string): string {
     // .env -> env, .gitignore -> gitignore (but we only check env in our map)
     return filename.slice(1).toLowerCase();
   }
-  
+
   // Get the last part after the last dot
   const parts = filename.split('.');
   if (parts.length > 1) {
     return parts[parts.length - 1].toLowerCase();
   }
-  
+
   // No extension
   return '';
 }
@@ -101,13 +101,16 @@ function getExtension(filename: string): string {
 /**
  * FileIcon component - Renders codicon icons for files and folders
  */
-export function FileIcon({ filename, isDirectory }: FileIconProps): React.ReactElement {
+export function FileIcon({
+  filename,
+  isDirectory,
+}: FileIconProps): React.ReactElement {
   if (isDirectory) {
     return <span className="codicon codicon-folder" aria-hidden="true" />;
   }
-  
+
   const ext = getExtension(filename);
   const icon = FILE_ICON_MAP[ext] || FILE_ICON_MAP.default;
-  
+
   return <span className={`codicon codicon-${icon}`} aria-hidden="true" />;
 }

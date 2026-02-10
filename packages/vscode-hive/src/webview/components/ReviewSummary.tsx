@@ -1,6 +1,6 @@
 /**
  * ReviewSummary component - Verdict selector + summary input + submit
- * 
+ *
  * Uses antd primitives: RadioGroup (button style), TextArea, Button
  * Uses @vscode/codicons for icons in verdict buttons and submit button.
  */
@@ -17,37 +17,40 @@ export interface ReviewSummaryProps {
 }
 
 const VERDICT_OPTIONS = [
-  { 
+  {
     label: (
       <>
-        <span className="codicon codicon-check" aria-hidden="true" />
-        {' '}Approve
+        <span className="codicon codicon-check" aria-hidden="true" /> Approve
       </>
-    ), 
-    value: 'approve' 
+    ),
+    value: 'approve',
   },
-  { 
+  {
     label: (
       <>
-        <span className="codicon codicon-request-changes" aria-hidden="true" />
-        {' '}Request Changes
+        <span className="codicon codicon-request-changes" aria-hidden="true" />{' '}
+        Request Changes
       </>
-    ), 
-    value: 'request_changes' 
+    ),
+    value: 'request_changes',
   },
-  { 
+  {
     label: (
       <>
-        <span className="codicon codicon-comment" aria-hidden="true" />
-        {' '}Comment
+        <span className="codicon codicon-comment" aria-hidden="true" /> Comment
       </>
-    ), 
-    value: 'comment' 
+    ),
+    value: 'comment',
   },
 ];
 
-export function ReviewSummary({ onSubmit, isSubmitting }: ReviewSummaryProps): React.ReactElement {
-  const [selectedVerdict, setSelectedVerdict] = useState<ReviewVerdict | null>(null);
+export function ReviewSummary({
+  onSubmit,
+  isSubmitting,
+}: ReviewSummaryProps): React.ReactElement {
+  const [selectedVerdict, setSelectedVerdict] = useState<ReviewVerdict | null>(
+    null,
+  );
   const [summary, setSummary] = useState('');
 
   const handleVerdictChange = (e: RadioChangeEvent) => {

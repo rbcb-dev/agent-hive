@@ -9,9 +9,30 @@ import type { ThreadSummary } from '../types';
 
 describe('ThreadList', () => {
   const mockThreads: ThreadSummary[] = [
-    { id: 'thread-1', uri: 'src/app.ts', firstLine: 'Consider using async/await here', status: 'open', commentCount: 3, lastUpdated: '2024-01-15T10:00:00Z' },
-    { id: 'thread-2', uri: 'src/utils.ts', firstLine: 'This could be simplified', status: 'resolved', commentCount: 2, lastUpdated: '2024-01-15T09:00:00Z' },
-    { id: 'thread-3', uri: null, firstLine: 'Plan looks good overall', status: 'open', commentCount: 1, lastUpdated: '2024-01-15T08:00:00Z' },
+    {
+      id: 'thread-1',
+      uri: 'src/app.ts',
+      firstLine: 'Consider using async/await here',
+      status: 'open',
+      commentCount: 3,
+      lastUpdated: '2024-01-15T10:00:00Z',
+    },
+    {
+      id: 'thread-2',
+      uri: 'src/utils.ts',
+      firstLine: 'This could be simplified',
+      status: 'resolved',
+      commentCount: 2,
+      lastUpdated: '2024-01-15T09:00:00Z',
+    },
+    {
+      id: 'thread-3',
+      uri: null,
+      firstLine: 'Plan looks good overall',
+      status: 'open',
+      commentCount: 1,
+      lastUpdated: '2024-01-15T08:00:00Z',
+    },
   ];
 
   it('renders all threads', () => {
@@ -20,10 +41,12 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
-    expect(screen.getByText('Consider using async/await here')).toBeInTheDocument();
+    expect(
+      screen.getByText('Consider using async/await here'),
+    ).toBeInTheDocument();
     expect(screen.getByText('This could be simplified')).toBeInTheDocument();
     expect(screen.getByText('Plan looks good overall')).toBeInTheDocument();
   });
@@ -34,7 +57,7 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     // Should have 2 open and 1 resolved status indicators
@@ -50,7 +73,7 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('src/app.ts')).toBeInTheDocument();
@@ -63,10 +86,12 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread="thread-2"
         onSelectThread={() => {}}
-      />
+      />,
     );
 
-    const selectedItem = screen.getByText('This could be simplified').closest('.thread-list-item');
+    const selectedItem = screen
+      .getByText('This could be simplified')
+      .closest('.thread-list-item');
     expect(selectedItem).toHaveClass('selected');
   });
 
@@ -77,7 +102,7 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={onSelectThread}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('This could be simplified'));
@@ -90,7 +115,7 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -104,7 +129,7 @@ describe('ThreadList', () => {
         threads={[]}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('No comments yet')).toBeInTheDocument();
@@ -126,7 +151,7 @@ describe('ThreadList', () => {
         threads={manyThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     // VirtualList renders with rc-virtual-list class
@@ -139,7 +164,7 @@ describe('ThreadList', () => {
         threads={mockThreads}
         selectedThread={null}
         onSelectThread={() => {}}
-      />
+      />,
     );
 
     // Should have thread-list class without virtual list

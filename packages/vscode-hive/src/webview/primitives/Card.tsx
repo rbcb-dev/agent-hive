@@ -1,6 +1,6 @@
 /**
  * Card - Ant Design Card wrapper
- * 
+ *
  * Provides a card container with title, actions, and various styling options.
  */
 

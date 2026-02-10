@@ -46,7 +46,9 @@ export class AgentsMdService {
 
     // 2. Read current AGENTS.md
     const agentsMdPath = path.join(this.rootDir, 'AGENTS.md');
-    const current = await fs.promises.readFile(agentsMdPath, 'utf-8').catch(() => '');
+    const current = await fs.promises
+      .readFile(agentsMdPath, 'utf-8')
+      .catch(() => '');
 
     // 3. Extract actionable findings from context content strings
     const findings = this.extractFindings(contexts);
@@ -67,7 +69,7 @@ export class AgentsMdService {
 
   private extractFindings(contexts: ContextFile[]): string[] {
     const findings: string[] = [];
-    
+
     // Regex patterns for actionable findings
     const patterns = [
       // "we use X" / "prefer X over Y" / "don't use X"
@@ -122,7 +124,7 @@ export class AgentsMdService {
   private formatDiff(current: string, proposals: string[]): string {
     if (proposals.length === 0) return '';
 
-    const lines = proposals.map(p => `+ ${p}`);
+    const lines = proposals.map((p) => `+ ${p}`);
     return lines.join('\n');
   }
 
@@ -167,9 +169,12 @@ export class AgentsMdService {
   }
 
   private detectLanguage(): string {
-    if (fileExists(path.join(this.rootDir, 'tsconfig.json'))) return 'TypeScript';
-    if (fileExists(path.join(this.rootDir, 'package.json'))) return 'JavaScript';
-    if (fileExists(path.join(this.rootDir, 'requirements.txt'))) return 'Python';
+    if (fileExists(path.join(this.rootDir, 'tsconfig.json')))
+      return 'TypeScript';
+    if (fileExists(path.join(this.rootDir, 'package.json')))
+      return 'JavaScript';
+    if (fileExists(path.join(this.rootDir, 'requirements.txt')))
+      return 'Python';
     if (fileExists(path.join(this.rootDir, 'go.mod'))) return 'Go';
     if (fileExists(path.join(this.rootDir, 'Cargo.toml'))) return 'Rust';
     return 'Unknown';
@@ -201,7 +206,9 @@ export class AgentsMdService {
     // Header
     sections.push('# Agent Guidelines\n');
     sections.push('## Overview\n');
-    sections.push('This project uses AI-assisted development. Follow these guidelines.\n');
+    sections.push(
+      'This project uses AI-assisted development. Follow these guidelines.\n',
+    );
 
     // Build & Test Commands
     sections.push('## Build & Test Commands\n');
@@ -219,7 +226,9 @@ export class AgentsMdService {
 
     if (info.testCommand) {
       sections.push(`# Run tests`);
-      sections.push(`${info.packageManager} ${info.testCommand === 'bun test' ? 'test' : 'run test'}`);
+      sections.push(
+        `${info.packageManager} ${info.testCommand === 'bun test' ? 'test' : 'run test'}`,
+      );
       sections.push('');
     }
 

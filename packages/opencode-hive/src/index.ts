@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { tool, type Plugin, type ToolDefinition } from "@opencode-ai/plugin";
+import { tool, type Plugin, type ToolDefinition } from '@opencode-ai/plugin';
 import { getFilteredSkills, loadBuiltinSkill } from './skills/builtin.js';
 import { loadFileSkill } from './skills/file-loader.js';
 import { BUILTIN_SKILLS } from './skills/registry.generated.js';
@@ -22,14 +22,16 @@ import { createBuiltinMcps } from './mcp/index.js';
 function formatSkillsXml(skills: SkillDefinition[]): string {
   if (skills.length === 0) return '';
 
-  const skillsXml = skills.map(skill => {
-    return [
-      '  <skill>',
-      `    <name>${skill.name}</name>`,
-      `    <description>(hive - Skill) ${skill.description}</description>`,
-      '  </skill>',
-    ].join('\n');
-  }).join('\n');
+  const skillsXml = skills
+    .map((skill) => {
+      return [
+        '  <skill>',
+        `    <name>${skill.name}</name>`,
+        `    <description>(hive - Skill) ${skill.description}</description>`,
+        '  </skill>',
+      ].join('\n');
+    })
+    .join('\n');
 
   return `\n\n<available_skills>\n${skillsXml}\n</available_skills>`;
 }
@@ -37,14 +39,20 @@ function formatSkillsXml(skills: SkillDefinition[]): string {
 /**
  * Build auto-loaded skill templates for an agent.
  * Returns a string containing all skill templates to append to the agent's prompt.
- * 
+ *
  * Resolution order for each skill ID:
  * 1. Builtin skill (wins if exists)
  * 2. File-based skill (project OpenCode -> global OpenCode -> project Claude -> global Claude)
  * 3. Warn and skip if not found
  */
 async function buildAutoLoadedSkillsContent(
-  agentName: 'hive-master' | 'architect-planner' | 'swarm-orchestrator' | 'scout-researcher' | 'forager-worker' | 'hygienic-reviewer',
+  agentName:
+    | 'hive-master'
+    | 'architect-planner'
+    | 'swarm-orchestrator'
+    | 'scout-researcher'
+    | 'forager-worker'
+    | 'hygienic-reviewer',
   configService: ConfigService,
   projectRoot: string,
 ): Promise<string> {
@@ -58,7 +66,7 @@ async function buildAutoLoadedSkillsContent(
   // Use process.env.HOME for testability, fallback to os.homedir()
   const homeDir = process.env.HOME || os.homedir();
   const skillTemplates: string[] = [];
-  
+
   for (const skillId of autoLoadSkills) {
     // 1. Try builtin skill first (builtin wins)
     const builtinSkill = BUILTIN_SKILLS.find((entry) => entry.name === skillId);
@@ -66,16 +74,18 @@ async function buildAutoLoadedSkillsContent(
       skillTemplates.push(builtinSkill.template);
       continue;
     }
-    
+
     // 2. Fallback to file-based skill
     const fileResult = await loadFileSkill(skillId, projectRoot, homeDir);
     if (fileResult.found && fileResult.skill) {
       skillTemplates.push(fileResult.skill.template);
       continue;
     }
-    
+
     // 3. Not found - warn and skip
-    console.warn(`[hive] Unknown skill id "${skillId}" for agent "${agentName}"`);
+    console.warn(
+      `[hive] Unknown skill id "${skillId}" for agent "${agentName}"`,
+    );
   }
 
   if (skillTemplates.length === 0) {
@@ -85,34 +95,43 @@ async function buildAutoLoadedSkillsContent(
   return '\n\n' + skillTemplates.join('\n\n');
 }
 
-function createHiveSkillTool(filteredSkills: SkillDefinition[]): ToolDefinition {
+function createHiveSkillTool(
+  filteredSkills: SkillDefinition[],
+): ToolDefinition {
   const base = `Load a Hive skill to get detailed instructions for a specific workflow.
 
 Use this when a task matches an available skill's description. The descriptions below ("Use when...", "Use before...") are triggers; when one applies, you MUST load that skill before proceeding.`;
-  const description = filteredSkills.length === 0
-    ? base + '\n\nNo Hive skills available.'
-    : base + formatSkillsXml(filteredSkills);
+  const description =
+    filteredSkills.length === 0
+      ? base + '\n\nNo Hive skills available.'
+      : base + formatSkillsXml(filteredSkills);
 
   // Build a set of available skill names for validation
-  const availableNames = new Set(filteredSkills.map(s => s.name));
+  const availableNames = new Set(filteredSkills.map((s) => s.name));
 
   return tool({
     description,
     args: {
-      name: tool.schema.string().describe('The skill name from available_skills'),
+      name: tool.schema
+        .string()
+        .describe('The skill name from available_skills'),
     },
     async execute({ name }) {
       // Check if skill is available (not filtered out)
       if (!availableNames.has(name)) {
-        const available = filteredSkills.map(s => s.name).join(', ');
-        throw new Error(`Skill "${name}" not available. Available Hive skills: ${available || 'none'}`);
+        const available = filteredSkills.map((s) => s.name).join(', ');
+        throw new Error(
+          `Skill "${name}" not available. Available Hive skills: ${available || 'none'}`,
+        );
       }
 
       const result = loadBuiltinSkill(name);
 
       if (!result.found || !result.skill) {
-        const available = filteredSkills.map(s => s.name).join(', ');
-        throw new Error(`Skill "${name}" not found. Available Hive skills: ${available || 'none'}`);
+        const available = filteredSkills.map((s) => s.name).join(', ');
+        throw new Error(
+          `Skill "${name}" not found. Available Hive skills: ${available || 'none'}`,
+        );
       }
 
       const skill = result.skill;
@@ -144,14 +163,31 @@ import {
   listFeatures,
   normalizePath,
   type WorktreeInfo,
-} from "hive-core";
-import { buildWorkerPrompt, type ContextFile, type CompletedTask } from "./utils/worker-prompt";
-import { calculatePromptMeta, calculatePayloadMeta, checkWarnings } from "./utils/prompt-observability";
-import { applyTaskBudget, applyContextBudget, DEFAULT_BUDGET, type TruncationEvent } from "./utils/prompt-budgeting";
-import { writeWorkerPromptFile } from "./utils/prompt-file";
-import { formatRelativeTime } from "./utils/format";
-import { createReviewTools } from "./tools/review-tools.js";
-import { HIVE_AGENT_NAMES, isHiveAgent, normalizeVariant } from "./hooks/variant-hook.js";
+} from 'hive-core';
+import {
+  buildWorkerPrompt,
+  type ContextFile,
+  type CompletedTask,
+} from './utils/worker-prompt';
+import {
+  calculatePromptMeta,
+  calculatePayloadMeta,
+  checkWarnings,
+} from './utils/prompt-observability';
+import {
+  applyTaskBudget,
+  applyContextBudget,
+  DEFAULT_BUDGET,
+  type TruncationEvent,
+} from './utils/prompt-budgeting';
+import { writeWorkerPromptFile } from './utils/prompt-file';
+import { formatRelativeTime } from './utils/format';
+import { createReviewTools } from './tools/review-tools.js';
+import {
+  HIVE_AGENT_NAMES,
+  isHiveAgent,
+  normalizeVariant,
+} from './hooks/variant-hook.js';
 
 const HIVE_SYSTEM_PROMPT = `
 ## Hive - Feature Development System
@@ -254,11 +290,12 @@ const plugin: Plugin = async (ctx) => {
   const disabledMcps = configService.getDisabledMcps();
   const disabledSkills = configService.getDisabledSkills();
   const builtinMcps = createBuiltinMcps(disabledMcps);
-  
+
   // Get filtered skills (globally disabled skills removed)
   // Per-agent skill filtering could be added here based on agent context
   const filteredSkills = getFilteredSkills(disabledSkills);
-  const effectiveAutoLoadSkills = configService.getAgentConfig('hive-master').autoLoadSkills ?? [];
+  const effectiveAutoLoadSkills =
+    configService.getAgentConfig('hive-master').autoLoadSkills ?? [];
   const worktreeService = new WorktreeService({
     baseDir: directory,
     hiveDir: path.join(directory, '.hive'),
@@ -300,14 +337,20 @@ const plugin: Plugin = async (ctx) => {
   /**
    * Check if a feature is blocked by the Beekeeper.
    * Returns the block message if blocked, null otherwise.
-   * 
+   *
    * File protocol: .hive/features/<name>/BLOCKED
    * - If file exists, feature is blocked
    * - File contents = reason for blocking
    */
   const checkBlocked = (feature: string): string | null => {
     const fs = require('fs');
-    const blockedPath = path.join(directory, '.hive', 'features', feature, 'BLOCKED');
+    const blockedPath = path.join(
+      directory,
+      '.hive',
+      'features',
+      feature,
+      'BLOCKED',
+    );
     if (fs.existsSync(blockedPath)) {
       const reason = fs.readFileSync(blockedPath, 'utf-8').trim();
       return `⛔ BLOCKED by Beekeeper
@@ -320,13 +363,16 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
     return null;
   };
 
-  const checkDependencies = (feature: string, taskFolder: string): { allowed: boolean; error?: string } => {
+  const checkDependencies = (
+    feature: string,
+    taskFolder: string,
+  ): { allowed: boolean; error?: string } => {
     const taskStatus = taskService.getRawStatus(feature, taskFolder);
     if (!taskStatus) {
       return { allowed: true };
     }
 
-    const tasks = taskService.list(feature).map(task => {
+    const tasks = taskService.list(feature).map((task) => {
       const status = taskService.getRawStatus(feature, task.folder);
       return {
         folder: task.folder,
@@ -357,12 +403,13 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
 
     if (unmetDeps.length > 0) {
       const depList = unmetDeps
-        .map(d => `"${d.folder}" (${d.status})`)
+        .map((d) => `"${d.folder}" (${d.status})`)
         .join(', ');
 
       return {
         allowed: false,
-        error: `Dependency constraint: Task "${taskFolder}" cannot start - dependencies not done: ${depList}. ` +
+        error:
+          `Dependency constraint: Task "${taskFolder}" cannot start - dependencies not done: ${depList}. ` +
           `Only tasks with status 'done' satisfy dependencies.`,
       };
     }
@@ -371,7 +418,7 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
   };
 
   return {
-    "experimental.chat.system.transform": async (
+    'experimental.chat.system.transform': async (
       input: { agent?: string } | unknown,
       output: { system: string[] },
     ) => {
@@ -387,7 +434,7 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
         if (info) {
           let statusHint = `\n### Current Hive Status\n`;
           statusHint += `**Active Feature**: ${info.name} (${info.status})\n`;
-          statusHint += `**Progress**: ${info.tasks.filter(t => t.status === 'done').length}/${info.tasks.length} tasks\n`;
+          statusHint += `**Progress**: ${info.tasks.filter((t) => t.status === 'done').length}/${info.tasks.length} tasks\n`;
 
           if (info.commentCount > 0) {
             statusHint += `**Comments**: ${info.commentCount} unresolved - address with hive_plan_read\n`;
@@ -402,7 +449,7 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
     // Type assertion needed because TypeScript's contravariance rules are too strict
     // for the hook's output parameter type. The hook only accesses output.message.variant
     // which exists on UserMessage.
-    "chat.message": (async (
+    'chat.message': (async (
       input: {
         sessionID: string;
         agent?: string;
@@ -436,32 +483,38 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
       }
     }) as any,
 
-    "tool.execute.before": async (input, output) => {
-      if (input.tool !== "bash") return;
-      
+    'tool.execute.before': async (input, output) => {
+      if (input.tool !== 'bash') return;
+
       const sandboxConfig = configService.getSandboxConfig();
       if (sandboxConfig.mode === 'none') return;
-      
+
       const command = output.args?.command?.trim();
       if (!command) return;
-      
+
       // Escape hatch: HOST: prefix (case-insensitive)
       if (/^HOST:\s*/i.test(command)) {
         const strippedCommand = command.replace(/^HOST:\s*/i, '');
-        console.warn(`[hive:sandbox] HOST bypass: ${strippedCommand.slice(0, 80)}${strippedCommand.length > 80 ? '...' : ''}`);
+        console.warn(
+          `[hive:sandbox] HOST bypass: ${strippedCommand.slice(0, 80)}${strippedCommand.length > 80 ? '...' : ''}`,
+        );
         output.args.command = strippedCommand;
         return;
       }
-      
+
       // Only wrap commands with explicit workdir inside hive worktrees
       const workdir = output.args?.workdir;
       if (!workdir) return;
-      
+
       const hiveWorktreeBase = path.join(directory, '.hive', '.worktrees');
       if (!workdir.startsWith(hiveWorktreeBase)) return;
-      
+
       // Wrap command using static method (with persistent config)
-      const wrapped = DockerSandboxService.wrapCommand(workdir, command, sandboxConfig);
+      const wrapped = DockerSandboxService.wrapCommand(
+        workdir,
+        command,
+        sandboxConfig,
+      );
       output.args.command = wrapped;
       output.args.workdir = undefined; // docker command runs on host
     },
@@ -528,10 +581,16 @@ NEXT: Ask your first clarifying question about this feature.`;
 
       hive_feature_complete: tool({
         description: 'Mark feature as completed (irreversible)',
-        args: { name: tool.schema.string().optional().describe('Feature name (defaults to active)') },
+        args: {
+          name: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to active)'),
+        },
         async execute({ name }) {
           const feature = resolveFeature(name);
-          if (!feature) return "Error: No feature specified. Create a feature or provide name.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide name.';
           featureService.complete(feature);
           return `Feature "${feature}" marked as completed`;
         },
@@ -541,11 +600,15 @@ NEXT: Ask your first clarifying question about this feature.`;
         description: 'Write plan.md (clears existing comments)',
         args: {
           content: tool.schema.string().describe('Plan markdown content'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ content, feature: explicitFeature }, toolContext) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           // GATE: Check for discovery section with substantive content
           const discoveryMatch = content.match(/^##\s+Discovery\s*$/im);
@@ -559,14 +622,17 @@ Your plan must include a \`## Discovery\` section documenting:
 
 Add this section to your plan content and try again.`;
           }
-          
+
           // Extract content between ## Discovery and next ## heading (or end)
-          const afterDiscovery = content.slice(discoveryMatch.index! + discoveryMatch[0].length);
+          const afterDiscovery = content.slice(
+            discoveryMatch.index! + discoveryMatch[0].length,
+          );
           const nextHeading = afterDiscovery.search(/^##\s+/m);
-          const discoveryContent = nextHeading > -1
-            ? afterDiscovery.slice(0, nextHeading).trim()
-            : afterDiscovery.trim();
-          
+          const discoveryContent =
+            nextHeading > -1
+              ? afterDiscovery.slice(0, nextHeading).trim()
+              : afterDiscovery.trim();
+
           if (discoveryContent.length < 100) {
             return `BLOCKED: Discovery section is too thin (${discoveryContent.length} chars, minimum 100).
 
@@ -587,14 +653,18 @@ Expand your Discovery section and try again.`;
       hive_plan_read: tool({
         description: 'Read plan.md and user comments',
         args: {
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ feature: explicitFeature }, toolContext) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
           captureSession(feature, toolContext);
           const result = planService.read(feature);
-          if (!result) return "Error: No plan.md found";
+          if (!result) return 'Error: No plan.md found';
           return JSON.stringify(result, null, 2);
         },
       }),
@@ -602,32 +672,40 @@ Expand your Discovery section and try again.`;
       hive_plan_approve: tool({
         description: 'Approve plan for execution',
         args: {
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ feature: explicitFeature }, toolContext) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
           captureSession(feature, toolContext);
           const comments = planService.getComments(feature);
           if (comments.length > 0) {
             return `Error: Cannot approve - ${comments.length} unresolved comment(s). Address them first.`;
           }
           planService.approve(feature);
-          return "Plan approved. Run hive_tasks_sync to generate tasks.";
+          return 'Plan approved. Run hive_tasks_sync to generate tasks.';
         },
       }),
 
       hive_tasks_sync: tool({
         description: 'Generate tasks from approved plan',
         args: {
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
           const featureData = featureService.get(feature);
           if (!featureData || featureData.status === 'planning') {
-            return "Error: Plan must be approved first";
+            return 'Error: Plan must be approved first';
           }
           const result = taskService.sync(feature);
           if (featureData.status === 'approved') {
@@ -642,11 +720,15 @@ Expand your Discovery section and try again.`;
         args: {
           name: tool.schema.string().describe('Task name'),
           order: tool.schema.number().optional().describe('Task order'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ name, order, feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
           const folder = taskService.create(feature, name, order);
           return `Manual task created: ${folder}\nReminder: start work with hive_worktree_create to use its worktree, and ensure any subagents work in that worktree too.`;
         },
@@ -656,13 +738,20 @@ Expand your Discovery section and try again.`;
         description: 'Update task status or summary',
         args: {
           task: tool.schema.string().describe('Task folder name'),
-          status: tool.schema.string().optional().describe('New status: pending, in_progress, done, cancelled'),
+          status: tool.schema
+            .string()
+            .optional()
+            .describe('New status: pending, in_progress, done, cancelled'),
           summary: tool.schema.string().optional().describe('Summary of work'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ task, status, summary, feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
           const updated = taskService.update(feature, task, {
             status: status as any,
             summary,
@@ -672,16 +761,30 @@ Expand your Discovery section and try again.`;
       }),
 
       hive_worktree_create: tool({
-        description: 'Create worktree and begin work on task. Spawns Forager worker automatically.',
+        description:
+          'Create worktree and begin work on task. Spawns Forager worker automatically.',
         args: {
           task: tool.schema.string().describe('Task folder name'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
-          continueFrom: tool.schema.enum(['blocked']).optional().describe('Resume a blocked task'),
-          decision: tool.schema.string().optional().describe('Answer to blocker question when continuing'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
+          continueFrom: tool.schema
+            .enum(['blocked'])
+            .optional()
+            .describe('Resume a blocked task'),
+          decision: tool.schema
+            .string()
+            .optional()
+            .describe('Answer to blocker question when continuing'),
         },
-        async execute({ task, feature: explicitFeature, continueFrom, decision }, toolContext) {
+        async execute(
+          { task, feature: explicitFeature, continueFrom, decision },
+          toolContext,
+        ) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           const blockedMessage = checkBlocked(feature);
           if (blockedMessage) return blockedMessage;
@@ -690,9 +793,10 @@ Expand your Discovery section and try again.`;
           if (!taskInfo) return `Error: Task "${task}" not found`;
 
           // Allow continuing blocked tasks, but not completed ones
-          if (taskInfo.status === 'done') return "Error: Task already completed";
+          if (taskInfo.status === 'done')
+            return 'Error: Task already completed';
           if (continueFrom === 'blocked' && taskInfo.status !== 'blocked') {
-            return "Error: Task is not in blocked state. Use without continueFrom.";
+            return 'Error: Task is not in blocked state. Use without continueFrom.';
           }
 
           if (continueFrom !== 'blocked') {
@@ -713,7 +817,7 @@ Expand your Discovery section and try again.`;
           let worktree: Awaited<ReturnType<typeof worktreeService.create>>;
           if (continueFrom === 'blocked') {
             worktree = await worktreeService.get(feature, task);
-            if (!worktree) return "Error: No worktree found for blocked task";
+            if (!worktree) return 'Error: No worktree found for blocked task';
           } else {
             worktree = await worktreeService.create(feature, task);
           }
@@ -727,46 +831,59 @@ Expand your Discovery section and try again.`;
           // NOTE: Use services once and derive all needed formats from the result (no duplicate reads)
           const planResult = planService.read(feature);
           const allTasks = taskService.list(feature);
-          
+
           // Use contextService.list() instead of manual fs reads (Task 03 deduplication)
           // This replaces: fs.existsSync/readdirSync/readFileSync pattern
-          const rawContextFiles = contextService.list(feature).map(f => ({
+          const rawContextFiles = contextService.list(feature).map((f) => ({
             name: f.name,
             content: f.content,
           }));
-          
+
           // Collect previous tasks ONCE and derive both formats from it
           const rawPreviousTasks = allTasks
-            .filter(t => t.status === 'done' && t.summary)
-            .map(t => ({ name: t.folder, summary: t.summary! }));
-          
+            .filter((t) => t.status === 'done' && t.summary)
+            .map((t) => ({ name: t.folder, summary: t.summary! }));
+
           // Apply deterministic budgeting to bound prompt growth (Task 04)
           // - Limits to last N tasks with truncated summaries
           // - Truncates context files exceeding budget
           // - Emits truncation events for warnings
-          const taskBudgetResult = applyTaskBudget(rawPreviousTasks, { ...DEFAULT_BUDGET, feature });
-          const contextBudgetResult = applyContextBudget(rawContextFiles, { ...DEFAULT_BUDGET, feature });
-          
+          const taskBudgetResult = applyTaskBudget(rawPreviousTasks, {
+            ...DEFAULT_BUDGET,
+            feature,
+          });
+          const contextBudgetResult = applyContextBudget(rawContextFiles, {
+            ...DEFAULT_BUDGET,
+            feature,
+          });
+
           // Use budgeted versions for prompt construction
-          const contextFiles: ContextFile[] = contextBudgetResult.files.map(f => ({
-            name: f.name,
-            content: f.content,
-          }));
-          const previousTasks: CompletedTask[] = taskBudgetResult.tasks.map(t => ({
-            name: t.name,
-            summary: t.summary,
-          }));
-          
+          const contextFiles: ContextFile[] = contextBudgetResult.files.map(
+            (f) => ({
+              name: f.name,
+              content: f.content,
+            }),
+          );
+          const previousTasks: CompletedTask[] = taskBudgetResult.tasks.map(
+            (t) => ({
+              name: t.name,
+              summary: t.summary,
+            }),
+          );
+
           // Collect all truncation events for warnings
           const truncationEvents: TruncationEvent[] = [
             ...taskBudgetResult.truncationEvents,
             ...contextBudgetResult.truncationEvents,
           ];
-          
+
           // Add hint about dropped tasks if any were omitted
           const droppedTasksHint = taskBudgetResult.droppedTasksHint;
 
-          const taskOrder = parseInt(taskInfo.folder.match(/^(\d+)/)?.[1] || '0', 10);
+          const taskOrder = parseInt(
+            taskInfo.folder.match(/^(\d+)/)?.[1] || '0',
+            10,
+          );
           const status = taskService.getRawStatus(feature, task);
           const dependsOn = status?.dependsOn ?? [];
           const specContent = taskService.buildSpecContent({
@@ -778,7 +895,7 @@ Expand your Discovery section and try again.`;
               description: undefined,
             },
             dependsOn,
-            allTasks: allTasks.map(t => ({
+            allTasks: allTasks.map((t) => ({
               folder: t.folder,
               name: t.name,
               order: parseInt(t.folder.match(/^(\d+)/)?.[1] || '0', 10),
@@ -798,18 +915,25 @@ Expand your Discovery section and try again.`;
           const workerPrompt = buildWorkerPrompt({
             feature,
             task,
-            taskOrder: parseInt(taskInfo.folder.match(/^(\d+)/)?.[1] || '0', 10),
+            taskOrder: parseInt(
+              taskInfo.folder.match(/^(\d+)/)?.[1] || '0',
+              10,
+            ),
             worktreePath: worktree.path,
             branch: worktree.branch,
             plan: planResult?.content || 'No plan available',
             contextFiles,
             spec: specContent,
             previousTasks,
-            continueFrom: continueFrom === 'blocked' ? {
-              status: 'blocked',
-              previousSummary: (taskInfo as any).summary || 'No previous summary',
-              decision: decision || 'No decision provided',
-            } : undefined,
+            continueFrom:
+              continueFrom === 'blocked'
+                ? {
+                    status: 'blocked',
+                    previousSummary:
+                      (taskInfo as any).summary || 'No previous summary',
+                    decision: decision || 'No decision provided',
+                  }
+                : undefined,
           });
 
           // Always use Forager (forager-worker) for task execution
@@ -828,8 +952,12 @@ Expand your Discovery section and try again.`;
           taskService.patchBackgroundFields(feature, task, { idempotencyKey });
 
           // Calculate observability metadata for prompt/payload sizes
-          const contextContent = contextFiles.map(f => f.content).join('\n\n');
-          const previousTasksContent = previousTasks.map(t => `- **${t.name}**: ${t.summary}`).join('\n');
+          const contextContent = contextFiles
+            .map((f) => f.content)
+            .join('\n\n');
+          const previousTasksContent = previousTasks
+            .map((t) => `- **${t.name}**: ${t.summary}`)
+            .join('\n');
           const promptMeta = calculatePromptMeta({
             plan: planResult?.content || '',
             context: contextContent,
@@ -841,18 +969,24 @@ Expand your Discovery section and try again.`;
           // Write worker prompt to file to prevent tool output truncation (Task 05)
           // This keeps the tool output small while preserving full prompt content
           const hiveDir = path.join(directory, '.hive');
-          const workerPromptPath = writeWorkerPromptFile(feature, task, workerPrompt, hiveDir);
-          
+          const workerPromptPath = writeWorkerPromptFile(
+            feature,
+            task,
+            workerPrompt,
+            hiveDir,
+          );
+
           // Convert to relative path for portability in output
-          const relativePromptPath = normalizePath(path.relative(directory, workerPromptPath));
+          const relativePromptPath = normalizePath(
+            path.relative(directory, workerPromptPath),
+          );
 
           // Build workerPromptPreview (truncated for display, max 200 chars)
           const PREVIEW_MAX_LENGTH = 200;
-          const workerPromptPreview = workerPrompt.length > PREVIEW_MAX_LENGTH
-            ? workerPrompt.slice(0, PREVIEW_MAX_LENGTH) + '...'
-            : workerPrompt;
-
-
+          const workerPromptPreview =
+            workerPrompt.length > PREVIEW_MAX_LENGTH
+              ? workerPrompt.slice(0, PREVIEW_MAX_LENGTH) + '...'
+              : workerPrompt;
 
           const taskToolPrompt = `Follow instructions in @${relativePromptPath}`;
 
@@ -903,65 +1037,115 @@ Use the \`@path\` attachment syntax in the prompt to reference the file. Do not 
 
           // Check for warnings about threshold exceedance
           const sizeWarnings = checkWarnings(promptMeta, payloadMeta);
-          
+
           // Convert truncation events to warnings format for unified output
-          const budgetWarnings = truncationEvents.map(event => ({
+          const budgetWarnings = truncationEvents.map((event) => ({
             type: event.type as string,
             severity: 'info' as const,
             message: event.message,
             affected: event.affected,
             count: event.count,
           }));
-          
+
           // Combine all warnings
           const allWarnings = [...sizeWarnings, ...budgetWarnings];
 
           // Return delegation instructions with observability data
-          return JSON.stringify({
-            ...responseBase,
-            promptMeta,
-            payloadMeta,
-            budgetApplied: {
-              maxTasks: DEFAULT_BUDGET.maxTasks,
-              maxSummaryChars: DEFAULT_BUDGET.maxSummaryChars,
-              maxContextChars: DEFAULT_BUDGET.maxContextChars,
-              maxTotalContextChars: DEFAULT_BUDGET.maxTotalContextChars,
-              tasksIncluded: previousTasks.length,
-              tasksDropped: rawPreviousTasks.length - previousTasks.length,
-              droppedTasksHint,
+          return JSON.stringify(
+            {
+              ...responseBase,
+              promptMeta,
+              payloadMeta,
+              budgetApplied: {
+                maxTasks: DEFAULT_BUDGET.maxTasks,
+                maxSummaryChars: DEFAULT_BUDGET.maxSummaryChars,
+                maxContextChars: DEFAULT_BUDGET.maxContextChars,
+                maxTotalContextChars: DEFAULT_BUDGET.maxTotalContextChars,
+                tasksIncluded: previousTasks.length,
+                tasksDropped: rawPreviousTasks.length - previousTasks.length,
+                droppedTasksHint,
+              },
+              warnings: allWarnings.length > 0 ? allWarnings : undefined,
             },
-            warnings: allWarnings.length > 0 ? allWarnings : undefined,
-          }, null, 2);
+            null,
+            2,
+          );
         },
       }),
 
       hive_worktree_commit: tool({
-        description: 'Complete task: commit changes to branch, write report. Supports blocked/failed/partial status for worker communication.',
+        description:
+          'Complete task: commit changes to branch, write report. Supports blocked/failed/partial status for worker communication.',
         args: {
           task: tool.schema.string().describe('Task folder name'),
           summary: tool.schema.string().describe('Summary of what was done'),
-          status: tool.schema.enum(['completed', 'blocked', 'failed', 'partial']).optional().default('completed').describe('Task completion status'),
-          blocker: tool.schema.object({
-            reason: tool.schema.string().describe('Why the task is blocked'),
-            options: tool.schema.array(tool.schema.string()).optional().describe('Available options for the user'),
-            recommendation: tool.schema.string().optional().describe('Your recommended choice'),
-            context: tool.schema.string().optional().describe('Additional context for the decision'),
-          }).optional().describe('Blocker info when status is blocked'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          status: tool.schema
+            .enum(['completed', 'blocked', 'failed', 'partial'])
+            .optional()
+            .default('completed')
+            .describe('Task completion status'),
+          blocker: tool.schema
+            .object({
+              reason: tool.schema.string().describe('Why the task is blocked'),
+              options: tool.schema
+                .array(tool.schema.string())
+                .optional()
+                .describe('Available options for the user'),
+              recommendation: tool.schema
+                .string()
+                .optional()
+                .describe('Your recommended choice'),
+              context: tool.schema
+                .string()
+                .optional()
+                .describe('Additional context for the decision'),
+            })
+            .optional()
+            .describe('Blocker info when status is blocked'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
-        async execute({ task, summary, status = 'completed', blocker, feature: explicitFeature }) {
+        async execute({
+          task,
+          summary,
+          status = 'completed',
+          blocker,
+          feature: explicitFeature,
+        }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           const taskInfo = taskService.get(feature, task);
           if (!taskInfo) return `Error: Task "${task}" not found`;
-          if (taskInfo.status !== 'in_progress' && taskInfo.status !== 'blocked') return "Error: Task not in progress";
+          if (
+            taskInfo.status !== 'in_progress' &&
+            taskInfo.status !== 'blocked'
+          )
+            return 'Error: Task not in progress';
 
           // GATE: Check for verification mention when completing
           if (status === 'completed') {
-            const verificationKeywords = ['test', 'build', 'lint', 'vitest', 'jest', 'npm run', 'pnpm', 'cargo', 'pytest', 'verified', 'passes', 'succeeds'];
+            const verificationKeywords = [
+              'test',
+              'build',
+              'lint',
+              'vitest',
+              'jest',
+              'npm run',
+              'pnpm',
+              'cargo',
+              'pytest',
+              'verified',
+              'passes',
+              'succeeds',
+            ];
             const summaryLower = summary.toLowerCase();
-            const hasVerificationMention = verificationKeywords.some(kw => summaryLower.includes(kw));
+            const hasVerificationMention = verificationKeywords.some((kw) =>
+              summaryLower.includes(kw),
+            );
 
             if (!hasVerificationMention) {
               return `BLOCKED: No verification detected in summary.
@@ -986,18 +1170,27 @@ Re-run with updated summary showing verification results.`;
             } as any);
 
             const worktree = await worktreeService.get(feature, task);
-            return JSON.stringify({
-              status: 'blocked',
-              task,
-              summary,
-              blocker,
-              worktreePath: worktree?.path,
-              message: 'Task blocked. Hive Master will ask user and resume with hive_worktree_create(continueFrom: "blocked", decision: answer)',
-            }, null, 2);
+            return JSON.stringify(
+              {
+                status: 'blocked',
+                task,
+                summary,
+                blocker,
+                worktreePath: worktree?.path,
+                message:
+                  'Task blocked. Hive Master will ask user and resume with hive_worktree_create(continueFrom: "blocked", decision: answer)',
+              },
+              null,
+              2,
+            );
           }
 
           // For failed/partial, still commit what we have
-          const commitResult = await worktreeService.commitChanges(feature, task, `hive(${task}): ${summary.slice(0, 50)}`);
+          const commitResult = await worktreeService.commitChanges(
+            feature,
+            task,
+            `hive(${task}): ${summary.slice(0, 50)}`,
+          );
 
           const diff = await worktreeService.getDiff(feature, task);
 
@@ -1038,13 +1231,23 @@ Re-run with updated summary showing verification results.`;
               reportLines.push('');
             }
           } else {
-            reportLines.push('---', '', '## Changes', '', '_No file changes detected_', '');
+            reportLines.push(
+              '---',
+              '',
+              '## Changes',
+              '',
+              '_No file changes detected_',
+              '',
+            );
           }
 
           taskService.writeReport(feature, task, reportLines.join('\n'));
 
           const finalStatus = status === 'completed' ? 'done' : status;
-          taskService.update(feature, task, { status: finalStatus as any, summary });
+          taskService.update(feature, task, {
+            status: finalStatus as any,
+            summary,
+          });
 
           const worktree = await worktreeService.get(feature, task);
           return `Task "${task}" ${status}. Changes committed to branch ${worktree?.branch || 'unknown'}.\nUse hive_merge to integrate changes. Worktree preserved at ${worktree?.path || 'unknown'}.`;
@@ -1055,11 +1258,15 @@ Re-run with updated summary showing verification results.`;
         description: 'Abort task: discard changes, reset status',
         args: {
           task: tool.schema.string().describe('Task folder name'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to detection or single feature)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to detection or single feature)'),
         },
         async execute({ task, feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           await worktreeService.remove(feature, task);
           taskService.update(feature, task, { status: 'pending' });
@@ -1068,27 +1275,35 @@ Re-run with updated summary showing verification results.`;
         },
       }),
 
-
       hive_merge: tool({
-        description: 'Merge completed task branch into current branch (explicit integration)',
+        description:
+          'Merge completed task branch into current branch (explicit integration)',
         args: {
           task: tool.schema.string().describe('Task folder name to merge'),
-          strategy: tool.schema.enum(['merge', 'squash', 'rebase']).optional().describe('Merge strategy (default: merge)'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to active)'),
+          strategy: tool.schema
+            .enum(['merge', 'squash', 'rebase'])
+            .optional()
+            .describe('Merge strategy (default: merge)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to active)'),
         },
         async execute({ task, strategy = 'merge', feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           const taskInfo = taskService.get(feature, task);
           if (!taskInfo) return `Error: Task "${task}" not found`;
-          if (taskInfo.status !== 'done') return "Error: Task must be completed before merging. Use hive_worktree_commit first.";
+          if (taskInfo.status !== 'done')
+            return 'Error: Task must be completed before merging. Use hive_worktree_commit first.';
 
           const result = await worktreeService.merge(feature, task, strategy);
 
           if (!result.success) {
             if (result.conflicts && result.conflicts.length > 0) {
-              return `Merge failed with conflicts in:\n${result.conflicts.map(f => `- ${f}`).join('\n')}\n\nResolve conflicts manually or try a different strategy.`;
+              return `Merge failed with conflicts in:\n${result.conflicts.map((f) => `- ${f}`).join('\n')}\n\nResolve conflicts manually or try a different strategy.`;
             }
             return `Merge failed: ${result.error}`;
           }
@@ -1099,15 +1314,24 @@ Re-run with updated summary showing verification results.`;
 
       // Context Tools
       hive_context_write: tool({
-        description: 'Write a context file for the feature. Context files store persistent notes, decisions, and reference material.',
+        description:
+          'Write a context file for the feature. Context files store persistent notes, decisions, and reference material.',
         args: {
-          name: tool.schema.string().describe('Context file name (e.g., "decisions", "architecture", "notes")'),
+          name: tool.schema
+            .string()
+            .describe(
+              'Context file name (e.g., "decisions", "architecture", "notes")',
+            ),
           content: tool.schema.string().describe('Markdown content to write'),
-          feature: tool.schema.string().optional().describe('Feature name (defaults to active)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to active)'),
         },
         async execute({ name, content, feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
-          if (!feature) return "Error: No feature specified. Create a feature or provide feature param.";
+          if (!feature)
+            return 'Error: No feature specified. Create a feature or provide feature param.';
 
           const filePath = contextService.write(feature, name, content);
           return `Context file written: ${filePath}`;
@@ -1116,9 +1340,13 @@ Re-run with updated summary showing verification results.`;
 
       // Status Tool
       hive_status: tool({
-        description: 'Get comprehensive status of a feature including plan, tasks, and context. Returns JSON with all relevant state for resuming work.',
+        description:
+          'Get comprehensive status of a feature including plan, tasks, and context. Returns JSON with all relevant state for resuming work.',
         args: {
-          feature: tool.schema.string().optional().describe('Feature name (defaults to active)'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name (defaults to active)'),
         },
         async execute({ feature: explicitFeature }) {
           const feature = resolveFeature(explicitFeature);
@@ -1144,49 +1372,65 @@ Re-run with updated summary showing verification results.`;
           const tasks = taskService.list(feature);
           const contextFiles = contextService.list(feature);
 
-          const tasksSummary = await Promise.all(tasks.map(async t => {
-            const rawStatus = taskService.getRawStatus(feature, t.folder);
-            const worktree = await worktreeService.get(feature, t.folder);
-            const hasChanges = worktree
-              ? await worktreeService.hasUncommittedChanges(worktree.feature, worktree.step)
-              : null;
+          const tasksSummary = await Promise.all(
+            tasks.map(async (t) => {
+              const rawStatus = taskService.getRawStatus(feature, t.folder);
+              const worktree = await worktreeService.get(feature, t.folder);
+              const hasChanges = worktree
+                ? await worktreeService.hasUncommittedChanges(
+                    worktree.feature,
+                    worktree.step,
+                  )
+                : null;
 
-            return {
-              folder: t.folder,
-              name: t.name,
-              status: t.status,
-              origin: t.origin || 'plan',
-              dependsOn: rawStatus?.dependsOn ?? null,
-              worktree: worktree ? {
-                branch: worktree.branch,
-                hasChanges,
-              } : null,
-            };
-          }));
+              return {
+                folder: t.folder,
+                name: t.name,
+                status: t.status,
+                origin: t.origin || 'plan',
+                dependsOn: rawStatus?.dependsOn ?? null,
+                worktree: worktree
+                  ? {
+                      branch: worktree.branch,
+                      hasChanges,
+                    }
+                  : null,
+              };
+            }),
+          );
 
-          const contextSummary = contextFiles.map(c => ({
+          const contextSummary = contextFiles.map((c) => ({
             name: c.name,
             chars: c.content.length,
             updatedAt: c.updatedAt,
           }));
 
-          const pendingTasks = tasksSummary.filter(t => t.status === 'pending');
-          const inProgressTasks = tasksSummary.filter(t => t.status === 'in_progress');
-          const doneTasks = tasksSummary.filter(t => t.status === 'done');
+          const pendingTasks = tasksSummary.filter(
+            (t) => t.status === 'pending',
+          );
+          const inProgressTasks = tasksSummary.filter(
+            (t) => t.status === 'in_progress',
+          );
+          const doneTasks = tasksSummary.filter((t) => t.status === 'done');
 
-          const tasksWithDeps = tasksSummary.map(t => ({
+          const tasksWithDeps = tasksSummary.map((t) => ({
             folder: t.folder,
             status: t.status,
             dependsOn: t.dependsOn ?? undefined,
           }));
           const effectiveDeps = buildEffectiveDependencies(tasksWithDeps);
-          const normalizedTasks = tasksWithDeps.map(task => ({
+          const normalizedTasks = tasksWithDeps.map((task) => ({
             ...task,
             dependsOn: effectiveDeps.get(task.folder),
           }));
-          const { runnable, blocked: blockedBy } = computeRunnableAndBlocked(normalizedTasks);
+          const { runnable, blocked: blockedBy } =
+            computeRunnableAndBlocked(normalizedTasks);
 
-          const getNextAction = (planStatus: string | null, tasks: Array<{ status: string; folder: string }>, runnableTasks: string[]): string => {
+          const getNextAction = (
+            planStatus: string | null,
+            tasks: Array<{ status: string; folder: string }>,
+            runnableTasks: string[],
+          ): string => {
             if (!planStatus || planStatus === 'draft') {
               return 'Write or revise plan with hive_plan_write, then get approval';
             }
@@ -1196,7 +1440,7 @@ Re-run with updated summary showing verification results.`;
             if (tasks.length === 0) {
               return 'Generate tasks from plan with hive_tasks_sync';
             }
-            const inProgress = tasks.find(t => t.status === 'in_progress');
+            const inProgress = tasks.find((t) => t.status === 'in_progress');
             if (inProgress) {
               return `Continue work on task: ${inProgress.folder}`;
             }
@@ -1206,16 +1450,21 @@ Re-run with updated summary showing verification results.`;
             if (runnableTasks.length === 1) {
               return `Start next task with hive_worktree_create: ${runnableTasks[0]}`;
             }
-            const pending = tasks.find(t => t.status === 'pending');
+            const pending = tasks.find((t) => t.status === 'pending');
             if (pending) {
               return `Pending tasks exist but are blocked by dependencies. Check blockedBy for details.`;
             }
             return 'All tasks complete. Review and merge or complete feature.';
           };
 
-          const planStatus = featureData.status === 'planning' ? 'draft' :
-            featureData.status === 'approved' ? 'approved' :
-              featureData.status === 'executing' ? 'locked' : 'none';
+          const planStatus =
+            featureData.status === 'planning'
+              ? 'draft'
+              : featureData.status === 'approved'
+                ? 'approved'
+                : featureData.status === 'executing'
+                  ? 'locked'
+                  : 'none';
 
           return JSON.stringify({
             feature: {
@@ -1249,11 +1498,20 @@ Re-run with updated summary showing verification results.`;
 
       // AGENTS.md Tool
       hive_agents_md: tool({
-        description: 'Initialize or sync AGENTS.md. init: scan codebase and generate (preview only). sync: propose updates from feature contexts. apply: write approved content to disk.',
+        description:
+          'Initialize or sync AGENTS.md. init: scan codebase and generate (preview only). sync: propose updates from feature contexts. apply: write approved content to disk.',
         args: {
-          action: tool.schema.enum(['init', 'sync', 'apply']).describe('Action to perform'),
-          feature: tool.schema.string().optional().describe('Feature name for sync action'),
-          content: tool.schema.string().optional().describe('Content to write (required for apply action)'),
+          action: tool.schema
+            .enum(['init', 'sync', 'apply'])
+            .describe('Action to perform'),
+          feature: tool.schema
+            .string()
+            .optional()
+            .describe('Feature name for sync action'),
+          content: tool.schema
+            .string()
+            .optional()
+            .describe('Content to write (required for apply action)'),
         },
         async execute({ action, feature, content }) {
           if (action === 'init') {
@@ -1276,7 +1534,8 @@ Re-run with updated summary showing verification results.`;
           }
 
           if (action === 'apply') {
-            if (!content) return 'Error: content required for apply action. Use init or sync first to get content, then apply with the approved content.';
+            if (!content)
+              return 'Error: content required for apply action. Use init or sync first to get content, then apply with the approved content.';
             const result = agentsMdService.apply(content);
             return `AGENTS.md ${result.isNew ? 'created' : 'updated'} (${result.chars} chars) at ${result.path}`;
           }
@@ -1284,15 +1543,14 @@ Re-run with updated summary showing verification results.`;
           return 'Error: unknown action';
         },
       }),
-
     },
 
     command: {
       hive: {
-        description: "Create a new feature: /hive <feature-name>",
+        description: 'Create a new feature: /hive <feature-name>',
         async run(args: string) {
           const name = args.trim();
-          if (!name) return "Usage: /hive <feature-name>";
+          if (!name) return 'Usage: /hive <feature-name>';
           return `Create feature "${name}" using hive_feature_create tool.`;
         },
       },
@@ -1305,113 +1563,146 @@ Re-run with updated summary showing verification results.`;
 
       // Build auto-loaded skill content for each agent
       const hiveUserConfig = configService.getAgentConfig('hive-master');
-      const hiveAutoLoadedSkills = await buildAutoLoadedSkillsContent('hive-master', configService, directory);
+      const hiveAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'hive-master',
+        configService,
+        directory,
+      );
       const hiveConfig = {
         model: hiveUserConfig.model,
         variant: hiveUserConfig.variant,
         temperature: hiveUserConfig.temperature ?? 0.5,
-        description: 'Hive (Hybrid) - Plans + orchestrates. Detects phase, loads skills on-demand.',
+        description:
+          'Hive (Hybrid) - Plans + orchestrates. Detects phase, loads skills on-demand.',
         prompt: QUEEN_BEE_PROMPT + hiveAutoLoadedSkills,
         permission: {
-          question: "allow",
-          skill: "allow",
-          todowrite: "allow",
-          todoread: "allow",
+          question: 'allow',
+          skill: 'allow',
+          todowrite: 'allow',
+          todoread: 'allow',
         },
       };
 
-      const architectUserConfig = configService.getAgentConfig('architect-planner');
-      const architectAutoLoadedSkills = await buildAutoLoadedSkillsContent('architect-planner', configService, directory);
+      const architectUserConfig =
+        configService.getAgentConfig('architect-planner');
+      const architectAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'architect-planner',
+        configService,
+        directory,
+      );
       const architectConfig = {
         model: architectUserConfig.model,
         variant: architectUserConfig.variant,
         temperature: architectUserConfig.temperature ?? 0.7,
-        description: 'Architect (Planner) - Plans features, interviews, writes plans. NEVER executes.',
+        description:
+          'Architect (Planner) - Plans features, interviews, writes plans. NEVER executes.',
         prompt: ARCHITECT_BEE_PROMPT + architectAutoLoadedSkills,
         permission: {
-          edit: "deny",  // Planners don't edit code
-          task: "allow",
-          question: "allow",
-          skill: "allow",
-          todowrite: "allow",
-          todoread: "allow",
-          webfetch: "allow",
+          edit: 'deny', // Planners don't edit code
+          task: 'allow',
+          question: 'allow',
+          skill: 'allow',
+          todowrite: 'allow',
+          todoread: 'allow',
+          webfetch: 'allow',
         },
       };
 
-      const swarmUserConfig = configService.getAgentConfig('swarm-orchestrator');
-      const swarmAutoLoadedSkills = await buildAutoLoadedSkillsContent('swarm-orchestrator', configService, directory);
+      const swarmUserConfig =
+        configService.getAgentConfig('swarm-orchestrator');
+      const swarmAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'swarm-orchestrator',
+        configService,
+        directory,
+      );
       const swarmConfig = {
         model: swarmUserConfig.model,
         variant: swarmUserConfig.variant,
         temperature: swarmUserConfig.temperature ?? 0.5,
-        description: 'Swarm (Orchestrator) - Orchestrates execution. Delegates, spawns workers, verifies, merges.',
+        description:
+          'Swarm (Orchestrator) - Orchestrates execution. Delegates, spawns workers, verifies, merges.',
         prompt: SWARM_BEE_PROMPT + swarmAutoLoadedSkills,
         permission: {
-          question: "allow",
-          skill: "allow",
-          todowrite: "allow",
-          todoread: "allow",
+          question: 'allow',
+          skill: 'allow',
+          todowrite: 'allow',
+          todoread: 'allow',
         },
       };
 
       const scoutUserConfig = configService.getAgentConfig('scout-researcher');
-      const scoutAutoLoadedSkills = await buildAutoLoadedSkillsContent('scout-researcher', configService, directory);
+      const scoutAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'scout-researcher',
+        configService,
+        directory,
+      );
       const scoutConfig = {
         model: scoutUserConfig.model,
         variant: scoutUserConfig.variant,
         temperature: scoutUserConfig.temperature ?? 0.5,
         mode: 'subagent' as const,
-        description: 'Scout (Explorer/Researcher/Retrieval) - Researches codebase + external docs/data.',
+        description:
+          'Scout (Explorer/Researcher/Retrieval) - Researches codebase + external docs/data.',
         prompt: SCOUT_BEE_PROMPT + scoutAutoLoadedSkills,
         permission: {
-          edit: "deny",  // Researchers don't edit code
-          task: "deny",
-          delegate: "deny",
-          skill: "allow",
-          webfetch: "allow",
+          edit: 'deny', // Researchers don't edit code
+          task: 'deny',
+          delegate: 'deny',
+          skill: 'allow',
+          webfetch: 'allow',
         },
       };
 
       const foragerUserConfig = configService.getAgentConfig('forager-worker');
-      const foragerAutoLoadedSkills = await buildAutoLoadedSkillsContent('forager-worker', configService, directory);
+      const foragerAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'forager-worker',
+        configService,
+        directory,
+      );
       const foragerConfig = {
         model: foragerUserConfig.model,
         variant: foragerUserConfig.variant,
         temperature: foragerUserConfig.temperature ?? 0.3,
         mode: 'subagent' as const,
-        description: 'Forager (Worker/Coder) - Executes tasks directly in isolated worktrees. Never delegates.',
+        description:
+          'Forager (Worker/Coder) - Executes tasks directly in isolated worktrees. Never delegates.',
         prompt: FORAGER_BEE_PROMPT + foragerAutoLoadedSkills,
         permission: {
-          task: "deny",
-          delegate: "deny",
-          skill: "allow",
+          task: 'deny',
+          delegate: 'deny',
+          skill: 'allow',
         },
       };
 
-      const hygienicUserConfig = configService.getAgentConfig('hygienic-reviewer');
-      const hygienicAutoLoadedSkills = await buildAutoLoadedSkillsContent('hygienic-reviewer', configService, directory);
+      const hygienicUserConfig =
+        configService.getAgentConfig('hygienic-reviewer');
+      const hygienicAutoLoadedSkills = await buildAutoLoadedSkillsContent(
+        'hygienic-reviewer',
+        configService,
+        directory,
+      );
       const hygienicConfig = {
         model: hygienicUserConfig.model,
         variant: hygienicUserConfig.variant,
         temperature: hygienicUserConfig.temperature ?? 0.3,
         mode: 'subagent' as const,
-        description: 'Hygienic (Consultant/Reviewer/Debugger) - Reviews plan documentation quality. OKAY/REJECT verdict.',
+        description:
+          'Hygienic (Consultant/Reviewer/Debugger) - Reviews plan documentation quality. OKAY/REJECT verdict.',
         prompt: HYGIENIC_BEE_PROMPT + hygienicAutoLoadedSkills,
         permission: {
-          edit: "deny",  // Reviewers don't edit
-          task: "deny",
-          delegate: "deny",
-          skill: "allow",
+          edit: 'deny', // Reviewers don't edit
+          task: 'deny',
+          delegate: 'deny',
+          skill: 'allow',
         },
       };
 
       // Build agents map based on agentMode
       const hiveConfigData = configService.get();
       const agentMode = hiveConfigData.agentMode ?? 'unified';
-      
+
       const allAgents: Record<string, unknown> = {};
-      
+
       if (agentMode === 'unified') {
         allAgents['hive-master'] = hiveConfig;
         allAgents['scout-researcher'] = scoutConfig;
@@ -1426,7 +1717,9 @@ Re-run with updated summary showing verification results.`;
       }
 
       // Merge agents into opencodeConfig.agent (config hook is sufficient for agent discovery)
-      const configAgent = opencodeConfig.agent as Record<string, unknown> | undefined;
+      const configAgent = opencodeConfig.agent as
+        | Record<string, unknown>
+        | undefined;
       if (!configAgent) {
         opencodeConfig.agent = allAgents;
       } else {
@@ -1449,17 +1742,18 @@ Re-run with updated summary showing verification results.`;
       }
 
       // Set default agent based on mode
-      (opencodeConfig as Record<string, unknown>).default_agent = 
+      (opencodeConfig as Record<string, unknown>).default_agent =
         agentMode === 'unified' ? 'hive-master' : 'architect-planner';
 
       // Merge built-in MCP servers (OMO-style remote endpoints)
-      const configMcp = opencodeConfig.mcp as Record<string, unknown> | undefined;
+      const configMcp = opencodeConfig.mcp as
+        | Record<string, unknown>
+        | undefined;
       if (!configMcp) {
         opencodeConfig.mcp = builtinMcps;
       } else {
         Object.assign(configMcp, builtinMcps);
       }
-
     },
   };
 };

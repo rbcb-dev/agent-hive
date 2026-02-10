@@ -36,7 +36,8 @@ const meta = {
     },
     maxHeight: {
       control: 'text',
-      description: 'Maximum height for the viewer (enables scrolling). Can be number (px) or CSS string.',
+      description:
+        'Maximum height for the viewer (enables scrolling). Can be number (px) or CSS string.',
     },
     // Note: theme is no longer a prop - it comes from HiveThemeProvider context.
     // Use the Storybook toolbar theme switcher to toggle between light and dark themes.
@@ -133,11 +134,11 @@ export const RawMode: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Click the Raw button to switch to raw mode
     const rawButton = canvas.getByRole('button', { name: /raw/i });
     await userEvent.click(rawButton);
-    
+
     // Verify we're in raw mode by checking for line numbers
     await expect(canvas.getByText('1')).toBeInTheDocument();
     await expect(canvas.getByTestId('line-1')).toBeInTheDocument();
@@ -155,10 +156,12 @@ export const RenderedMode: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Verify rendered mode is active by checking for rendered heading
-    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('Welcome to the Documentation');
-    
+    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Welcome to the Documentation',
+    );
+
     // Verify rendered button is active
     const renderedButton = canvas.getByRole('button', { name: /rendered/i });
     await expect(renderedButton).toHaveClass('active');
@@ -176,27 +179,27 @@ export const ModeToggleInteraction: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Start in rendered mode
     const renderedButton = canvas.getByRole('button', { name: /rendered/i });
     const rawButton = canvas.getByRole('button', { name: /raw/i });
-    
+
     // Verify initial state (rendered mode)
     await expect(renderedButton).toHaveClass('active');
     await expect(rawButton).not.toHaveClass('active');
     await expect(canvas.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    
+
     // Switch to raw mode
     await userEvent.click(rawButton);
-    
+
     // Verify raw mode is now active
     await expect(rawButton).toHaveClass('active');
     await expect(renderedButton).not.toHaveClass('active');
     await expect(canvas.getByTestId('line-1')).toBeInTheDocument();
-    
+
     // Switch back to rendered mode
     await userEvent.click(renderedButton);
-    
+
     // Verify rendered mode is active again
     await expect(renderedButton).toHaveClass('active');
     await expect(canvas.getByRole('heading', { level: 1 })).toBeInTheDocument();
@@ -239,33 +242,37 @@ export const XssSanitization: Story = {
     filePath: 'security/xss-test.md',
     onLineClick: fn(),
   },
-   play: async ({ canvasElement }) => {
-     const canvas = within(canvasElement);
-     
-     // Verify heading renders (component works)
-     await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('XSS Test Document');
-     
-     // Verify normal content renders
-     await expect(canvas.getByText(/This paragraph should render normally/)).toBeInTheDocument();
-     
-     // Check that script tags are sanitized by inspecting the rendered HTML
-     const renderedContainer = canvasElement.querySelector('.markdown-rendered');
-     if (renderedContainer) {
-       const html = renderedContainer.innerHTML;
-       
-       // Script tag content should be stripped
-       expect(html).not.toContain('<script>');
-       expect(html).not.toContain('</script>');
-       
-       // Event handlers should not have dangerous attributes (img without onerror handler)
-       // The img tag should not have the onerror= attribute
-       const hasUnsafeEventHandler = /on\w+\s*=/.test(html);
-       expect(hasUnsafeEventHandler).toBe(false);
-       
-       // JavaScript URLs should be replaced or removed
-       expect(html).not.toContain('javascript:');
-     }
-   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify heading renders (component works)
+    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'XSS Test Document',
+    );
+
+    // Verify normal content renders
+    await expect(
+      canvas.getByText(/This paragraph should render normally/),
+    ).toBeInTheDocument();
+
+    // Check that script tags are sanitized by inspecting the rendered HTML
+    const renderedContainer = canvasElement.querySelector('.markdown-rendered');
+    if (renderedContainer) {
+      const html = renderedContainer.innerHTML;
+
+      // Script tag content should be stripped
+      expect(html).not.toContain('<script>');
+      expect(html).not.toContain('</script>');
+
+      // Event handlers should not have dangerous attributes (img without onerror handler)
+      // The img tag should not have the onerror= attribute
+      const hasUnsafeEventHandler = /on\w+\s*=/.test(html);
+      expect(hasUnsafeEventHandler).toBe(false);
+
+      // JavaScript URLs should be replaced or removed
+      expect(html).not.toContain('javascript:');
+    }
+  },
 };
 
 /**
@@ -285,21 +292,21 @@ This is line 7.`,
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    
+
     // Switch to raw mode to enable line clicking
     const rawButton = canvas.getByRole('button', { name: /raw/i });
     await userEvent.click(rawButton);
-    
+
     // Click on line 1
     const line1 = canvas.getByTestId('line-1');
     await userEvent.click(line1);
     await expect(args.onLineClick).toHaveBeenCalledWith(1);
-    
+
     // Click on line 3
     const line3 = canvas.getByTestId('line-3');
     await userEvent.click(line3);
     await expect(args.onLineClick).toHaveBeenCalledWith(3);
-    
+
     // Click on line 7
     const line7 = canvas.getByTestId('line-7');
     await userEvent.click(line7);
@@ -440,7 +447,7 @@ npm run test
 /**
  * Demonstrates syntax highlighting for code blocks using Shiki.
  * Code blocks with language specifiers are highlighted with appropriate colors.
- * 
+ *
  * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
  * to switch between light/dark themes.
  */
@@ -453,22 +460,26 @@ export const SyntaxHighlighting: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Wait for rendering to complete (check for heading)
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Code Block Highlighting Demo');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Code Block Highlighting Demo');
+
     // Verify that code blocks are rendered (Shiki adds pre.shiki elements)
     const container = canvasElement.querySelector('.markdown-rendered');
     await expect(container?.innerHTML).toContain('shiki');
-    
+
     // Verify TypeScript code is present
-    await expect(canvas.findByText(/interface User/)).resolves.toBeInTheDocument();
+    await expect(
+      canvas.findByText(/interface User/),
+    ).resolves.toBeInTheDocument();
   },
 };
 
 /**
  * Light theme syntax highlighting.
- * 
+ *
  * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
  * to switch between light/dark themes.
  */
@@ -498,12 +509,16 @@ export const NoSyntaxHighlighting: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Wait for rendering to complete
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Code Block Highlighting Demo');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Code Block Highlighting Demo');
+
     // Verify code is still rendered (but without shiki classes)
-    await expect(canvas.findByText(/interface User/)).resolves.toBeInTheDocument();
+    await expect(
+      canvas.findByText(/interface User/),
+    ).resolves.toBeInTheDocument();
   },
 };
 
@@ -581,14 +596,14 @@ The code blocks above demonstrate proper syntax coloring for keywords, strings, 
 
 /**
  * Demonstrates syntax-highlighted code blocks within markdown.
- * 
+ *
  * Uses Shiki for accurate TextMate-based highlighting with:
  * - TypeScript type annotations and keywords
  * - TSX/JSX components with JSX syntax
  * - Shell scripts with variables and control flow
- * 
+ *
  * The highlighting matches VS Code's theme colors.
- * 
+ *
  * Note: Theme is obtained from HiveThemeProvider context. Use Storybook toolbar
  * to switch between light/dark themes.
  */
@@ -601,16 +616,20 @@ export const WithHighlightedCode: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Wait for rendering
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Syntax-Highlighted Code Examples');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Syntax-Highlighted Code Examples');
+
     // Verify code blocks with highlighting are present
     const container = canvasElement.querySelector('.markdown-rendered');
     await expect(container?.innerHTML).toContain('shiki');
-    
+
     // Verify TypeScript code is rendered
-    await expect(canvas.findByText(/interface Person/)).resolves.toBeInTheDocument();
+    await expect(
+      canvas.findByText(/interface Person/),
+    ).resolves.toBeInTheDocument();
   },
 };
 
@@ -758,7 +777,7 @@ This document demonstrates the rendering capabilities of the MarkdownViewer comp
 
 /**
  * Complex document with headings, lists, tables, and code blocks.
- * 
+ *
  * Demonstrates the full rendering capability including:
  * - Multiple heading levels (h1-h5)
  * - Unordered, ordered, and task lists with nesting
@@ -778,19 +797,25 @@ export const ComplexDocument: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Verify heading renders
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Complex Document Example');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Complex Document Example');
+
     // Verify table is rendered
     await expect(canvas.findByText('Feature')).resolves.toBeInTheDocument();
     await expect(canvas.findByText('Status')).resolves.toBeInTheDocument();
-    
+
     // Verify code block is present
-    await expect(canvas.findByText(/interface Config/)).resolves.toBeInTheDocument();
-    
+    await expect(
+      canvas.findByText(/interface Config/),
+    ).resolves.toBeInTheDocument();
+
     // Verify task list items
-    await expect(canvas.findByText('Completed task')).resolves.toBeInTheDocument();
+    await expect(
+      canvas.findByText('Completed task'),
+    ).resolves.toBeInTheDocument();
   },
 };
 
@@ -846,27 +871,33 @@ export const CopyToClipboard: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Wait for rendering to complete
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Copy-to-Clipboard Demo');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Copy-to-Clipboard Demo');
+
     // Verify code blocks are rendered
     const container = canvasElement.querySelector('.markdown-rendered');
     await expect(container?.innerHTML).toContain('shiki');
-    
+
     // Should have 2 copy buttons (for 2 fenced code blocks)
-    const copyButtons = await canvas.findAllByRole('button', { name: /copy code/i });
+    const copyButtons = await canvas.findAllByRole('button', {
+      name: /copy code/i,
+    });
     await expect(copyButtons).toHaveLength(2);
-    
+
     // Verify the buttons have correct initial text
     await expect(copyButtons[0]).toHaveTextContent('Copy');
-    
+
     // Click the first copy button
     await userEvent.click(copyButtons[0]);
-    
+
     // Should show "Copied!" feedback
     await expect(copyButtons[0]).toHaveTextContent('Copied!');
-    await expect(canvas.findByText('Pending task')).resolves.toBeInTheDocument();
+    await expect(
+      canvas.findByText('Pending task'),
+    ).resolves.toBeInTheDocument();
   },
 };
 
@@ -952,14 +983,16 @@ export const WithMaxHeight: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Verify heading renders
-    await expect(canvas.findByRole('heading', { level: 1 })).resolves.toHaveTextContent('Long Document for Scrolling Demo');
-    
+    await expect(
+      canvas.findByRole('heading', { level: 1 }),
+    ).resolves.toHaveTextContent('Long Document for Scrolling Demo');
+
     // Verify the container has scrollable styles
     const viewer = canvasElement.querySelector('.markdown-viewer');
     expect(viewer).toHaveStyle({ maxHeight: '300px', overflow: 'auto' });
-    
+
     // Verify content is scrollable (scrollHeight > clientHeight)
     if (viewer) {
       expect(viewer.scrollHeight).toBeGreaterThan(viewer.clientHeight);

@@ -91,7 +91,10 @@ function createSecondHunk(): DiffHunk {
       { type: 'context', content: '  return (' },
       { type: 'remove', content: '    <div onClick={this.handleClick}>' },
       { type: 'add', content: '    <div onClick={handleClick}>' },
-      { type: 'add', content: '      <span className="counter-value">{count}</span>' },
+      {
+        type: 'add',
+        content: '      <span className="counter-value">{count}</span>',
+      },
       { type: 'context', content: '    </div>' },
       { type: 'context', content: '  );' },
     ],
@@ -200,12 +203,12 @@ export const Mixed: Story = {
 
 /**
  * Demonstrates accessible diff viewing with symbols alongside colors.
- * 
+ *
  * The diff uses:
  * - `+` prefix for additions (green)
  * - `-` prefix for deletions (red)
  * - ` ` prefix for context lines
- * 
+ *
  * This ensures the diff is understandable even without color perception,
  * meeting WCAG accessibility guidelines.
  */
@@ -245,23 +248,29 @@ export const AccessibleDiff: Story = {
 /**
  * Helper to generate a large hunk with many lines
  */
-function createLargeHunk(hunkIndex: number, linesPerHunk: number = 30): DiffHunk {
+function createLargeHunk(
+  hunkIndex: number,
+  linesPerHunk: number = 30,
+): DiffHunk {
   const startLine = hunkIndex * 50 + 1;
   const lines: DiffHunk['lines'] = [];
-  
+
   for (let i = 0; i < linesPerHunk; i++) {
-    const lineType = i % 5 === 0 ? 'remove' as const : 
-                     i % 5 === 1 ? 'add' as const : 
-                     'context' as const;
+    const lineType =
+      i % 5 === 0
+        ? ('remove' as const)
+        : i % 5 === 1
+          ? ('add' as const)
+          : ('context' as const);
     lines.push({
       type: lineType,
       content: `${lineType === 'context' ? '//' : ''} Line ${startLine + i}: ${lineType === 'remove' ? 'Old code removed here' : lineType === 'add' ? 'New code added here' : 'Unchanged context line'}`,
     });
   }
-  
-  const adds = lines.filter(l => l.type === 'add').length;
-  const removes = lines.filter(l => l.type === 'remove').length;
-  
+
+  const adds = lines.filter((l) => l.type === 'add').length;
+  const removes = lines.filter((l) => l.type === 'remove').length;
+
   return {
     oldStart: startLine,
     oldLines: linesPerHunk - adds,
@@ -273,12 +282,12 @@ function createLargeHunk(hunkIndex: number, linesPerHunk: number = 30): DiffHunk
 
 /**
  * Large diff with many hunks to demonstrate scrolling and performance.
- * 
+ *
  * Real-world refactors often produce diffs with:
  * - Multiple hunks across the file
  * - Many added/removed lines
  * - Need for efficient rendering
- * 
+ *
  * This story shows 5 hunks with 30 lines each (150 total lines).
  */
 export const LargeDiff: Story = {

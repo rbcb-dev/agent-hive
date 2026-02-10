@@ -45,7 +45,12 @@ describe('ReviewService', () => {
     });
 
     it('creates a session with code scope and git refs', async () => {
-      const session = await service.startSession('test-feature', 'code', 'main', 'feature-branch');
+      const session = await service.startSession(
+        'test-feature',
+        'code',
+        'main',
+        'feature-branch',
+      );
 
       expect(session.scope).toBe('code');
       expect(session.gitMeta.baseRef).toBe('main');
@@ -55,15 +60,30 @@ describe('ReviewService', () => {
     it('creates reviews directory if it does not exist', async () => {
       await service.startSession('test-feature', 'task');
 
-      const reviewDir = path.join(tempDir, '.hive', 'features', 'test-feature', 'reviews');
+      const reviewDir = path.join(
+        tempDir,
+        '.hive',
+        'features',
+        'test-feature',
+        'reviews',
+      );
       expect(fs.existsSync(reviewDir)).toBe(true);
     });
 
     it('updates the review index with the new session', async () => {
       const session = await service.startSession('test-feature', 'feature');
 
-      const indexPath = path.join(tempDir, '.hive', 'features', 'test-feature', 'reviews', 'index.json');
-      const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as ReviewIndex;
+      const indexPath = path.join(
+        tempDir,
+        '.hive',
+        'features',
+        'test-feature',
+        'reviews',
+        'index.json',
+      );
+      const index = JSON.parse(
+        fs.readFileSync(indexPath, 'utf-8'),
+      ) as ReviewIndex;
 
       expect(index.activeSessionId).toBe(session.id);
       expect(index.sessions).toHaveLength(1);
@@ -108,7 +128,11 @@ describe('ReviewService', () => {
   describe('submitSession', () => {
     it('updates session with verdict and summary', async () => {
       const created = await service.startSession('test-feature', 'feature');
-      const submitted = await service.submitSession(created.id, 'approve', 'LGTM!');
+      const submitted = await service.submitSession(
+        created.id,
+        'approve',
+        'LGTM!',
+      );
 
       expect(submitted.status).toBe('approved');
       expect(submitted.verdict).toBe('approve');
@@ -117,7 +141,11 @@ describe('ReviewService', () => {
 
     it('sets status to changes_requested when verdict is request_changes', async () => {
       const created = await service.startSession('test-feature', 'feature');
-      const submitted = await service.submitSession(created.id, 'request_changes', 'Needs fixes');
+      const submitted = await service.submitSession(
+        created.id,
+        'request_changes',
+        'Needs fixes',
+      );
 
       expect(submitted.status).toBe('changes_requested');
       expect(submitted.verdict).toBe('request_changes');
@@ -125,14 +153,20 @@ describe('ReviewService', () => {
 
     it('sets status to commented when verdict is comment', async () => {
       const created = await service.startSession('test-feature', 'feature');
-      const submitted = await service.submitSession(created.id, 'comment', 'Just a note');
+      const submitted = await service.submitSession(
+        created.id,
+        'comment',
+        'Just a note',
+      );
 
       expect(submitted.status).toBe('commented');
       expect(submitted.verdict).toBe('comment');
     });
 
     it('throws error for non-existent session', async () => {
-      await expect(service.submitSession('non-existent', 'approve', 'LGTM')).rejects.toThrow();
+      await expect(
+        service.submitSession('non-existent', 'approve', 'LGTM'),
+      ).rejects.toThrow();
     });
   });
 
@@ -153,7 +187,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'This is a comment',
           author: { type: 'human', name: 'tester' },
-        }
+        },
       );
 
       expect(thread).toBeDefined();
@@ -184,12 +218,14 @@ describe('ReviewService', () => {
           body: 'Consider refactoring',
           author: { type: 'llm', name: 'claude', agentId: 'reviewer-1' },
           suggestion: { replacement: 'refactored code' },
-        }
+        },
       );
 
       expect(thread.uri).toBe('src/index.ts');
       expect(thread.annotations[0].type).toBe('suggestion');
-      expect(thread.annotations[0].suggestion).toEqual({ replacement: 'refactored code' });
+      expect(thread.annotations[0].suggestion).toEqual({
+        replacement: 'refactored code',
+      });
     });
 
     it('persists the thread to the session file', async () => {
@@ -199,17 +235,11 @@ describe('ReviewService', () => {
         end: { line: 1, character: 0 },
       };
 
-      await service.addThread(
-        session.id,
-        'entity-1',
-        null,
-        range,
-        {
-          type: 'comment',
-          body: 'Test comment',
-          author: { type: 'human', name: 'tester' },
-        }
-      );
+      await service.addThread(session.id, 'entity-1', null, range, {
+        type: 'comment',
+        body: 'Test comment',
+        author: { type: 'human', name: 'tester' },
+      });
 
       // Reload session from disk
       const reloaded = await service.getSession(session.id);
@@ -228,7 +258,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'Test',
           author: { type: 'human', name: 'test' },
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -250,7 +280,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'Original comment',
           author: { type: 'human', name: 'author' },
-        }
+        },
       );
 
       const reply = await service.replyToThread(thread.id, 'This is a reply');
@@ -277,20 +307,22 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'Original',
           author: { type: 'human', name: 'author' },
-        }
+        },
       );
 
       await service.replyToThread(thread.id, 'Reply');
 
       // Reload session
       const reloaded = await service.getSession(session.id);
-      const reloadedThread = reloaded!.threads.find(t => t.id === thread.id);
+      const reloadedThread = reloaded!.threads.find((t) => t.id === thread.id);
       expect(reloadedThread!.annotations).toHaveLength(2);
       expect(reloadedThread!.annotations[1].body).toBe('Reply');
     });
 
     it('throws error for non-existent thread', async () => {
-      await expect(service.replyToThread('non-existent-thread', 'Reply')).rejects.toThrow();
+      await expect(
+        service.replyToThread('non-existent-thread', 'Reply'),
+      ).rejects.toThrow();
     });
   });
 
@@ -311,7 +343,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'To resolve',
           author: { type: 'human', name: 'author' },
-        }
+        },
       );
 
       const resolved = await service.resolveThread(thread.id);
@@ -335,19 +367,21 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'To resolve',
           author: { type: 'human', name: 'author' },
-        }
+        },
       );
 
       await service.resolveThread(thread.id);
 
       // Reload
       const reloaded = await service.getSession(session.id);
-      const reloadedThread = reloaded!.threads.find(t => t.id === thread.id);
+      const reloadedThread = reloaded!.threads.find((t) => t.id === thread.id);
       expect(reloadedThread!.status).toBe('resolved');
     });
 
     it('throws error for non-existent thread', async () => {
-      await expect(service.resolveThread('non-existent-thread')).rejects.toThrow();
+      await expect(
+        service.resolveThread('non-existent-thread'),
+      ).rejects.toThrow();
     });
   });
 
@@ -362,7 +396,13 @@ describe('ReviewService', () => {
     it('creates review directory structure correctly', async () => {
       await service.startSession('test-feature', 'feature');
 
-      const reviewDir = path.join(tempDir, '.hive', 'features', 'test-feature', 'reviews');
+      const reviewDir = path.join(
+        tempDir,
+        '.hive',
+        'features',
+        'test-feature',
+        'reviews',
+      );
       expect(fs.existsSync(reviewDir)).toBe(true);
       expect(fs.existsSync(path.join(reviewDir, 'index.json'))).toBe(true);
     });
@@ -386,11 +426,14 @@ describe('ReviewService', () => {
           body: 'Consider refactoring',
           author: { type: 'llm', name: 'claude' },
           suggestion: { replacement: 'refactored code' },
-        }
+        },
       );
 
       const annotationId = thread.annotations[0].id;
-      const updated = await service.markSuggestionApplied(thread.id, annotationId);
+      const updated = await service.markSuggestionApplied(
+        thread.id,
+        annotationId,
+      );
 
       expect(updated.meta).toBeDefined();
       expect(updated.meta!.applied).toBe(true);
@@ -414,7 +457,7 @@ describe('ReviewService', () => {
           body: 'Refactor this',
           author: { type: 'llm', name: 'claude' },
           suggestion: { replacement: 'new code' },
-        }
+        },
       );
 
       const annotationId = thread.annotations[0].id;
@@ -422,15 +465,17 @@ describe('ReviewService', () => {
 
       // Reload session
       const reloaded = await service.getSession(session.id);
-      const reloadedThread = reloaded!.threads.find(t => t.id === thread.id);
-      const reloadedAnnotation = reloadedThread!.annotations.find(a => a.id === annotationId);
+      const reloadedThread = reloaded!.threads.find((t) => t.id === thread.id);
+      const reloadedAnnotation = reloadedThread!.annotations.find(
+        (a) => a.id === annotationId,
+      );
 
       expect(reloadedAnnotation!.meta?.applied).toBe(true);
     });
 
     it('throws error for non-existent thread', async () => {
       await expect(
-        service.markSuggestionApplied('non-existent-thread', 'anno-id')
+        service.markSuggestionApplied('non-existent-thread', 'anno-id'),
       ).rejects.toThrow();
     });
 
@@ -451,11 +496,11 @@ describe('ReviewService', () => {
           body: 'Suggestion',
           author: { type: 'llm', name: 'claude' },
           suggestion: { replacement: 'code' },
-        }
+        },
       );
 
       await expect(
-        service.markSuggestionApplied(thread.id, 'non-existent-annotation')
+        service.markSuggestionApplied(thread.id, 'non-existent-annotation'),
       ).rejects.toThrow();
     });
 
@@ -475,12 +520,12 @@ describe('ReviewService', () => {
           type: 'comment', // Not a suggestion
           body: 'Just a comment',
           author: { type: 'human', name: 'user' },
-        }
+        },
       );
 
       const annotationId = thread.annotations[0].id;
       await expect(
-        service.markSuggestionApplied(thread.id, annotationId)
+        service.markSuggestionApplied(thread.id, annotationId),
       ).rejects.toThrow(/not a suggestion/i);
     });
   });
@@ -494,8 +539,17 @@ describe('ReviewService', () => {
     it('creates index with schemaVersion 1', async () => {
       await service.startSession('test-feature', 'feature');
 
-      const indexPath = path.join(tempDir, '.hive', 'features', 'test-feature', 'reviews', 'index.json');
-      const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as ReviewIndex;
+      const indexPath = path.join(
+        tempDir,
+        '.hive',
+        'features',
+        'test-feature',
+        'reviews',
+        'index.json',
+      );
+      const index = JSON.parse(
+        fs.readFileSync(indexPath, 'utf-8'),
+      ) as ReviewIndex;
       expect(index.schemaVersion).toBe(1);
     });
   });
@@ -517,24 +571,18 @@ describe('ReviewService', () => {
       const originalUpdatedAt = session.updatedAt;
 
       // Small delay to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const range: Range = {
         start: { line: 0, character: 0 },
         end: { line: 1, character: 0 },
       };
 
-      await service.addThread(
-        session.id,
-        'entity-1',
-        null,
-        range,
-        {
-          type: 'comment',
-          body: 'Test',
-          author: { type: 'human', name: 'test' },
-        }
-      );
+      await service.addThread(session.id, 'entity-1', null, range, {
+        type: 'comment',
+        body: 'Test',
+        author: { type: 'human', name: 'test' },
+      });
 
       const updated = await service.getSession(session.id);
       expect(updated!.updatedAt >= originalUpdatedAt).toBe(true);
@@ -556,7 +604,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'Test',
           author: { type: 'human', name: 'test' },
-        }
+        },
       );
 
       expect(thread.createdAt).toBeDefined();
@@ -579,7 +627,7 @@ describe('ReviewService', () => {
           type: 'comment',
           body: 'Test',
           author: { type: 'human', name: 'test' },
-        }
+        },
       );
 
       expect(thread.annotations[0].createdAt).toBeDefined();

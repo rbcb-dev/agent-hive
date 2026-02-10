@@ -37,14 +37,16 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // Should show old code
       expect(screen.getByText(mockOldCode)).toBeInTheDocument();
 
       // Should show new code (suggestion replacement)
-      expect(screen.getByText(mockAnnotation.suggestion!.replacement)).toBeInTheDocument();
+      expect(
+        screen.getByText(mockAnnotation.suggestion!.replacement),
+      ).toBeInTheDocument();
     });
 
     it('shows diff in split view by default with before/after code viewers', () => {
@@ -56,16 +58,18 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // In split view, we should see "Before:" and "After:" labels
       expect(screen.getByText('Before:')).toBeInTheDocument();
       expect(screen.getByText('After:')).toBeInTheDocument();
-      
+
       // Code viewers should be rendered with code content
       expect(screen.getByText(mockOldCode)).toBeInTheDocument();
-      expect(screen.getByText(mockAnnotation.suggestion!.replacement)).toBeInTheDocument();
+      expect(
+        screen.getByText(mockAnnotation.suggestion!.replacement),
+      ).toBeInTheDocument();
     });
 
     it('displays file location information', () => {
@@ -77,7 +81,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       expect(screen.getByText(/src\/utils\.ts/)).toBeInTheDocument();
@@ -93,12 +97,16 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // The body should be rendered through MarkdownViewer
       // The content appears in the rendered markdown (may need to wait for async rendering)
-      expect(await screen.findByText(/Consider using a more descriptive variable name/)).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          /Consider using a more descriptive variable name/,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('renders nothing when annotation has no suggestion', () => {
@@ -115,7 +123,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       expect(container.querySelector('.suggestion-preview')).toBeNull();
@@ -132,7 +140,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -150,7 +158,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={onApply}
           isApplied={false}
-        />
+        />,
       );
 
       const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -169,7 +177,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={true}
-        />
+        />,
       );
 
       expect(screen.getByText(/applied/i)).toBeInTheDocument();
@@ -186,7 +194,7 @@ describe('SuggestionPreview', () => {
           onApply={vi.fn()}
           isApplied={false}
           isApplying={true}
-        />
+        />,
       );
 
       const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -205,7 +213,7 @@ describe('SuggestionPreview', () => {
           onApply={vi.fn()}
           isApplied={false}
           hasConflict={true}
-        />
+        />,
       );
 
       expect(screen.getByText(/conflict/i)).toBeInTheDocument();
@@ -222,7 +230,7 @@ describe('SuggestionPreview', () => {
           onApply={vi.fn()}
           isApplied={false}
           hasConflict={true}
-        />
+        />,
       );
 
       const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -240,10 +248,12 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
-      const preview = screen.getByRole('region', { name: /suggestion preview/i });
+      const preview = screen.getByRole('region', {
+        name: /suggestion preview/i,
+      });
       expect(preview).toBeInTheDocument();
     });
   });
@@ -258,7 +268,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // Should show the toggle options
@@ -275,7 +285,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // In split view mode, should show "Before:" and "After:" labels
@@ -292,7 +302,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // Click on Unified option
@@ -313,7 +323,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // Switch to unified
@@ -342,7 +352,7 @@ describe('SuggestionPreview', () => {
           range={mockRange}
           onApply={vi.fn()}
           isApplied={false}
-        />
+        />,
       );
 
       // Should have markdown viewer that renders the content (may need to wait for async)

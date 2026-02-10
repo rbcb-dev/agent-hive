@@ -263,7 +263,12 @@ export async function initNest(projectRoot: string): Promise<void> {
   // 4. Create Copilot agent
   const agentPath = path.join(projectRoot, '.github', 'agents');
   fs.mkdirSync(agentPath, { recursive: true });
-  fs.writeFileSync(path.join(agentPath, 'Hive.agent.md'), COPILOT_AGENT_TEMPLATE);
+  fs.writeFileSync(
+    path.join(agentPath, 'Hive.agent.md'),
+    COPILOT_AGENT_TEMPLATE,
+  );
 
-  vscode.window.showInformationMessage('🐝 Hive Nest initialized! Skills created for OpenCode, Claude, and GitHub Copilot.');
+  vscode.window.showInformationMessage(
+    '🐝 Hive Nest initialized! Skills created for OpenCode, Claude, and GitHub Copilot.',
+  );
 }

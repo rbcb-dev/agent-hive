@@ -9,9 +9,30 @@ import type { FileTreeItem } from '../types';
 
 describe('FileTree', () => {
   const mockFiles: FileTreeItem[] = [
-    { path: 'src/app.ts', name: 'app.ts', status: 'M', commentCount: 2, additions: 10, deletions: 5 },
-    { path: 'src/utils.ts', name: 'utils.ts', status: 'A', commentCount: 0, additions: 50, deletions: 0 },
-    { path: 'src/old.ts', name: 'old.ts', status: 'D', commentCount: 1, additions: 0, deletions: 30 },
+    {
+      path: 'src/app.ts',
+      name: 'app.ts',
+      status: 'M',
+      commentCount: 2,
+      additions: 10,
+      deletions: 5,
+    },
+    {
+      path: 'src/utils.ts',
+      name: 'utils.ts',
+      status: 'A',
+      commentCount: 0,
+      additions: 50,
+      deletions: 0,
+    },
+    {
+      path: 'src/old.ts',
+      name: 'old.ts',
+      status: 'D',
+      commentCount: 1,
+      additions: 0,
+      deletions: 30,
+    },
   ];
 
   it('renders all files', () => {
@@ -20,7 +41,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile={null}
         onSelectFile={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText('app.ts')).toBeInTheDocument();
@@ -34,7 +55,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile={null}
         onSelectFile={() => {}}
-      />
+      />,
     );
 
     // Status badges should show M, A, D
@@ -49,7 +70,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile={null}
         onSelectFile={() => {}}
-      />
+      />,
     );
 
     // Should show comment counts: 2 and 1
@@ -63,7 +84,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile="src/app.ts"
         onSelectFile={() => {}}
-      />
+      />,
     );
 
     const appItem = screen.getByText('app.ts').closest('.file-tree-item');
@@ -77,7 +98,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile={null}
         onSelectFile={onSelectFile}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('utils.ts'));
@@ -90,7 +111,7 @@ describe('FileTree', () => {
         files={mockFiles}
         selectedFile={null}
         onSelectFile={() => {}}
-      />
+      />,
     );
 
     // app.ts has +10 -5
@@ -99,13 +120,7 @@ describe('FileTree', () => {
   });
 
   it('renders empty state when no files', () => {
-    render(
-      <FileTree
-        files={[]}
-        selectedFile={null}
-        onSelectFile={() => {}}
-      />
-    );
+    render(<FileTree files={[]} selectedFile={null} onSelectFile={() => {}} />);
 
     expect(screen.getByText('No files to review')).toBeInTheDocument();
   });

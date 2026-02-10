@@ -1,8 +1,8 @@
 /**
  * Review tools for Hive code review workflow.
- * 
+ *
  * Provides user-facing tools for managing review sessions, threads, and annotations.
- * 
+ *
  * Tools:
  * - hive_review_start: Start a new review session
  * - hive_review_list: List review sessions for a feature
@@ -39,7 +39,7 @@ export interface ReviewToolsOptions {
 
 /**
  * Create review tools.
- * 
+ *
  * @param reviewService - The ReviewService instance for review lifecycle
  * @param resolveFeature - Function to resolve feature name
  * @param reviewConfig - Optional review configuration (defaults to DEFAULT_REVIEW_CONFIG)
@@ -47,7 +47,7 @@ export interface ReviewToolsOptions {
 export function createReviewTools(
   reviewService: ReviewService,
   resolveFeature: (explicit?: string) => string | null,
-  reviewConfig: ReviewConfig = DEFAULT_REVIEW_CONFIG
+  reviewConfig: ReviewConfig = DEFAULT_REVIEW_CONFIG,
 ): {
   hive_review_start: ToolDefinition;
   hive_review_list: ToolDefinition;
@@ -64,7 +64,7 @@ export function createReviewTools(
   async function getActiveSessionId(feature: string): Promise<string | null> {
     const sessions = await reviewService.listSessions(feature);
     // Find the most recent in_progress session
-    const activeSession = sessions.find(s => s.status === 'in_progress');
+    const activeSession = sessions.find((s) => s.status === 'in_progress');
     return activeSession?.id || null;
   }
 
@@ -72,7 +72,11 @@ export function createReviewTools(
    * Get the configured parallelReviewers limit
    */
   function getParallelReviewersLimit(): number {
-    return reviewConfig.parallelReviewers ?? DEFAULT_REVIEW_CONFIG.parallelReviewers ?? 1;
+    return (
+      reviewConfig.parallelReviewers ??
+      DEFAULT_REVIEW_CONFIG.parallelReviewers ??
+      1
+    );
   }
 
   return {
@@ -82,14 +86,39 @@ export function createReviewTools(
     hive_review_start: tool({
       description: 'Start a new code review session for a feature or task',
       args: {
-        feature: tool.schema.string().optional().describe('Feature name (defaults to active feature)'),
-        scope: tool.schema.enum(['feature', 'task', 'context', 'plan', 'code']).optional().describe('Review scope (default: feature)'),
-        baseRef: tool.schema.string().optional().describe('Base git ref (default: main)'),
-        headRef: tool.schema.string().optional().describe('Head git ref (default: HEAD)'),
-        reviewer: tool.schema.string().optional().describe('Reviewer agent ID (e.g., "hygienic-reviewer")'),
-        sessionId: tool.schema.string().optional().describe('Existing session ID to add reviewer to'),
+        feature: tool.schema
+          .string()
+          .optional()
+          .describe('Feature name (defaults to active feature)'),
+        scope: tool.schema
+          .enum(['feature', 'task', 'context', 'plan', 'code'])
+          .optional()
+          .describe('Review scope (default: feature)'),
+        baseRef: tool.schema
+          .string()
+          .optional()
+          .describe('Base git ref (default: main)'),
+        headRef: tool.schema
+          .string()
+          .optional()
+          .describe('Head git ref (default: HEAD)'),
+        reviewer: tool.schema
+          .string()
+          .optional()
+          .describe('Reviewer agent ID (e.g., "hygienic-reviewer")'),
+        sessionId: tool.schema
+          .string()
+          .optional()
+          .describe('Existing session ID to add reviewer to'),
       },
-      async execute({ feature: explicitFeature, scope = 'feature', baseRef, headRef, reviewer, sessionId }): Promise<string> {
+      async execute({
+        feature: explicitFeature,
+        scope = 'feature',
+        baseRef,
+        headRef,
+        reviewer,
+        sessionId,
+      }): Promise<string> {
         const feature = resolveFeature(explicitFeature);
         if (!feature) {
           return 'Error: No feature specified. Create a feature or provide feature param.';
@@ -126,7 +155,7 @@ export function createReviewTools(
             feature,
             scope as ReviewScope,
             baseRef,
-            headRef
+            headRef,
           );
 
           // Add reviewer if specified
@@ -148,7 +177,10 @@ export function createReviewTools(
     hive_review_list: tool({
       description: 'List all review sessions for a feature',
       args: {
-        feature: tool.schema.string().optional().describe('Feature name (defaults to active feature)'),
+        feature: tool.schema
+          .string()
+          .optional()
+          .describe('Feature name (defaults to active feature)'),
       },
       async execute({ feature: explicitFeature }): Promise<string> {
         const feature = resolveFeature(explicitFeature);
@@ -192,24 +224,55 @@ export function createReviewTools(
     hive_review_add_comment: tool({
       description: 'Add a comment or question to a review session',
       args: {
-        sessionId: tool.schema.string().optional().describe('Review session ID (defaults to active session)'),
-        entityId: tool.schema.string().describe('Entity being reviewed (feature, task, file path)'),
-        uri: tool.schema.string().optional().describe('File URI for code reviews'),
-        range: tool.schema.object({
-          start: tool.schema.object({
-            line: tool.schema.number().describe('Start line (0-based)'),
-            character: tool.schema.number().describe('Start character (0-based)'),
-          }).describe('Start position'),
-          end: tool.schema.object({
-            line: tool.schema.number().describe('End line (0-based)'),
-            character: tool.schema.number().describe('End character (0-based)'),
-          }).describe('End position'),
-        }).describe('Range of code being commented on'),
-        type: tool.schema.enum(['comment', 'question', 'task', 'approval']).describe('Annotation type'),
+        sessionId: tool.schema
+          .string()
+          .optional()
+          .describe('Review session ID (defaults to active session)'),
+        entityId: tool.schema
+          .string()
+          .describe('Entity being reviewed (feature, task, file path)'),
+        uri: tool.schema
+          .string()
+          .optional()
+          .describe('File URI for code reviews'),
+        range: tool.schema
+          .object({
+            start: tool.schema
+              .object({
+                line: tool.schema.number().describe('Start line (0-based)'),
+                character: tool.schema
+                  .number()
+                  .describe('Start character (0-based)'),
+              })
+              .describe('Start position'),
+            end: tool.schema
+              .object({
+                line: tool.schema.number().describe('End line (0-based)'),
+                character: tool.schema
+                  .number()
+                  .describe('End character (0-based)'),
+              })
+              .describe('End position'),
+          })
+          .describe('Range of code being commented on'),
+        type: tool.schema
+          .enum(['comment', 'question', 'task', 'approval'])
+          .describe('Annotation type'),
         body: tool.schema.string().describe('Comment body'),
-        agentId: tool.schema.string().optional().describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
+        agentId: tool.schema
+          .string()
+          .optional()
+          .describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
       },
-      async execute({ sessionId, entityId, uri, range, type, body, agentId }): Promise<string> {
+      async execute({
+        sessionId,
+        entityId,
+        uri,
+        range,
+        type,
+        body,
+        agentId,
+      }): Promise<string> {
         try {
           // Resolve session ID
           let resolvedSessionId = sessionId;
@@ -233,7 +296,7 @@ export function createReviewTools(
               type: type as AnnotationType,
               body,
               author: { type: 'llm', name: 'Agent', agentId },
-            }
+            },
           );
           return JSON.stringify(thread, null, 2);
         } catch (error) {
@@ -248,24 +311,53 @@ export function createReviewTools(
     hive_review_suggest: tool({
       description: 'Add a code suggestion with replacement text',
       args: {
-        sessionId: tool.schema.string().optional().describe('Review session ID (defaults to active session)'),
-        entityId: tool.schema.string().describe('Entity being reviewed (feature, task, file path)'),
-        uri: tool.schema.string().optional().describe('File URI for code reviews'),
-        range: tool.schema.object({
-          start: tool.schema.object({
-            line: tool.schema.number().describe('Start line (0-based)'),
-            character: tool.schema.number().describe('Start character (0-based)'),
-          }).describe('Start position'),
-          end: tool.schema.object({
-            line: tool.schema.number().describe('End line (0-based)'),
-            character: tool.schema.number().describe('End character (0-based)'),
-          }).describe('End position'),
-        }).describe('Range of code to replace'),
+        sessionId: tool.schema
+          .string()
+          .optional()
+          .describe('Review session ID (defaults to active session)'),
+        entityId: tool.schema
+          .string()
+          .describe('Entity being reviewed (feature, task, file path)'),
+        uri: tool.schema
+          .string()
+          .optional()
+          .describe('File URI for code reviews'),
+        range: tool.schema
+          .object({
+            start: tool.schema
+              .object({
+                line: tool.schema.number().describe('Start line (0-based)'),
+                character: tool.schema
+                  .number()
+                  .describe('Start character (0-based)'),
+              })
+              .describe('Start position'),
+            end: tool.schema
+              .object({
+                line: tool.schema.number().describe('End line (0-based)'),
+                character: tool.schema
+                  .number()
+                  .describe('End character (0-based)'),
+              })
+              .describe('End position'),
+          })
+          .describe('Range of code to replace'),
         body: tool.schema.string().describe('Suggestion explanation'),
         replacement: tool.schema.string().describe('Replacement code'),
-        agentId: tool.schema.string().optional().describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
+        agentId: tool.schema
+          .string()
+          .optional()
+          .describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
       },
-      async execute({ sessionId, entityId, uri, range, body, replacement, agentId }): Promise<string> {
+      async execute({
+        sessionId,
+        entityId,
+        uri,
+        range,
+        body,
+        replacement,
+        agentId,
+      }): Promise<string> {
         try {
           // Resolve session ID
           let resolvedSessionId = sessionId;
@@ -290,7 +382,7 @@ export function createReviewTools(
               body,
               author: { type: 'llm', name: 'Agent', agentId },
               suggestion: { replacement },
-            }
+            },
           );
           return JSON.stringify(thread, null, 2);
         } catch (error) {
@@ -307,11 +399,18 @@ export function createReviewTools(
       args: {
         threadId: tool.schema.string().describe('Thread ID to reply to'),
         body: tool.schema.string().describe('Reply body'),
-        agentId: tool.schema.string().optional().describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
+        agentId: tool.schema
+          .string()
+          .optional()
+          .describe('Agent ID for attribution (e.g., "hygienic-reviewer")'),
       },
       async execute({ threadId, body, agentId }): Promise<string> {
         try {
-          const annotation = await reviewService.replyToThread(threadId, body, agentId);
+          const annotation = await reviewService.replyToThread(
+            threadId,
+            body,
+            agentId,
+          );
           return JSON.stringify(annotation, null, 2);
         } catch (error) {
           return `Error: ${error instanceof Error ? error.message : 'Thread not found'}`;
@@ -341,10 +440,16 @@ export function createReviewTools(
      * Submit a review with verdict.
      */
     hive_review_submit: tool({
-      description: 'Submit review with verdict (approve, request_changes, or comment)',
+      description:
+        'Submit review with verdict (approve, request_changes, or comment)',
       args: {
-        sessionId: tool.schema.string().optional().describe('Review session ID (defaults to active session)'),
-        verdict: tool.schema.enum(['approve', 'request_changes', 'comment']).describe('Review verdict'),
+        sessionId: tool.schema
+          .string()
+          .optional()
+          .describe('Review session ID (defaults to active session)'),
+        verdict: tool.schema
+          .enum(['approve', 'request_changes', 'comment'])
+          .describe('Review verdict'),
         summary: tool.schema.string().describe('Review summary'),
       },
       async execute({ sessionId, verdict, summary }): Promise<string> {
@@ -365,7 +470,7 @@ export function createReviewTools(
           const session = await reviewService.submitSession(
             resolvedSessionId,
             verdict as ReviewVerdict,
-            summary
+            summary,
           );
           return JSON.stringify(session, null, 2);
         } catch (error) {

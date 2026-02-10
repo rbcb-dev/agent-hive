@@ -69,7 +69,7 @@ describe('Agent permissions', () => {
       agentMode: 'unified',
       agents: {
         'hive-master': {},
-      }
+      },
     } as any);
 
     const repoRoot = path.resolve(import.meta.dir, '..', '..', '..', '..');
@@ -78,16 +78,20 @@ describe('Agent permissions', () => {
       directory: repoRoot,
       worktree: repoRoot,
       serverUrl: new URL('http://localhost:1'),
-      project: { id: 'test', worktree: repoRoot, time: { created: Date.now() } },
+      project: {
+        id: 'test',
+        worktree: repoRoot,
+        time: { created: Date.now() },
+      },
       client: createStubClient(),
       $: createStubShell(),
     };
 
     const hooks = await plugin(ctx as any);
-    
-    const opencodeConfig: { 
-      agent?: Record<string, { permission?: Record<string, string> }>,
-      default_agent?: string 
+
+    const opencodeConfig: {
+      agent?: Record<string, { permission?: Record<string, string> }>;
+      default_agent?: string;
     } = {};
     await hooks.config?.(opencodeConfig);
 
@@ -110,7 +114,7 @@ describe('Agent permissions', () => {
       agents: {
         'architect-planner': {},
         'swarm-orchestrator': {},
-      }
+      },
     } as any);
 
     const repoRoot = path.resolve(import.meta.dir, '..', '..', '..', '..');
@@ -119,16 +123,20 @@ describe('Agent permissions', () => {
       directory: repoRoot,
       worktree: repoRoot,
       serverUrl: new URL('http://localhost:1'),
-      project: { id: 'test', worktree: repoRoot, time: { created: Date.now() } },
+      project: {
+        id: 'test',
+        worktree: repoRoot,
+        time: { created: Date.now() },
+      },
       client: createStubClient(),
       $: createStubShell(),
     };
 
     const hooks = await plugin(ctx as any);
-    
-    const opencodeConfig: { 
-      agent?: Record<string, { permission?: Record<string, string> }>,
-      default_agent?: string 
+
+    const opencodeConfig: {
+      agent?: Record<string, { permission?: Record<string, string> }>;
+      default_agent?: string;
     } = {};
     await hooks.config?.(opencodeConfig);
 
@@ -141,7 +149,8 @@ describe('Agent permissions', () => {
     expect(opencodeConfig.default_agent).toBe('architect-planner');
 
     const swarmPerm = opencodeConfig.agent?.['swarm-orchestrator']?.permission;
-    const architectPerm = opencodeConfig.agent?.['architect-planner']?.permission;
+    const architectPerm =
+      opencodeConfig.agent?.['architect-planner']?.permission;
 
     expect(swarmPerm).toBeTruthy();
     expect(architectPerm).toBeTruthy();
@@ -164,7 +173,11 @@ describe('Agent permissions', () => {
       directory: repoRoot,
       worktree: repoRoot,
       serverUrl: new URL('http://localhost:1'),
-      project: { id: 'test', worktree: repoRoot, time: { created: Date.now() } },
+      project: {
+        id: 'test',
+        worktree: repoRoot,
+        time: { created: Date.now() },
+      },
       client: createStubClient(),
       $: createStubShell(),
     };
@@ -176,7 +189,11 @@ describe('Agent permissions', () => {
     } = {};
     await hooks.config?.(opencodeConfig);
 
-    const subagentNames = ['scout-researcher', 'forager-worker', 'hygienic-reviewer'] as const;
+    const subagentNames = [
+      'scout-researcher',
+      'forager-worker',
+      'hygienic-reviewer',
+    ] as const;
     for (const name of subagentNames) {
       const perm = opencodeConfig.agent?.[name]?.permission;
       expect(perm).toBeTruthy();
