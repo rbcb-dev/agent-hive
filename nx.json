@@ -98,6 +98,11 @@
     "test-storybook": {
       "cache": true,
       "inputs": ["storybook"],
+      "outputs": []
+    },
+    "test-storybook-visual": {
+      "cache": true,
+      "inputs": ["storybook"],
       "outputs": [
         "{projectRoot}/__image_snapshots__"
       ]
