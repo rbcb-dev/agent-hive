@@ -1,0 +1,946 @@
+{
+  "graph": {
+    "nodes": {
+      "opencode-hive": {
+        "name": "opencode-hive",
+        "type": "lib",
+        "data": {
+          "root": "packages/opencode-hive",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "packages/opencode-hive",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.test.js",
+                "!{projectRoot}/src/e2e",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "bun tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/opencode-hive",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "linting"
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "bun eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build"
+              },
+              "metadata": {
+                "scriptContent": "npm run clean && npm run generate-skills && bun build src/index.ts --outdir dist --target node --format esm --packages=bundle && tsc --emitDeclarationOnly",
+                "runCommand": "bun run build -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build",
+                "lint",
+                "format:check"
+              ],
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ]
+            },
+            "test": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test"
+              },
+              "metadata": {
+                "scriptContent": "bun test src/__tests__ src/agents src/hooks src/skills src/templates src/tools src/utils",
+                "runCommand": "bun run test -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default"
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ]
+            },
+            "format:check": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:check"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --check 'src/**/*.ts'",
+                "runCommand": "bun run format:check -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "format:write": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:write"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --write 'src/**/*.ts'",
+                "runCommand": "bun run format:write -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": false,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "opencode-hive",
+          "includedScripts": [
+            "build",
+            "test",
+            "format:check",
+            "format:write"
+          ],
+          "tags": [
+            "npm:public",
+            "npm:opencode",
+            "npm:ai",
+            "npm:hive",
+            "npm:vibe-coding",
+            "npm:workflow",
+            "npm:planning",
+            "npm:agent"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "build",
+                "test",
+                "format:check",
+                "format:write"
+              ]
+            },
+            "description": "OpenCode plugin for Agent Hive - from vibe coding to hive coding",
+            "js": {
+              "packageName": "opencode-hive",
+              "packageVersion": "1.2.0",
+              "packageMain": "./dist/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/opencode-hive/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "vscode-hive": {
+        "name": "vscode-hive",
+        "type": "lib",
+        "data": {
+          "root": "packages/vscode-hive",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.storybook.json",
+                "{projectRoot}/src/**/*",
+                "{projectRoot}/src/**/*.stories.ts",
+                "{projectRoot}/src/**/*.stories.js",
+                "{projectRoot}/src/**/*.stories.jsx",
+                "{projectRoot}/src/**/*.stories.tsx",
+                "{projectRoot}/src/**/*.stories.mdx",
+                "{projectRoot}/.storybook/*.js",
+                "{projectRoot}/.storybook/*.ts",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.test.ts",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/tsconfig.tsbuildinfo",
+                "{projectRoot}/**/*.d.ts",
+                "{projectRoot}/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "bun tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "linting"
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "bun eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:build": {
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^vite:build"
+              ],
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/packages/vscode-hive/dist/webview"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "bun vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "bun vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "bun vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "vite:build"
+              ],
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "bun vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "vite:build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "help": {
+                  "command": "bun tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "bun nx watch --projects vscode-hive --includeDependentProjects -- bun nx build-deps vscode-hive"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vitest:test",
+              "outputs": [
+                "{options.reportsDirectory}"
+              ],
+              "options": {
+                "config": "packages/vscode-hive/vitest.webview.config.ts",
+                "reportsDirectory": "../../coverage/packages/vscode-hive"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "build-storybook": {
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "storybook build"
+              },
+              "cache": true,
+              "outputs": [
+                "{projectRoot}/storybook-static",
+                "{options.output-dir}",
+                "{options.outputDir}",
+                "{options.o}"
+              ],
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "storybook",
+                    "@storybook/test-runner"
+                  ]
+                }
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "storybook": {
+              "continuous": true,
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "storybook dev"
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test-storybook": {
+              "options": {
+                "cwd": "packages/vscode-hive",
+                "command": "test-storybook"
+              },
+              "inputs": [
+                {
+                  "externalDependencies": [
+                    "storybook",
+                    "@storybook/test-runner"
+                  ]
+                }
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "static-storybook": {
+              "dependsOn": [
+                "build-storybook"
+              ],
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build-storybook",
+                "staticFilePath": "packages/vscode-hive/storybook-static"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "storybook:build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "storybook:watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "storybook:build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "bun nx watch --projects vscode-hive --includeDependentProjects -- bun nx storybook:build-deps vscode-hive"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build"
+              },
+              "metadata": {
+                "scriptContent": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --define:import.meta.url=__importMetaUrl --banner:js=\"const __importMetaUrl = require('url').pathToFileURL(__filename).href;\" && npx vsce package --no-dependencies -o vscode-hive.vsix",
+                "runCommand": "bun run build -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build",
+                "lint",
+                "format:check"
+              ],
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ]
+            },
+            "test:webview": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:webview"
+              },
+              "metadata": {
+                "scriptContent": "vitest run --config vitest.webview.config.ts",
+                "runCommand": "bun run test:webview -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "format:check": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:check"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --check 'src/**/*.{ts,tsx}'",
+                "runCommand": "bun run format:check -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "format:write": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:write"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --write 'src/**/*.{ts,tsx}'",
+                "runCommand": "bun run format:write -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": false,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "library",
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "build",
+                "test:webview",
+                "format:check",
+                "format:write"
+              ]
+            },
+            "description": "From Vibe Coding to Hive Coding - Review and approve AI-generated plans",
+            "js": {
+              "packageName": "vscode-hive",
+              "packageVersion": "1.2.0",
+              "packageMain": "./dist/extension.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "vscode-hive",
+          "includedScripts": [
+            "build",
+            "test:webview",
+            "format:check",
+            "format:write"
+          ],
+          "tags": [
+            "npm:public",
+            "npm:ai",
+            "npm:hive",
+            "npm:vibe-coding",
+            "npm:opencode",
+            "npm:planning",
+            "npm:workflow"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/vscode-hive/src",
+          "implicitDependencies": []
+        }
+      },
+      "hive-core": {
+        "name": "hive-core",
+        "type": "lib",
+        "data": {
+          "root": "packages/hive-core",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "packages/hive-core",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/src/**/*",
+                "!{projectRoot}/node_modules",
+                "!{projectRoot}/dist",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/*.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "bun tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/hive-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "linting"
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "bun eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build"
+              },
+              "metadata": {
+                "scriptContent": "npm run clean && bun build src/index.ts --outdir dist --target node --format esm && tsc --emitDeclarationOnly",
+                "runCommand": "bun run build -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build",
+                "lint",
+                "format:check"
+              ],
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ]
+            },
+            "test": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test"
+              },
+              "metadata": {
+                "scriptContent": "bun test",
+                "runCommand": "bun run test -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^default"
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ]
+            },
+            "format:check": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:check"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --check 'src/**/*.ts'",
+                "runCommand": "bun run format:check -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "format:write": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:write"
+              },
+              "metadata": {
+                "scriptContent": "prettier --ignore-path ../../.prettierignore --write 'src/**/*.ts'",
+                "runCommand": "bun run format:write -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": false,
+              "inputs": [
+                "linting"
+              ],
+              "outputs": []
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "hive-core",
+          "includedScripts": [
+            "build",
+            "test",
+            "format:check",
+            "format:write"
+          ],
+          "tags": [
+            "npm:public",
+            "npm:hive",
+            "npm:agent",
+            "npm:workflow",
+            "npm:planning",
+            "npm:core"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "build",
+                "test",
+                "format:check",
+                "format:write"
+              ]
+            },
+            "description": "Core services and types for Agent Hive - shared by opencode-hive, hive-mcp, and vscode-hive",
+            "js": {
+              "packageName": "hive-core",
+              "packageVersion": "1.2.0",
+              "packageExports": {
+                ".": {
+                  "types": "./dist/index.d.ts",
+                  "import": "./dist/index.js"
+                }
+              },
+              "packageMain": "./dist/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/hive-core/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "opencode-hive": [
+        {
+          "source": "opencode-hive",
+          "target": "hive-core",
+          "type": "static"
+        }
+      ],
+      "vscode-hive": [
+        {
+          "source": "vscode-hive",
+          "target": "hive-core",
+          "type": "static"
+        },
+        {
+          "source": "vscode-hive",
+          "target": "hive-core",
+          "type": "dynamic"
+        }
+      ],
+      "hive-core": []
+    }
+  }
+}
