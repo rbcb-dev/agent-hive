@@ -28,20 +28,21 @@ Worktree dependency note: worktrees are isolated checkouts and do not share the 
 
 ```bash
 # NX-orchestrated builds and tests (respects dependency graph + caching)
-bunx nx run-many --target=build --all     # Build all projects via NX (runs lint + format:check first)
-bunx nx run-many --target=test --all      # Test all projects via NX
-bunx nx run-many --target=lint --all      # Lint all projects
-bunx nx run-many --target=format:check --all  # Check formatting (Prettier)
-bunx nx run hive-core:build               # Build a single project
-bunx nx run hive-core:test                # Test a single project
-
-# Formatting
-bun run format:check                      # Check formatting across all packages
+# IMPORTANT: Always use `bun run nx:*` scripts — they include non-interactive flags
+bun run nx:build                          # Build all projects via NX (runs lint + format:check first)
+bun run nx:test                           # Test all projects via NX
+bun run nx:lint                           # Lint all projects
+bun run format:check                      # Check formatting (Prettier)
 bun run format:write                      # Fix formatting across all packages
+bun run nx:typecheck                      # Typecheck all projects
 
-# Dependency graph (non-interactive alternatives)
+# Single project (use env vars prefix)
+NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
+NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:test
+
+# Dependency graph (non-interactive)
+bun run nx:graph                          # Export graph to graph.json (non-interactive)
 bunx nx show projects                     # List all detected projects
-bunx nx graph --file=graph.json --watch=false --open=false  # Export graph to file (non-interactive)
 
 # Cache
 bunx nx reset                             # Clear NX cache (.nx/)
@@ -49,10 +50,10 @@ bunx nx reset                             # Clear NX cache (.nx/)
 
 **⚠️ Non-interactive NX usage (for agents/CI):**
 
-Always prefix NX commands with these environment variables when running in automated/agent contexts to prevent TUI hangs and interactive prompts:
+All `bun run nx:*` and `bun run format:*` root scripts already include `NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true`. When running `bunx nx` directly (e.g., for single-project commands), always prefix with these env vars:
 
 ```bash
-NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=build --all
+NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
 ```
 
 **NX integration notes:**
