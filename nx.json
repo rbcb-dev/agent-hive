@@ -39,7 +39,9 @@
   "targetDefaults": {
     "build": {
       "dependsOn": [
-        "^build"
+        "^build",
+        "lint",
+        "format:check"
       ],
       "cache": true,
       "inputs": [
@@ -62,10 +64,7 @@
     },
     "lint": {
       "cache": true,
-      "inputs": [
-        "default",
-        "^default"
-      ]
+      "inputs": ["linting"]
     },
     "@nx/vitest:test": {
       "cache": true,
