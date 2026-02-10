@@ -17,13 +17,6 @@ bun run dev
 bun run test              # Run all tests
 bun run test -- <file>    # Run specific test
 
-# Type checking
-bun run typecheck         # Run typecheck across all projects
-
-# Format checking
-bun run format:check      # Check formatting across all projects
-bun run format:write      # Fix formatting across all projects
-
 # Release preparation
 bun run release:check     # Install, build, and test all packages
 bun run release:prepare   # Prepare release
@@ -40,19 +33,6 @@ bunx nx run-many --target=test --all      # Test all projects via NX
 bunx nx run hive-core:build               # Build a single project
 bunx nx run hive-core:test                # Test a single project
 
-# Quality targets
-bunx nx run-many --target=lint            # Lint all projects
-bunx nx run-many --target=typecheck       # Type-check all projects
-bunx nx run-many --target=format:check    # Check formatting (CI validation)
-bunx nx run-many --target=format:write    # Fix formatting (local dev)
-
-# Affected commands (only changed projects)
-bunx nx affected --target=build           # Build affected projects
-bunx nx affected --target=test            # Test affected projects
-bunx nx affected --target=lint            # Lint affected projects
-bunx nx affected --target=typecheck       # Type-check affected projects
-bunx nx affected --target=format:check    # Format-check affected projects
-
 # Dependency graph
 bunx nx graph                             # Open interactive graph in browser
 bunx nx show projects                     # List all detected projects
@@ -64,10 +44,8 @@ bunx nx reset                             # Clear NX cache (.nx/)
 **NX integration notes:**
 - NX uses existing `package.json` scripts (via `includedScripts`) — it does NOT replace bun/esbuild/vite builds
 - `tsconfig.base.json` provides path aliases for cross-package imports (no project references / composite)
-- NX caches `build`, `test`, `lint`, `typecheck`, and `format:check` targets; cache outputs are in `{projectRoot}/dist` and `{projectRoot}/coverage`
-- Build targets have `dependsOn: ["^build", "lint", "format:check"]` — running `bunx nx run-many --target=build` automatically validates lint + formatting for free
-- `typecheck` runs independently (not in the build pipeline) because `typecheck` depends on `build` (via plugin-inferred `[build, ^typecheck]`), creating a cycle if `build` also depended on `typecheck`
-- `format:write` is NOT cacheable (it mutates files) — use for local dev only; CI should use `format:check`
+- NX caches `build` and `test` targets; cache outputs are in `{projectRoot}/dist` and `{projectRoot}/coverage`
+- Build targets have `dependsOn: ["^build"]` — NX builds dependencies first
 - ESLint is configured with warnings-only rules (`@nx/enforce-module-boundaries`)
 
 ### Package-Specific Commands

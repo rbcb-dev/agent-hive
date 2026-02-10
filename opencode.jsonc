@@ -1,9 +1,4 @@
 {
-  // OpenCode Configuration for Agent Hive Workflow
-  // Using GitHub Copilot subscription: all agents use premium model
-  // Sub-agents inherit from main subscription without additional user requests
-  // See: https://opencode.ai/docs/config/
-
   // JSON Schema for IDE validation
   "$schema": "https://opencode.ai/config.json",
 
@@ -12,14 +7,13 @@
   // ============================================================================
 
   // Main model for user interactions in TUI
-  // Claude Opus 4.5 recommended for best planning & coordination quality
   // All sub-agents will use this same model (no additional cost in subscription)
-  "model": "github-copilot/claude-opus-4.5",
+  "model": "github-copilot/claude-opus-4.6",
 
   // Small model used for:
-  // - Compaction (context pruning by DCP plugin)
-  // - Title generation (plan summaries)
-  // - Summary generation (token-saving summaries)
+  // - Compaction
+  // - Title generation
+  // - Summary generation
   // Using free gpt-5-mini reduces unnecessary token consumption for background tasks
   "small_model": "github-copilot/gpt-5-mini",
 
@@ -28,12 +22,8 @@
   // ============================================================================
 
   "compaction": {
-    // Auto-compact context approximately every 10 messages
-    // Recommended: true (keeps token usage efficient)
     "auto": true,
-
     // Prune old context chunks when compacting
-    // Saves ~260KB per session by removing outdated context
     "prune": true,
   },
 
@@ -43,7 +33,6 @@
 
   // Dynamic Context Pruning (DCP): Automatic context cleanup (free, no API cost)
   //   - Removes duplicate info, merges similar contexts
-  //   - Saves ~260KB per feature
   //   - Zero additional API calls
   //
   // OpenCode Hive: 6-agent orchestration system
@@ -51,199 +40,32 @@
   //   - Worktree isolation for parallel task execution
   //   - Context persistence across sessions (.hive/ directory)
   //   - Plan approval workflow (integrate with VS Code extension)
-  "plugin": ["opencode-hive@1.0.7", "@tarquinen/opencode-dcp@1.2.8"],
+  "plugin": ["opencode-hive@1.2.0", "@tarquinen/opencode-dcp@2.0.2"],
 
   // ============================================================================
   // AGENT CONFIGURATION
   // ============================================================================
-  //
-  // Key Insight: All sub-agents use the same model as the main agent
-  // Reasoning: Sub-agent work is spawned by orchestrator, NOT triggered by new user requests
-  // Therefore: GitHub Copilot subscription covers all agents with single subscription
-  // Result: All agents get premium quality (opus-4.5) at no additional user cost
-  //
   "agent": {
-    // ========================================================================
-    // HIVE AGENTS (6 total)
-    // ========================================================================
-
-    // HIVE-MASTER: Hybrid planner + orchestrator (ALTERNATIVE - flexible mode)
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: Phase-aware agent that auto-detects PLANNING vs EXECUTION
-    //
-    // PLANNING phase:
-    //   - Brainstorms requirements
-    //   - Writes detailed feature plans
-    //   - Identifies tasks and dependencies
-    //   - Outputs to .hive/features/{name}/plan.md
-    //
-    // EXECUTION phase (after user approval in VS Code):
-    //   - Can execute directly OR delegate to sub-agents
-    //   - Flexible behavior based on complexity analysis
-    //   - Context isolation is optional
-    //   - Merges worker results
-    //
-    // Use case: Hybrid workflows needing flexibility (planning + execution mixed)
-    // Cost: Subscription model (no additional cost)
-    //
-    // ⚠️ Note: hive-master is flexible but doesn't ENFORCE sub-agent usage.
-    // If you need strict context separation, use swarm-orchestrator instead.
     "hive-master": {
-      "model": "github-copilot/claude-opus-4.5",
-      // Temperatures omitted. OpenCode defaults work well for this agent:
-      // - Planning phase: slightly creative (0.6-0.7)
-      // - Execution phase: balanced & deterministic (0.4-0.5)
-      // Override only if you find plans too creative or too rigid
-      // "temperature": 0.5
-      //
-      // Auto-loaded skills for story creation and component documentation
-      "autoLoadSkills": [
-        "storybook-stories-expert", // Load when working on component stories
-        "vercel-react-best-practices", // React/Next.js optimization
-        "vercel-composition-patterns" // Component composition patterns
-      ]
+      "model": "github-copilot/claude-opus-4.6",
     },
-
-    // ARCHITECT-PLANNER: Pure planning agent (never executes code)
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: Writes detailed plans without implementation
-    //
-    // Capabilities:
-    //   - Requirements analysis
-    //   - Architecture design
-    //   - Test strategy planning
-    //   - Risk identification
-    //   - Timeline estimation
-    //
-    // Limitations:
-    //   - Cannot create/edit files
-    //   - Cannot run commands
-    //   - Read-only access
-    //
-    // Use case: Planning complex features before execution
-    // Cost: Subscription model (spawned by hive-master, not user)
     "architect-planner": {
-      "model": "github-copilot/gpt-5.2-codex",
-      // "temperature": 0.6  // Optional: slightly creative for plan diversity
-      //
-      // Auto-loaded skills for planning component stories
-      "autoLoadSkills": [
-        "storybook-stories-expert" // Plan story structure and testing strategy
-      ]
+      // "model": "github-copilot/gpt-5.2-codex",
+      "model": "openai/gpt-5.3-codex",
     },
-
-    // SWARM-ORCHESTRATOR: Pure orchestrator (RECOMMENDED FOR STRICT CONTEXT SEPARATION)
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: ENFORCES delegation - cannot execute directly, must use sub-agents
-    //
-    // Advantages of strict delegation:
-    //   - ✅ ENFORCES context separation (no direct execution fallback)
-    //   - ✅ Every task isolated in scout-researcher or forager-worker
-    //   - ✅ Predictable workflow (always uses sub-agents)
-    //   - ✅ Cleaner architecture (pure orchestration pattern)
-    //   - ✅ Better for complex features (parallel task execution)
-    //
-    // Task orchestration:
-    //   - Decides which workers to spawn for each task
-    //   - Manages task dependencies and ordering
-    //   - Handles worker failures and retries
-    //   - Merges results from parallel workers
-    //   - Never directly modifies code (enforced)
-    //
-    // Use case: Feature development WITH enforced context separation
-    // Recommended: YES - best for most development workflows
-    // Cost: Subscription model (spawned by initial request)
     "swarm-orchestrator": {
-      "model": "github-copilot/claude-opus-4.5",
-      // "temperature": 0.4  // Optional: deterministic for consistent delegation
+      "model": "github-copilot/claude-opus-4.6",
     },
-
-    // SCOUT-RESEARCHER: Exploration & research specialist
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: Explores codebase and external resources (read-only)
-    //
-    // Capabilities (read-only):
-    //   - Codebase exploration via AST/grep
-    //   - API documentation lookup
-    //   - Web search for libraries/solutions
-    //   - Code pattern discovery
-    //   - Architecture analysis without editing
-    //
-    // Limitations:
-    //   - Cannot create/edit files
-    //   - Cannot run commands
-    //   - Information gathering only
-    //
-    // Use case: Understanding existing code before implementation
-    // Spawned by: hive-master during execution phase
-    // Cost: Subscription model (background worker)
     "scout-researcher": {
-      "model": "github-copilot/gpt-5.2-codex",
-      // "temperature": 0.5  // Optional: balanced for thorough analysis
-      //
-      // Auto-loaded skills for analyzing existing stories
-      "autoLoadSkills": [
-        "storybook-stories-expert" // Analyze story patterns and coverage
-      ]
+      // "model": "github-copilot/gpt-5.2-codex",
+      "model": "openai/gpt-5.3-codex",
     },
-
-    // FORAGER-WORKER: Direct execution specialist
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: Executes tasks directly (never delegates)
-    //
-    // Capabilities:
-    //   - File creation and editing
-    //   - Command execution
-    //   - Task-specific implementation
-    //   - Works in isolated worktree
-    //   - Appends learnings to shared notepads
-    //
-    // Limitations:
-    //   - Cannot spawn other agents
-    //   - Cannot merge results (orchestrator does this)
-    //   - Task-focused, not cross-task aware
-    //
-    // Use case: Parallel code generation/modification
-    // Spawned by: Orchestrator with individual task specs
-    // Cost: Subscription model (background worker)
     "forager-worker": {
-      "model": "github-copilot/claude-opus-4.5",
-      // "temperature": 0.3  // Optional: very focused for precise code execution
-      //
-      // Auto-loaded skills for story implementation and testing
-      "autoLoadSkills": [
-        "storybook-stories-expert",          // Create stories with tests & interactions
-        "test-driven-development",            // TDD approach for story creation
-        "verification-before-completion"     // Verify stories work before completing
-      ]
+      "model": "github-copilot/claude-opus-4.6",
     },
-
-    // HYGIENIC-REVIEWER: Quality validation specialist
-    // ───────────────────────────────────────────────────────────────────
-    // Behavior: Validates plan quality before execution (read-only)
-    //
-    // Responsibilities:
-    //   - Reviews plan completeness
-    //   - Checks for missing edge cases
-    //   - Validates test coverage
-    //   - Ensures feasibility
-    //   - Returns OKAY or REJECT verdict
-    //
-    // Permissions:
-    //   - Read plan.md
-    //   - Read context/ directory
-    //   - Return verdict (no modifications)
-    //
-    // Gate: If REJECT, plan must be revised before execution starts
-    // Cost: Subscription model (spawned by workflow)
     "hygienic-reviewer": {
-      "model": "github-copilot/gpt-5.2-codex",
-      // "temperature": 0.2  // Optional: very strict for quality assurance
-      //
-      // Auto-loaded skills for validating story quality
-      "autoLoadSkills": [
-        "storybook-stories-expert" // Validate story quality & best practices
-      ]
+      // "model": "github-copilot/gpt-5.2-codex",
+      "model": "openai/gpt-5.3-codex",
     },
 
     // ========================================================================
@@ -252,94 +74,15 @@
     // These handle non-developmental work: compaction, titles, summaries
     // Kept on gpt-5-mini to reduce unnecessary token consumption
     // (These don't contribute to code quality, just housekeeping)
-
-    // Title generation: Summarize plans into concise titles
-    // Used by: OpenCode for .hive/features/{name}/ hierarchy labels
-    // Cost: Small model (background task, no code quality impact)
     "title": {
       "model": "github-copilot/gpt-5-mini",
     },
-
-    // Summary generation: Create concise summaries of long contexts
-    // Used by: OpenCode for token-saving context summaries
-    // Cost: Small model (background task, no code quality impact)
     "summary": {
       "model": "github-copilot/gpt-5-mini",
     },
-
-    // Compaction: Prune and merge old contexts (DCP plugin)
-    // Used by: Dynamic Context Pruning plugin
-    // Cost: Small model (cleanup routine, no code output)
     "compaction": {
-      "model": "github-copilot/gpt-5-mini",
+      // "model": "github-copilot/gpt-5.2-codex",
+      "model": "openai/gpt-5.3-codex",
     },
   },
-
-  // ============================================================================
-  // COST PROFILE
-  // ============================================================================
-  //
-  // GitHub Copilot Subscription Model:
-  //
-  // Premium Cost (Opus 4.5): 6 agents
-  //   ✓ hive-master (orchestrator)
-  //   ✓ architect-planner (planning)
-  //   ✓ swarm-orchestrator (delegation)
-  //   ✓ scout-researcher (exploration)
-  //   ✓ forager-worker (execution)
-  //   ✓ hygienic-reviewer (validation)
-  //
-  // Free Cost (gpt-5-mini): 3 agents
-  //   ✓ title (summaries only)
-  //   ✓ summary (context compression)
-  //   ✓ compaction (cleanup)
-  //
-  // KEY INSIGHT:
-  // All sub-agents are spawned by the hive-master orchestrator, NOT by user requests
-  // Therefore, they inherit from the same subscription call that started the user's session
-  // Net cost: Single subscription payment covers ENTIRE workflow (all 9 agents)
-  //
-  // Comparison to alternative (all free models):
-  // - All agents on gpt-5-mini = worse code quality, slightly lower token cost
-  // - All agents on opus-4.5 = better code quality, same subscription cost (no additional fees)
-  //
-  // This configuration maximizes code quality at no additional cost.
-  //
-  // ============================================================================
-  // WORKFLOW QUICK START
-  // ============================================================================
-  //
-  // Step 1: Start Swarm Orchestrator in TUI
-  //   $ opencode --agent swarm-orchestrator
-  //
-  // Step 2: Describe Feature & Get Plan
-  //   In TUI, describe what you want to build
-  //   → Swarm orchestrator spawns architect-planner for planning
-  //   → Plan written to .hive/features/{name}/plan.md
-  //
-  // Step 3: Review in VS Code (APPROVAL GATE)
-  //   Open VS Code sidebar (Agent Hive extension)
-  //   $ code --install-extension tctinh.vscode-hive  // if not installed
-  //   → View hierarchical plan
-  //   → Add inline comments with suggestions
-  //   → Click "Approve" button
-  //
-  // Step 4: Autonomous Execution (PURE DELEGATION)
-  //   Swarm orchestrator receives approval, begins execution
-  //   → Spawns scout-researcher(s) to explore codebase (isolated context)
-  //   → Spawns parallel forager-workers with task specs (isolated contexts)
-  //   → Monitors progress via .hive/tasks/
-  //   → Hygienic-reviewer validates outputs
-  //   → Swarm merges results while maintaining separation
-  //   → Each task runs in isolated worktree with isolated context
-  //
-  // Step 5: Review Results
-  //   $ cat .hive/features/{name}/tasks/01-task-name/report.md
-  //   → Task summary, diffs, validation results
-  //   $ cat .hive/features/{name}/notepads/learnings.md
-  //   → Shared discoveries (architecture patterns, gotchas)    //
-  // ALTERNATIVE WORKFLOW: If you need planning + execution in same phase:
-  //   $ opencode --agent hive-master
-  //   → hive-master can handle both phases but less strict on context separation  //
-  // ============================================================================
 }
