@@ -3,7 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "includedScripts": [
     "build",
-    "test:webview"
+    "test:webview",
+    "format:check",
+    "format:write"
   ],
   "sourceRoot": "packages/vscode-hive/src",
   "projectType": "library",

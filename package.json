@@ -18,7 +18,11 @@
     "nx:graph": "bunx nx graph",
     "nx:affected:build": "bunx nx affected --target=build",
     "nx:affected:test": "bunx nx affected --target=test",
-    "nx:affected:lint": "bunx nx affected --target=lint"
+    "nx:affected:lint": "bunx nx affected --target=lint",
+    "format:check": "bunx nx run-many --target=format:check",
+    "format:write": "bunx nx run-many --target=format:write",
+    "nx:format:check": "bunx nx run-many --target=format:check",
+    "nx:format:write": "bunx nx run-many --target=format:write"
   },
   "license": "MIT",
   "devDependencies": {

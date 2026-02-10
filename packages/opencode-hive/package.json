@@ -30,7 +30,9 @@
     "generate-skills": "bun run scripts/generate-skills.ts",
     "build": "npm run clean && npm run generate-skills && bun build src/index.ts --outdir dist --target node --format esm --packages=bundle && tsc --emitDeclarationOnly",
     "dev": "opencode plugin dev",
-    "test": "bun test"
+    "test": "bun test",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "format:write": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=0.13.7"
@@ -58,6 +60,6 @@
     "README.md"
   ],
   "nx": {
-    "includedScripts": ["build", "test"]
+    "includedScripts": ["build", "test", "format:check", "format:write"]
   }
 }

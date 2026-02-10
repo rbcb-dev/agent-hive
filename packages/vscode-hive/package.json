@@ -885,7 +885,9 @@
     "test-storybook": "test-storybook",
     "test:storybook": "test-storybook --url http://127.0.0.1:6006",
     "test:storybook:update": "test-storybook --url http://127.0.0.1:6006 --updateSnapshot",
-    "test:storybook:ci": "concurrently -k -s first -n \"SB,TEST\" -c \"magenta,blue\" \"npx http-server storybook-static --port 7006 --silent\" \"wait-on tcp:127.0.0.1:7006 && npx test-storybook --url http://127.0.0.1:7006\""
+    "test:storybook:ci": "concurrently -k -s first -n \"SB,TEST\" -c \"magenta,blue\" \"npx http-server storybook-static --port 7006 --silent\" \"wait-on tcp:127.0.0.1:7006 && npx test-storybook --url http://127.0.0.1:7006\"",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}'",
+    "format:write": "prettier --write 'src/**/*.{ts,tsx}'"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10",
@@ -928,6 +930,6 @@
     "shiki": "^3.21.0"
   },
   "nx": {
-    "includedScripts": ["build", "test:webview"]
+    "includedScripts": ["build", "test:webview", "format:check", "format:write"]
   }
 }
