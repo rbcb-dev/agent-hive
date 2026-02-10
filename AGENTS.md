@@ -28,10 +28,16 @@ Worktree dependency note: worktrees are isolated checkouts and do not share the 
 
 ```bash
 # NX-orchestrated builds and tests (respects dependency graph + caching)
-bunx nx run-many --target=build --all     # Build all projects via NX
+bunx nx run-many --target=build --all     # Build all projects via NX (runs lint + format:check first)
 bunx nx run-many --target=test --all      # Test all projects via NX
+bunx nx run-many --target=lint --all      # Lint all projects
+bunx nx run-many --target=format:check --all  # Check formatting (Prettier)
 bunx nx run hive-core:build               # Build a single project
 bunx nx run hive-core:test                # Test a single project
+
+# Formatting
+bun run format:check                      # Check formatting across all packages
+bun run format:write                      # Fix formatting across all packages
 
 # Dependency graph
 bunx nx graph                             # Open interactive graph in browser
@@ -42,10 +48,12 @@ bunx nx reset                             # Clear NX cache (.nx/)
 ```
 
 **NX integration notes:**
+
 - NX uses existing `package.json` scripts (via `includedScripts`) — it does NOT replace bun/esbuild/vite builds
 - `tsconfig.base.json` provides path aliases for cross-package imports (no project references / composite)
-- NX caches `build` and `test` targets; cache outputs are in `{projectRoot}/dist` and `{projectRoot}/coverage`
-- Build targets have `dependsOn: ["^build"]` — NX builds dependencies first
+- NX caches `build`, `test`, `lint`, and `format:check` targets; cache outputs are in `{projectRoot}/dist` and `{projectRoot}/coverage`
+- Build targets have `dependsOn: ["^build", "lint", "format:check"]` — NX runs lint + format checks before building
+- `format:check` is cacheable; `format:write` is NOT cacheable (it modifies files)
 - ESLint is configured with warnings-only rules (`@nx/enforce-module-boundaries`)
 
 ### Package-Specific Commands
@@ -90,7 +98,7 @@ interface FeatureInfo {
 // Classes for services
 export class FeatureService {
   constructor(private readonly rootDir: string) {}
-  
+
   async createFeature(name: string): Promise<FeatureInfo> {
     // ...
   }
@@ -143,6 +151,7 @@ perf: cache resolved paths
 ```
 
 Breaking changes use `!`:
+
 ```
 feat!: change plan format to support subtasks
 ```
@@ -161,18 +170,19 @@ feat!: change plan format to support subtasks
 
 ### Agent Roles
 
-| Agent | Role |
-|-------|------|
-| Hive (Hybrid) | Plans AND orchestrates; phase-aware |
-| Architect | Plans features, interviews, writes plans. NEVER executes |
-| Swarm | Orchestrates execution. Delegates, spawns workers, verifies |
-| Scout | Researches codebase + external docs/data |
-| Forager | Executes tasks directly in isolated worktrees |
-| Hygienic | Reviews plan/code quality. OKAY/REJECT verdict |
+| Agent         | Role                                                        |
+| ------------- | ----------------------------------------------------------- |
+| Hive (Hybrid) | Plans AND orchestrates; phase-aware                         |
+| Architect     | Plans features, interviews, writes plans. NEVER executes    |
+| Swarm         | Orchestrates execution. Delegates, spawns workers, verifies |
+| Scout         | Researches codebase + external docs/data                    |
+| Forager       | Executes tasks directly in isolated worktrees               |
+| Hygienic      | Reviews plan/code quality. OKAY/REJECT verdict              |
 
 ### Data Model
 
 Features stored in `.hive/features/<name>/`:
+
 ```
 .hive/features/my-feature/
 ├── feature.json       # Feature metadata
@@ -230,9 +240,9 @@ try {
   const feature = await featureService.load(name);
   return { success: true, feature };
 } catch (error) {
-  return { 
+  return {
     error: `Failed to load feature: ${error.message}`,
-    hint: 'Check that the feature exists'
+    hint: 'Check that the feature exists',
   };
 }
 ```
@@ -267,16 +277,16 @@ Plan-first development: Write plan → User reviews → Approve → Execute task
 
 ### Tools (15 total)
 
-| Domain | Tools |
-|--------|-------|
-| Feature | hive_feature_create, hive_feature_complete |
-| Plan | hive_plan_write, hive_plan_read, hive_plan_approve |
-| Task | hive_tasks_sync, hive_task_create, hive_task_update |
-| Worktree | hive_worktree_create, hive_worktree_commit, hive_worktree_discard |
-| Merge | hive_merge |
-| Context | hive_context_write |
-| AGENTS.md | hive_agents_md |
-| Status | hive_status |
+| Domain    | Tools                                                             |
+| --------- | ----------------------------------------------------------------- |
+| Feature   | hive_feature_create, hive_feature_complete                        |
+| Plan      | hive_plan_write, hive_plan_read, hive_plan_approve                |
+| Task      | hive_tasks_sync, hive_task_create, hive_task_update               |
+| Worktree  | hive_worktree_create, hive_worktree_commit, hive_worktree_discard |
+| Merge     | hive_merge                                                        |
+| Context   | hive_context_write                                                |
+| AGENTS.md | hive_agents_md                                                    |
+| Status    | hive_status                                                       |
 
 ### Workflow
 
@@ -309,6 +319,7 @@ Use `hive_merge` to explicitly integrate changes. Worktrees persist until manual
 - **Escape hatch**: Prefix commands with `HOST:` to bypass sandbox and run directly on host
 
 **Example config**:
+
 ```json
 {
   "sandbox": "docker",

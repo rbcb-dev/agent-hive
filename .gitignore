@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 dist/
 *.vsix
+*.tsbuildinfo
+tsconfig.lib.json
 
 # Storybook
 storybook-static/
