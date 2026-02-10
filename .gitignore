@@ -12,9 +12,9 @@ storybook-static/
 __snapshots__/
 
 # Visual regression testing
-# Keep baseline snapshots, ignore diffs (generated during failed tests)
+# Keep baseline snapshots, ignore diffs and attachments (generated during tests)
 **/__image_snapshots__/__diff_output__/
-*-diff.png
+.vitest-attachments/
 
 # IDE
 .vscode/
