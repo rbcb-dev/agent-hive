@@ -30,7 +30,8 @@
     "generate-skills": "bun run scripts/generate-skills.ts",
     "build": "npm run clean && npm run generate-skills && bun build src/index.ts --outdir dist --target node --format esm --packages=bundle && tsc --emitDeclarationOnly",
     "dev": "opencode plugin dev",
-    "test": "bun test"
+    "test": "bun test src/__tests__ src/agents src/hooks src/skills src/templates src/tools src/utils",
+    "test:e2e": "bun test src/e2e/"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=0.13.7"
