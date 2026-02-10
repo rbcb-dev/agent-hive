@@ -214,7 +214,7 @@
       },
       "vscode-hive": {
         "name": "vscode-hive",
-        "type": "lib",
+        "type": "app",
         "data": {
           "root": "packages/vscode-hive",
           "targets": {
@@ -507,20 +507,13 @@
               },
               "cache": true,
               "outputs": [
-                "{projectRoot}/storybook-static",
-                "{options.output-dir}",
-                "{options.outputDir}",
-                "{options.o}"
+                "{projectRoot}/storybook-static"
               ],
               "inputs": [
-                "production",
+                "default",
                 "^production",
-                {
-                  "externalDependencies": [
-                    "storybook",
-                    "@storybook/test-runner"
-                  ]
-                }
+                "{projectRoot}/.storybook/**/*",
+                "{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
               ],
               "executor": "nx:run-commands",
               "configurations": {},
@@ -589,20 +582,18 @@
             },
             "build": {
               "executor": "nx:run-script",
+              "metadata": {
+                "scriptContent": "vite build && esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --define:import.meta.url=__importMetaUrl --banner:js=\"const __importMetaUrl = require('url').pathToFileURL(__filename).href;\" && npx vsce package --no-dependencies -o vscode-hive.vsix",
+                "runCommand": "bun run build -- undefined"
+              },
+              "dependsOn": [
+                "vite:build"
+              ],
               "options": {
                 "script": "build"
               },
-              "metadata": {
-                "scriptContent": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --define:import.meta.url=__importMetaUrl --banner:js=\"const __importMetaUrl = require('url').pathToFileURL(__filename).href;\" && npx vsce package --no-dependencies -o vscode-hive.vsix",
-                "runCommand": "bun run build -- undefined"
-              },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build",
-                "lint",
-                "format:check"
-              ],
               "cache": true,
               "inputs": [
                 "production",
@@ -611,18 +602,6 @@
               "outputs": [
                 "{projectRoot}/dist"
               ]
-            },
-            "test:webview": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "test:webview"
-              },
-              "metadata": {
-                "scriptContent": "vitest run --config vitest.webview.config.ts",
-                "runCommand": "bun run test:webview -- undefined"
-              },
-              "configurations": {},
-              "parallelism": true
             },
             "format:check": {
               "executor": "nx:run-script",
@@ -668,12 +647,11 @@
               "parallelism": true
             }
           },
-          "projectType": "library",
+          "projectType": "application",
           "metadata": {
             "targetGroups": {
               "NPM Scripts": [
                 "build",
-                "test:webview",
                 "format:check",
                 "format:write"
               ]
@@ -689,7 +667,6 @@
           "name": "vscode-hive",
           "includedScripts": [
             "build",
-            "test:webview",
             "format:check",
             "format:write"
           ],

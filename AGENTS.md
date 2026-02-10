@@ -7,7 +7,7 @@
 ## Build & Test Commands
 
 ```bash
-# Build all packages
+# Build all packages (sequential, without NX — runs each package filter in order)
 bun run build
 
 # Development mode (all packages)
@@ -22,6 +22,8 @@ bun run release:check     # Install, build, and test all packages
 bun run release:prepare   # Prepare release
 ```
 
+**`bun run build` vs `bun run nx:build`**: `bun run build` runs each package sequentially via `--filter` without NX orchestration. `bun run nx:build` uses NX to resolve the dependency graph, run lint + format checks first, and cache results. Prefer `bun run nx:build` for CI and full validation; use `bun run build` for quick local builds.
+
 Worktree dependency note: worktrees are isolated checkouts and do not share the root `node_modules`. If you run tests or builds inside a worktree, run `bun install` there first (or run tests from the repo root that already has dependencies installed).
 
 ### NX Commands
@@ -35,6 +37,10 @@ bun run nx:lint                           # Lint all projects
 bun run format:check                      # Check formatting (Prettier)
 bun run format:write                      # Fix formatting across all packages
 bun run nx:typecheck                      # Typecheck all projects
+
+# Storybook (opt-in, not part of default build pipeline)
+bun run nx:build-storybook                # Build Storybook for all projects that have it
+bun run nx:test-storybook                 # Run Storybook interaction tests
 
 # Single project (use env vars prefix)
 NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
@@ -60,8 +66,9 @@ NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run hive-core:build
 
 - NX uses existing `package.json` scripts (via `includedScripts`) — it does NOT replace bun/esbuild/vite builds
 - `tsconfig.base.json` provides path aliases for cross-package imports (no project references / composite)
-- NX caches `build`, `test`, `lint`, and `format:check` targets; cache outputs are in `{projectRoot}/dist` and `{projectRoot}/coverage`
+- NX caches `build`, `test`, `lint`, `format:check`, and `build-storybook` targets; cache outputs are in `{projectRoot}/dist`, `{projectRoot}/coverage`, and `{projectRoot}/storybook-static`
 - Build targets have `dependsOn: ["^build", "lint", "format:check"]` — NX runs lint + format checks before building
+- Storybook targets (`build-storybook`, `test-storybook`) are opt-in and NOT part of the default `build` pipeline
 - `format:check` is cacheable; `format:write` is NOT cacheable (it modifies files)
 - ESLint is configured with warnings-only rules (`@nx/enforce-module-boundaries`)
 
@@ -77,7 +84,7 @@ bun run build             # Build opencode-hive plugin
 bun run dev               # Watch mode
 
 # From packages/vscode-hive/
-bun run build             # Build VS Code extension
+bun run build             # Build VS Code extension (vite:build webview + esbuild extension + vsce package)
 ```
 
 ## Code Style
