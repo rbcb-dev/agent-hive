@@ -7,10 +7,16 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run --filter hive-core build && bun run --filter opencode-hive build && bun run --filter vscode-hive build",
-    "dev": "bun run --filter hive-core build && bun run --filter '*' dev",
+    "build": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many -t build",
+    "build:legacy": "bun run --filter hive-core build && bun run --filter opencode-hive build && bun run --filter vscode-hive build",
+    "build:ci": "bun run build:legacy",
+    "build:affected": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected -t build",
+    "dev": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many -t dev",
+    "dev:legacy": "bun run --filter hive-core build && bun run --filter '*' dev",
+    "test": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many -t test",
+    "test:affected": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected -t test",
     "release:prepare": "node scripts/release/prepare.mjs",
-    "release:check": "bun install && bun run build && npm -ws --if-present run test",
+    "release:check": "bun install && bun run build:legacy && npm -ws --if-present run test",
     "lint": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=lint",
     "nx:build": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=build",
     "nx:test": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=test",
@@ -28,7 +34,8 @@
     "nx:affected:typecheck": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected --target=typecheck",
     "nx:affected:format": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected --target=format:check",
     "nx:build-storybook": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=build-storybook",
-    "nx:test-storybook": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=test-storybook"
+    "nx:test-storybook": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=test-storybook",
+    "storybook:affected": "NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx affected -t build-storybook test-storybook"
   },
   "license": "MIT",
   "devDependencies": {
