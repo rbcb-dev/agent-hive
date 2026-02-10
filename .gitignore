@@ -13,7 +13,7 @@ __snapshots__/
 
 # Visual regression testing
 # Keep baseline snapshots, ignore diffs (generated during failed tests)
-__image_snapshots__/__diff_output__/
+**/__image_snapshots__/__diff_output__/
 *-diff.png
 
 # IDE
