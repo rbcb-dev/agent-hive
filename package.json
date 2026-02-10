@@ -22,7 +22,11 @@
     "format:check": "bunx nx run-many --target=format:check",
     "format:write": "bunx nx run-many --target=format:write",
     "nx:format:check": "bunx nx run-many --target=format:check",
-    "nx:format:write": "bunx nx run-many --target=format:write"
+    "nx:format:write": "bunx nx run-many --target=format:write",
+    "typecheck": "bunx nx run-many --target=typecheck",
+    "nx:typecheck": "bunx nx run-many --target=typecheck",
+    "nx:affected:typecheck": "bunx nx affected --target=typecheck",
+    "nx:affected:format": "bunx nx affected --target=format:check"
   },
   "license": "MIT",
   "devDependencies": {
