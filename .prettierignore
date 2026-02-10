@@ -8,3 +8,5 @@ storybook-static
 bun.lock
 *.vsix
 .hive
+# Generated files
+*.generated.ts

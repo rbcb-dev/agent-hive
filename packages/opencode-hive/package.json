@@ -32,8 +32,8 @@
     "dev": "opencode plugin dev",
     "test": "bun test src/__tests__ src/agents src/hooks src/skills src/templates src/tools src/utils",
     "test:e2e": "bun test src/e2e/",
-    "format:check": "prettier --check 'src/**/*.ts'",
-    "format:write": "prettier --write 'src/**/*.ts'"
+    "format:check": "prettier --ignore-path ../../.prettierignore --check 'src/**/*.ts'",
+    "format:write": "prettier --ignore-path ../../.prettierignore --write 'src/**/*.ts'"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=0.13.7"
@@ -61,6 +61,11 @@
     "README.md"
   ],
   "nx": {
-    "includedScripts": ["build", "test", "format:check", "format:write"]
+    "includedScripts": [
+      "build",
+      "test",
+      "format:check",
+      "format:write"
+    ]
   }
 }
