@@ -14,6 +14,7 @@ __snapshots__/
 # Visual regression testing
 # Keep baseline snapshots, ignore diffs and attachments (generated during tests)
 **/__image_snapshots__/__diff_output__/
+**/__screenshots__/
 .vitest-attachments/
 
 # IDE

@@ -5,11 +5,17 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 5188,
+    strictPort: false,
+  },
   test: {
     browser: {
       enabled: true,
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
+      headless: true,
+      api: 5189,
       viewport: {
         width: 1280,
         height: 720,
@@ -23,11 +29,7 @@ export default defineConfig({
           resolveScreenshotPath: ({ arg, ext }) => {
             // Use story-id naming convention: <kind>-<component>--<story>.png
             // The arg is expected to be passed as the screenshot name in the test
-            return resolve(
-              __dirname,
-              '__image_snapshots__',
-              `${arg}${ext}`,
-            );
+            return resolve(__dirname, '__image_snapshots__', `${arg}${ext}`);
           },
         },
       },
