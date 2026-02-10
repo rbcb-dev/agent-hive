@@ -39,12 +39,20 @@ bunx nx run hive-core:test                # Test a single project
 bun run format:check                      # Check formatting across all packages
 bun run format:write                      # Fix formatting across all packages
 
-# Dependency graph
-bunx nx graph                             # Open interactive graph in browser
+# Dependency graph (non-interactive alternatives)
 bunx nx show projects                     # List all detected projects
+bunx nx graph --file=graph.json --watch=false --open=false  # Export graph to file (non-interactive)
 
 # Cache
 bunx nx reset                             # Clear NX cache (.nx/)
+```
+
+**⚠️ Non-interactive NX usage (for agents/CI):**
+
+Always prefix NX commands with these environment variables when running in automated/agent contexts to prevent TUI hangs and interactive prompts:
+
+```bash
+NX_TUI=false NX_DAEMON=false NX_NO_CLOUD=true bunx nx run-many --target=build --all
 ```
 
 **NX integration notes:**
