@@ -14,7 +14,8 @@
       "dependsOn": [
         "vite:build",
         "build-storybook",
-        "test-storybook"
+        "test-storybook",
+        "test-storybook-visual"
       ]
     },
     "test": {
@@ -42,6 +43,15 @@
       "executor": "@nx/vitest:test",
       "options": {
         "configFile": "packages/vscode-hive/vitest.storybook.config.ts"
+      },
+      "cache": true,
+      "inputs": ["storybook", "^production"],
+      "dependsOn": ["build-storybook"]
+    },
+    "test-storybook-visual": {
+      "executor": "@nx/vitest:test",
+      "options": {
+        "configFile": "packages/vscode-hive/vitest.visual.config.ts"
       },
       "cache": true,
       "inputs": ["storybook", "^production"],
