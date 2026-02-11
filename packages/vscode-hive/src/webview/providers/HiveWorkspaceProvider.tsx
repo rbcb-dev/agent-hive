@@ -17,7 +17,8 @@ import React, {
   useReducer,
   useCallback,
 } from 'react';
-import type { FeatureInfo, DiffPayload, PlanComment } from 'hive-core';
+import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread, ReviewSession, Range } from 'hive-core';
+import { postMessage } from '../vscodeApi';
 
 // ---------------------------------------------------------------------------
 // State
@@ -34,6 +35,8 @@ export interface HiveWorkspaceState {
   planComments: PlanComment[];
   contextContent: string | null;
   isLoading: boolean;
+  reviewThreads: ReviewThread[];
+  activeReviewSession: ReviewSession | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +56,9 @@ export type HiveWorkspaceAction =
       comments: PlanComment[];
     }
   | { type: 'SET_CONTEXT_CONTENT'; content: string }
-  | { type: 'SET_LOADING'; isLoading: boolean };
+  | { type: 'SET_LOADING'; isLoading: boolean }
+  | { type: 'SET_REVIEW_THREADS'; threads: ReviewThread[] }
+  | { type: 'SET_REVIEW_SESSION'; session: ReviewSession | null };
 
 export interface HiveWorkspaceActions {
   selectFeature: (name: string) => void;
@@ -61,6 +66,14 @@ export interface HiveWorkspaceActions {
   selectFile: (path: string) => void;
   selectView: (view: HiveWorkspaceState['activeView']) => void;
   refreshFeatures: () => void;
+  // Review thread actions
+  addThread: (entityId: string, uri: string, range: Range, body: string, type: string) => void;
+  replyToThread: (threadId: string, body: string) => void;
+  resolveThread: (threadId: string) => void;
+  unresolveThread: (threadId: string) => void;
+  deleteThread: (threadId: string) => void;
+  editAnnotation: (threadId: string, annotationId: string, body: string) => void;
+  deleteAnnotation: (threadId: string, annotationId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +95,8 @@ export function workspaceReducer(
         planContent: null,
         planComments: [],
         contextContent: null,
+        reviewThreads: [],
+        activeReviewSession: null,
       };
     case 'SELECT_TASK':
       return {
@@ -127,6 +142,16 @@ export function workspaceReducer(
         ...state,
         contextContent: action.content,
       };
+    case 'SET_REVIEW_THREADS':
+      return {
+        ...state,
+        reviewThreads: action.threads,
+      };
+    case 'SET_REVIEW_SESSION':
+      return {
+        ...state,
+        activeReviewSession: action.session,
+      };
     default:
       return state;
   }
@@ -161,6 +186,8 @@ export const DEFAULT_WORKSPACE_STATE: HiveWorkspaceState = {
   planComments: [],
   contextContent: null,
   isLoading: false,
+  reviewThreads: [],
+  activeReviewSession: null,
 };
 
 export interface HiveWorkspaceProviderProps {
@@ -201,12 +228,68 @@ export function HiveWorkspaceProvider({
     onRefreshFeatures?.();
   }, [onRefreshFeatures]);
 
+  const addThread = useCallback(
+    (entityId: string, uri: string, range: Range, body: string, annotationType: string) => {
+      postMessage({ type: 'addComment', entityId, uri, range, body, annotationType });
+    },
+    [],
+  );
+
+  const replyToThread = useCallback(
+    (threadId: string, body: string) => {
+      postMessage({ type: 'reply', threadId, body });
+    },
+    [],
+  );
+
+  const resolveThread = useCallback(
+    (threadId: string) => {
+      postMessage({ type: 'resolve', threadId });
+    },
+    [],
+  );
+
+  const unresolveThread = useCallback(
+    (threadId: string) => {
+      postMessage({ type: 'unresolve', threadId });
+    },
+    [],
+  );
+
+  const deleteThread = useCallback(
+    (threadId: string) => {
+      postMessage({ type: 'deleteThread', threadId });
+    },
+    [],
+  );
+
+  const editAnnotation = useCallback(
+    (threadId: string, annotationId: string, body: string) => {
+      postMessage({ type: 'editComment', threadId, annotationId, body });
+    },
+    [],
+  );
+
+  const deleteAnnotation = useCallback(
+    (threadId: string, annotationId: string) => {
+      postMessage({ type: 'deleteComment', threadId, annotationId });
+    },
+    [],
+  );
+
   const actions: HiveWorkspaceActions = {
     selectFeature,
     selectTask,
     selectFile,
     selectView,
     refreshFeatures,
+    addThread,
+    replyToThread,
+    resolveThread,
+    unresolveThread,
+    deleteThread,
+    editAnnotation,
+    deleteAnnotation,
   };
 
   return (

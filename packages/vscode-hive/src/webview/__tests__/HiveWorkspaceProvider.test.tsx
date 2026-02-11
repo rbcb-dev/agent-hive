@@ -19,9 +19,13 @@ import React from 'react';
 import {
   HiveWorkspaceProvider,
   useHiveWorkspace,
+  workspaceReducer,
 } from '../providers/HiveWorkspaceProvider';
-import type { HiveWorkspaceState } from '../providers/HiveWorkspaceProvider';
-import type { FeatureInfo } from 'hive-core';
+import type {
+  HiveWorkspaceState,
+  HiveWorkspaceAction,
+} from '../providers/HiveWorkspaceProvider';
+import type { FeatureInfo, ReviewThread, ReviewSession } from 'hive-core';
 
 const mockFeatures: FeatureInfo[] = [
   {
@@ -64,7 +68,49 @@ const mockInitialState: HiveWorkspaceState = {
   planComments: [],
   contextContent: null,
   isLoading: false,
+  reviewThreads: [],
+  activeReviewSession: null,
 };
+
+function makeThread(overrides: Partial<ReviewThread> = {}): ReviewThread {
+  return {
+    id: 'thread-1',
+    entityId: 'entity-1',
+    uri: 'file:///src/index.ts',
+    range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+    status: 'open',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    annotations: [],
+    ...overrides,
+  };
+}
+
+function makeSession(overrides: Partial<ReviewSession> = {}): ReviewSession {
+  return {
+    schemaVersion: 1,
+    id: 'session-1',
+    featureName: 'feature-one',
+    scope: 'feature',
+    status: 'in_progress',
+    verdict: null,
+    summary: null,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    threads: [],
+    diffs: {},
+    gitMeta: {
+      repoRoot: '/repo',
+      baseRef: 'main',
+      headRef: 'feature',
+      mergeBase: 'abc123',
+      capturedAt: '2026-01-01T00:00:00Z',
+      diffStats: { files: 0, insertions: 0, deletions: 0 },
+      diffSummary: [],
+    },
+    ...overrides,
+  };
+}
 
 function createWrapper(
   initialState?: Partial<HiveWorkspaceState>,
@@ -222,5 +268,87 @@ describe('useHiveWorkspace', () => {
     expect(result.current.state.activeTask).toBeNull();
     expect(result.current.state.activeFile).toBeNull();
     expect(result.current.state.activeView).toBe('plan');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review thread state tests
+// ---------------------------------------------------------------------------
+
+describe('workspaceReducer — review thread state', () => {
+  it('SET_REVIEW_THREADS replaces reviewThreads array', () => {
+    const threads = [makeThread({ id: 't-1' }), makeThread({ id: 't-2', status: 'resolved' })];
+    const state = workspaceReducer(mockInitialState, {
+      type: 'SET_REVIEW_THREADS',
+      threads,
+    });
+
+    expect(state.reviewThreads).toHaveLength(2);
+    expect(state.reviewThreads[0].id).toBe('t-1');
+    expect(state.reviewThreads[1].status).toBe('resolved');
+  });
+
+  it('SET_REVIEW_SESSION sets activeReviewSession', () => {
+    const session = makeSession({ id: 'sess-42' });
+    const state = workspaceReducer(mockInitialState, {
+      type: 'SET_REVIEW_SESSION',
+      session,
+    });
+
+    expect(state.activeReviewSession).not.toBeNull();
+    expect(state.activeReviewSession!.id).toBe('sess-42');
+  });
+
+  it('SET_REVIEW_SESSION with null clears session', () => {
+    const withSession: HiveWorkspaceState = {
+      ...mockInitialState,
+      activeReviewSession: makeSession(),
+    };
+    const state = workspaceReducer(withSession, {
+      type: 'SET_REVIEW_SESSION',
+      session: null,
+    });
+
+    expect(state.activeReviewSession).toBeNull();
+  });
+
+  it('SELECT_FEATURE resets reviewThreads and activeReviewSession', () => {
+    const withReviewState: HiveWorkspaceState = {
+      ...mockInitialState,
+      reviewThreads: [makeThread()],
+      activeReviewSession: makeSession(),
+    };
+    const state = workspaceReducer(withReviewState, {
+      type: 'SELECT_FEATURE',
+      name: 'other-feature',
+    });
+
+    expect(state.reviewThreads).toEqual([]);
+    expect(state.activeReviewSession).toBeNull();
+  });
+
+  it('provides initial reviewThreads as empty array', () => {
+    const { result } = renderHook(() => useHiveWorkspace(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.state.reviewThreads).toEqual([]);
+    expect(result.current.state.activeReviewSession).toBeNull();
+  });
+});
+
+describe('HiveWorkspaceActions — review thread actions', () => {
+  it('exposes all 7 review thread action methods', () => {
+    const { result } = renderHook(() => useHiveWorkspace(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(typeof result.current.actions.addThread).toBe('function');
+    expect(typeof result.current.actions.replyToThread).toBe('function');
+    expect(typeof result.current.actions.resolveThread).toBe('function');
+    expect(typeof result.current.actions.unresolveThread).toBe('function');
+    expect(typeof result.current.actions.deleteThread).toBe('function');
+    expect(typeof result.current.actions.editAnnotation).toBe('function');
+    expect(typeof result.current.actions.deleteAnnotation).toBe('function');
   });
 });

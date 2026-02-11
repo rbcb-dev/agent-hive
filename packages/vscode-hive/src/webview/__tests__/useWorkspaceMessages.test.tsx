@@ -25,7 +25,7 @@ import type {
   WebviewToExtensionMessage,
   ExtensionToWebviewMessage,
 } from '../types';
-import type { FeatureInfo, DiffPayload, PlanComment } from 'hive-core';
+import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread } from 'hive-core';
 
 // Mock vscodeApi
 const mockPostMessage = vi.fn();
@@ -88,6 +88,8 @@ const DEFAULT_STATE: HiveWorkspaceState = {
   planComments: [],
   contextContent: null,
   isLoading: false,
+  reviewThreads: [],
+  activeReviewSession: null,
 };
 
 function createWrapper(initialState?: Partial<HiveWorkspaceState>) {
@@ -378,7 +380,7 @@ describe('useWorkspaceMessages — mounted integration', () => {
     const mockComments: PlanComment[] = [
       {
         id: 'c1',
-        line: 5,
+        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 0 } },
         body: 'Looks good',
         author: 'human',
         timestamp: '2026-01-01T00:00:00Z',
@@ -447,5 +449,261 @@ describe('useWorkspaceMessages — mounted integration', () => {
     expect(calls).toContain('requestFeatures');
     expect(calls).toContain('requestFeatureDiffs');
     expect(calls).not.toContain('requestTaskDiff');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review thread message handling tests
+// ---------------------------------------------------------------------------
+
+function makeThread(overrides: Partial<ReviewThread> = {}): ReviewThread {
+  return {
+    id: 'thread-1',
+    entityId: 'entity-1',
+    uri: 'file:///src/index.ts',
+    range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+    status: 'open',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    annotations: [],
+    ...overrides,
+  };
+}
+
+describe('useWorkspaceMessages — review thread messages', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedHandler = null;
+  });
+
+  it('handles reviewThreadsUpdate message and updates state', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    const threads = [makeThread({ id: 't-1' }), makeThread({ id: 't-2', status: 'resolved' })];
+
+    act(() => {
+      capturedHandler!({
+        type: 'reviewThreadsUpdate',
+        threads,
+      });
+    });
+
+    expect(result.current.state.reviewThreads).toHaveLength(2);
+    expect(result.current.state.reviewThreads[0].id).toBe('t-1');
+    expect(result.current.state.reviewThreads[1].status).toBe('resolved');
+  });
+
+  it('handles sessionUpdate message and updates activeReviewSession', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    act(() => {
+      capturedHandler!({
+        type: 'sessionUpdate',
+        session: {
+          schemaVersion: 1,
+          id: 'sess-1',
+          featureName: 'feature-one',
+          scope: 'feature',
+          status: 'in_progress',
+          verdict: null,
+          summary: null,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+          threads: [makeThread()],
+          diffs: {},
+          gitMeta: {
+            repoRoot: '/repo',
+            baseRef: 'main',
+            headRef: 'feature',
+            mergeBase: 'abc123',
+            capturedAt: '2026-01-01T00:00:00Z',
+            diffStats: { files: 0, insertions: 0, deletions: 0 },
+            diffSummary: [],
+          },
+        },
+      });
+    });
+
+    expect(result.current.state.activeReviewSession).not.toBeNull();
+    expect(result.current.state.activeReviewSession!.id).toBe('sess-1');
+  });
+});
+
+describe('useWorkspaceMessages — review action messages', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedHandler = null;
+  });
+
+  it('addThread sends addComment message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    const range = { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } };
+    act(() => {
+      result.current.actions.addThread('entity-1', 'file:///src/a.ts', range, 'Nice code', 'comment');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'addComment',
+      entityId: 'entity-1',
+      uri: 'file:///src/a.ts',
+      range,
+      body: 'Nice code',
+      annotationType: 'comment',
+    });
+  });
+
+  it('replyToThread sends reply message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.replyToThread('thread-1', 'I agree');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'reply',
+      threadId: 'thread-1',
+      body: 'I agree',
+    });
+  });
+
+  it('resolveThread sends resolve message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.resolveThread('thread-1');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'resolve',
+      threadId: 'thread-1',
+    });
+  });
+
+  it('unresolveThread sends unresolve message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.unresolveThread('thread-1');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'unresolve',
+      threadId: 'thread-1',
+    });
+  });
+
+  it('deleteThread sends deleteThread message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.deleteThread('thread-1');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'deleteThread',
+      threadId: 'thread-1',
+    });
+  });
+
+  it('editAnnotation sends editComment message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.editAnnotation('thread-1', 'ann-1', 'Updated text');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'editComment',
+      threadId: 'thread-1',
+      annotationId: 'ann-1',
+      body: 'Updated text',
+    });
+  });
+
+  it('deleteAnnotation sends deleteComment message to extension', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper() },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.deleteAnnotation('thread-1', 'ann-1');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'deleteComment',
+      threadId: 'thread-1',
+      annotationId: 'ann-1',
+    });
   });
 });
