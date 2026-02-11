@@ -8,6 +8,8 @@
 import type {
   ReviewSession,
   ReviewConfig,
+  ReviewThread,
+  TaskCommit,
   Range,
   FeatureInfo,
   DiffPayload,
@@ -33,6 +35,15 @@ export type WebviewToExtensionMessage =
     }
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
+  | { type: 'unresolve'; threadId: string }
+  | { type: 'deleteThread'; threadId: string }
+  | {
+      type: 'editComment';
+      threadId: string;
+      annotationId: string;
+      body: string;
+    }
+  | { type: 'deleteComment'; threadId: string; annotationId: string }
   | {
       /**
        * Apply a code suggestion to a file. The extension handler (`_handleApplySuggestion`
@@ -59,13 +70,28 @@ export type WebviewToExtensionMessage =
   | { type: 'requestTaskDiff'; feature: string; task: string }
   | { type: 'requestPlanContent'; feature: string }
   | { type: 'requestContextContent'; feature: string; name: string }
-  | { type: 'addPlanComment'; feature: string; line: number; body: string }
+  | { type: 'addPlanComment'; feature: string; range: Range; body: string }
   | { type: 'resolvePlanComment'; feature: string; commentId: string }
   | {
       type: 'replyToPlanComment';
       feature: string;
       commentId: string;
       body: string;
+    }
+  | { type: 'unresolvePlanComment'; feature: string; commentId: string }
+  | { type: 'deletePlanComment'; feature: string; commentId: string }
+  | {
+      type: 'editPlanComment';
+      feature: string;
+      commentId: string;
+      body: string;
+    }
+  | { type: 'requestCommitHistory'; feature: string; task: string }
+  | {
+      type: 'requestCommitDiff';
+      feature: string;
+      task: string;
+      sha: string;
     };
 
 /**
@@ -78,15 +104,6 @@ export type ExtensionToWebviewMessage =
       config: ReviewConfig;
     }
   | { type: 'sessionUpdate'; session: ReviewSession }
-  | {
-      /**
-       * Declared but **never emitted** by the extension host. Kept for forward
-       * compatibility — emit this when review config hot-reload is implemented,
-       * or remove if the feature is abandoned.
-       */
-      type: 'configUpdate';
-      config: ReviewConfig;
-    }
   | { type: 'error'; message: string }
   | {
       type: 'scopeChanged';
@@ -103,10 +120,9 @@ export type ExtensionToWebviewMessage =
   | { type: 'fileError'; uri: string; error: string }
   | {
       /**
-       * Emitted by the extension host after handling 'applySuggestion', but
-       * **not consumed by any webview hook or component** yet. The webview
-       * should listen for this to update SuggestionPreview status (pending →
-       * applied/conflict) once the applySuggestion sender is wired.
+       * Emitted by the extension host after handling 'applySuggestion'.
+       * Consumed by `useReviewSession` to update suggestion status
+       * (pending → applied/conflict).
        */
       type: 'suggestionApplied';
       threadId: string;
@@ -132,4 +148,18 @@ export type ExtensionToWebviewMessage =
       content: string;
       comments: PlanComment[];
     }
-  | { type: 'contextContent'; feature: string; name: string; content: string };
+  | { type: 'contextContent'; feature: string; name: string; content: string }
+  | {
+      type: 'commitHistory';
+      feature: string;
+      task: string;
+      commits: TaskCommit[];
+    }
+  | {
+      type: 'commitDiff';
+      feature: string;
+      task: string;
+      sha: string;
+      diffs: DiffPayload[];
+    }
+  | { type: 'reviewThreadsUpdate'; threads: ReviewThread[] };

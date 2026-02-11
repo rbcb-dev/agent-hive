@@ -29,6 +29,7 @@ export {
 export {
   useReviewSession,
   type ScopeContent,
+  type SuggestionResult,
   type UseReviewSessionResult,
 } from './useReviewSession';
 

@@ -20,6 +20,12 @@ export interface ScopeContent {
   language: string;
 }
 
+/** Result of applying a suggestion */
+export interface SuggestionResult {
+  success: boolean;
+  error?: string;
+}
+
 export interface UseReviewSessionResult {
   /** Current review session (null if not loaded) */
   session: ReviewSession | null;
@@ -43,6 +49,8 @@ export interface UseReviewSessionResult {
   selectedThreadData: ReviewThread | null;
   /** Selected file diff data */
   selectedFileData: DiffFile | null;
+  /** Applied suggestion results keyed by "threadId:annotationId" */
+  appliedSuggestions: Record<string, SuggestionResult>;
 
   // Handlers
   handleScopeChange: (scope: string) => void;
@@ -98,6 +106,9 @@ export function useReviewSession(): UseReviewSessionResult {
   const [scopeContent, setScopeContent] = useState<ScopeContent | undefined>(
     undefined,
   );
+  const [appliedSuggestions, setAppliedSuggestions] = useState<
+    Record<string, SuggestionResult>
+  >({});
 
   // Handle messages from extension
   const handleMessage = useCallback((message: ExtensionToWebviewMessage) => {
@@ -116,6 +127,17 @@ export function useReviewSession(): UseReviewSessionResult {
       case 'error':
         console.error('Extension error:', message.message);
         break;
+      case 'suggestionApplied': {
+        const key = `${message.threadId}:${message.annotationId}`;
+        setAppliedSuggestions((prev) => ({
+          ...prev,
+          [key]: {
+            success: message.success,
+            ...(message.error !== undefined && { error: message.error }),
+          },
+        }));
+        break;
+      }
       // Note: fileContent and fileError are handled by useFileContentCache
     }
   }, []);
@@ -241,6 +263,7 @@ export function useReviewSession(): UseReviewSessionResult {
     filePaths,
     selectedThreadData,
     selectedFileData,
+    appliedSuggestions,
     handleScopeChange,
     handleSelectFile,
     handleSelectThread,

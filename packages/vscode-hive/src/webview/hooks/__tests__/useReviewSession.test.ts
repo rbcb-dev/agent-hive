@@ -396,6 +396,80 @@ describe('useReviewSession', () => {
     });
   });
 
+  it('tracks suggestion applied status from suggestionApplied message', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Send a successful suggestionApplied message
+    act(() => {
+      handler({
+        type: 'suggestionApplied',
+        threadId: 'thread-1',
+        annotationId: 'ann-1',
+        success: true,
+      });
+    });
+
+    expect(result.current.appliedSuggestions).toEqual({
+      'thread-1:ann-1': { success: true },
+    });
+  });
+
+  it('tracks suggestion applied failure with error', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Send a failed suggestionApplied message
+    act(() => {
+      handler({
+        type: 'suggestionApplied',
+        threadId: 'thread-2',
+        annotationId: 'ann-2',
+        success: false,
+        error: 'Merge conflict',
+      });
+    });
+
+    expect(result.current.appliedSuggestions).toEqual({
+      'thread-2:ann-2': { success: false, error: 'Merge conflict' },
+    });
+  });
+
+  it('accumulates multiple suggestion results', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    act(() => {
+      handler({
+        type: 'suggestionApplied',
+        threadId: 'thread-1',
+        annotationId: 'ann-1',
+        success: true,
+      });
+    });
+
+    act(() => {
+      handler({
+        type: 'suggestionApplied',
+        threadId: 'thread-2',
+        annotationId: 'ann-2',
+        success: false,
+        error: 'conflict',
+      });
+    });
+
+    expect(result.current.appliedSuggestions).toEqual({
+      'thread-1:ann-1': { success: true },
+      'thread-2:ann-2': { success: false, error: 'conflict' },
+    });
+  });
+
   it('provides file paths from diffs', async () => {
     const { addMessageListener } = await import('../../vscodeApi');
     const { result } = renderHook(() => useReviewSession());
