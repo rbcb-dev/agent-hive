@@ -20,13 +20,26 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn, expect, within, userEvent, waitFor } from 'storybook/test';
 
 import { App } from './App';
-import type { ReviewSession } from 'hive-core';
+import type { ReviewSession, ReviewConfig } from 'hive-core';
 import type { ExtensionToWebviewMessage } from './types';
 import {
   createMockReviewThread,
   createMockAnnotation,
   createMockDiffFile,
 } from './__stories__/mocks';
+
+/**
+ * Default mock ReviewConfig used across all sessionData messages
+ */
+const mockConfig: ReviewConfig = {
+  autoDelegate: true,
+  parallelReviewers: 1,
+  notifications: {
+    llmQuestions: 'both',
+    newComments: true,
+    reviewComplete: true,
+  },
+};
 
 // =============================================================================
 // Mock Session Data Factory
@@ -308,6 +321,7 @@ or file changes. Shows the basic UI structure.
     sendMessage({
       type: 'sessionData',
       session: createMockSession(),
+      config: mockConfig,
     });
 
     const canvas = within(canvasElement);
@@ -348,6 +362,7 @@ human reviewers and AI, and various thread statuses.
     sendMessage({
       type: 'sessionData',
       session: createActiveReviewSession(),
+      config: mockConfig,
     });
 
     const canvas = within(canvasElement);
@@ -394,6 +409,7 @@ switching scopes, selecting files, and viewing threads.
     sendMessage({
       type: 'sessionData',
       session: createActiveReviewSession(),
+      config: mockConfig,
     });
 
     const canvas = within(canvasElement);
@@ -441,6 +457,7 @@ Demonstrates how the app displays scope-specific content
     sendMessage({
       type: 'sessionData',
       session: createMockSession(),
+      config: mockConfig,
     });
 
     const canvas = within(canvasElement);
@@ -475,6 +492,145 @@ Demonstrates how the app displays scope-specific content
 };
 
 // =============================================================================
+// Workspace Mode Stories (Sidebar + HivePanel)
+// =============================================================================
+
+/**
+ * Workspace mode — App renders HivePanel with sidebar navigation.
+ *
+ * When no review session is active, the App shows the workspace layout:
+ * - FeatureSidebar with Navigator and ChangedFiles
+ * - Content area driven by activeView
+ *
+ * This story renders in workspace mode (no sessionData message sent),
+ * showing the HivePanel with the empty sidebar state.
+ */
+export const WithSidebar: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Workspace mode: the App renders HivePanel with the sidebar showing
+the feature navigator and changed files panels. No review session is
+active, so HivePanel is the primary layout.
+        `,
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Wait for component to mount — in workspace mode (no session),
+    // App renders HivePanel which includes the sidebar
+    await waitFor(() => {
+      // HivePanel should be rendered
+      expect(canvas.getByTestId('hive-panel')).toBeInTheDocument();
+    });
+
+    // Sidebar should be present
+    await expect(
+      canvas.getByTestId('hive-panel-sidebar'),
+    ).toBeInTheDocument();
+
+    // Content area should be present
+    await expect(
+      canvas.getByTestId('hive-panel-content'),
+    ).toBeInTheDocument();
+
+    // In empty state, content area shows the welcome prompt
+    await expect(
+      canvas.getByText(/select a feature/i),
+    ).toBeInTheDocument();
+
+    // Sidebar should show "No features found" in empty state
+    await expect(
+      canvas.getByText('No features found'),
+    ).toBeInTheDocument();
+  },
+};
+
+/**
+ * End-to-end workspace flow — verifies the App renders workspace mode
+ * and the scope tabs remain accessible alongside the sidebar layout.
+ *
+ * Since the App's internal HiveWorkspaceProvider starts with empty state,
+ * this story validates the structural integration: scope tabs in header,
+ * HivePanel (sidebar + content) in the main area, and ReviewSummary in
+ * the footer. It then sends a session to transition into review mode,
+ * verifying the mode switch works correctly.
+ */
+export const EndToEndFlow: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: `
+End-to-end integration flow: starts in workspace mode (HivePanel visible),
+then transitions to review mode when session data arrives. Verifies both
+layout modes work within the same App instance.
+        `,
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Step 1: Workspace mode — HivePanel is rendered
+    await waitFor(() => {
+      expect(canvas.getByTestId('hive-panel')).toBeInTheDocument();
+    });
+
+    // Scope tabs should be in the header
+    await expect(
+      canvas.getByRole('tab', { name: /Feature/i }),
+    ).toBeInTheDocument();
+
+    // Sidebar and content area present
+    await expect(
+      canvas.getByTestId('hive-panel-sidebar'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByTestId('hive-panel-content'),
+    ).toBeInTheDocument();
+
+    // Step 2: Transition to review mode by sending session data
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    sendMessage({
+      type: 'sessionData',
+      session: createActiveReviewSession(),
+      config: mockConfig,
+    });
+
+    // Step 3: Review mode — HivePanel is replaced by review layout
+    await waitFor(() => {
+      // Files heading appears in review mode sidebar
+      const filesHeading = canvas.getByRole('heading', { name: /Files/i });
+      expect(filesHeading).toBeInTheDocument();
+    });
+
+    // Threads heading should also appear
+    await waitFor(() => {
+      const threadsHeading = canvas.getByRole('heading', {
+        name: /Threads/i,
+      });
+      expect(threadsHeading).toBeInTheDocument();
+    });
+
+    // Scope tabs still accessible after mode transition
+    await expect(
+      canvas.getByRole('tab', { name: /Code/i }),
+    ).toBeInTheDocument();
+
+    // Click Code tab to navigate
+    const codeTab = canvas.getByRole('tab', { name: /Code/i });
+    await userEvent.click(codeTab);
+
+    await waitFor(() => {
+      expect(codeTab).toHaveAttribute('aria-selected', 'true');
+    });
+  },
+};
+
+// =============================================================================
 // Accessibility Stories
 // =============================================================================
 
@@ -498,6 +654,7 @@ export const AccessibilityCheck: Story = {
     sendMessage({
       type: 'sessionData',
       session: createActiveReviewSession(),
+      config: mockConfig,
     });
 
     const canvas = within(canvasElement);

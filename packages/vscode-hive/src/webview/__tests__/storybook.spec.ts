@@ -95,6 +95,9 @@ const JSDOM_INCOMPATIBLE_PLAY: Set<string> = new Set([
   'App/NavigationFlow',
   'App/WithScopeContent',
   'App/AccessibilityCheck',
+  // App: workspace mode stories rely on HivePanel/HiveWorkspaceProvider + antd Layout in jsdom
+  'App/WithSidebar',
+  'App/EndToEndFlow',
 ]);
 
 // Generate tests for each composed story
