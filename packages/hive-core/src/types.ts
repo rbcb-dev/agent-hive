@@ -128,7 +128,7 @@ export interface PlanCommentReply {
 
 export interface PlanComment {
   id: string;
-  line: number;
+  range: Range;
   body: string;
   author: 'human' | 'agent';
   timestamp: string;
