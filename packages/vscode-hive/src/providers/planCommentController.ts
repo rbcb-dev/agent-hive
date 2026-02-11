@@ -288,8 +288,7 @@ export class PlanCommentController {
     raw: StoredThread | LegacyStoredThread,
     commentsPath: string,
   ): StoredThread {
-    const timestamp =
-      raw.timestamp || this.getFileMtime(commentsPath);
+    const timestamp = raw.timestamp || this.getFileMtime(commentsPath);
     const author = (raw.author as 'human' | 'agent') || 'human';
 
     let replies: StoredReply[] | undefined;

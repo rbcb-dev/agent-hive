@@ -530,6 +530,91 @@ describe('ReviewService', () => {
     });
   });
 
+  describe('event callbacks', () => {
+    it('calls onReviewSubmitted after submitSession', async () => {
+      const session = await service.startSession('test-feature', 'feature');
+
+      const events: Array<{
+        feature: string;
+        sessionId: string;
+        verdict: string;
+        status: string;
+      }> = [];
+      service.onReviewSubmitted = (f, sId, v, s) => {
+        events.push({ feature: f, sessionId: sId, verdict: v, status: s });
+      };
+
+      await service.submitSession(session.id, 'approve', 'Looks good!');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe('test-feature');
+      expect(events[0].sessionId).toBe(session.id);
+      expect(events[0].verdict).toBe('approve');
+      expect(events[0].status).toBe('approved');
+    });
+
+    it('calls onReviewThreadResolved after resolveThread', async () => {
+      const session = await service.startSession('test-feature', 'feature');
+      const range: Range = {
+        start: { line: 0, character: 0 },
+        end: { line: 1, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'entity-1',
+        null,
+        range,
+        {
+          type: 'comment',
+          body: 'Fix this',
+          author: { type: 'human', name: 'reviewer' },
+        },
+      );
+
+      const events: Array<{
+        feature: string;
+        sessionId: string;
+        threadId: string;
+      }> = [];
+      service.onReviewThreadResolved = (f, sId, tId) => {
+        events.push({ feature: f, sessionId: sId, threadId: tId });
+      };
+
+      await service.resolveThread(thread.id);
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe('test-feature');
+      expect(events[0].sessionId).toBe(session.id);
+      expect(events[0].threadId).toBe(thread.id);
+    });
+
+    it('does not fail when no event callbacks are set', async () => {
+      const session = await service.startSession('test-feature', 'feature');
+      const range: Range = {
+        start: { line: 0, character: 0 },
+        end: { line: 1, character: 0 },
+      };
+
+      const thread = await service.addThread(
+        session.id,
+        'entity-1',
+        null,
+        range,
+        {
+          type: 'comment',
+          body: 'Comment',
+          author: { type: 'human', name: 'user' },
+        },
+      );
+
+      // No callbacks set — should not throw
+      await expect(
+        service.submitSession(session.id, 'approve', 'OK'),
+      ).resolves.toBeDefined();
+    });
+  });
+
   describe('schema versioning', () => {
     it('creates sessions with schemaVersion 1', async () => {
       const session = await service.startSession('test-feature', 'feature');

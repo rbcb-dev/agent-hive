@@ -927,9 +927,9 @@ export const AccessibilityCheck: Story = {
     const canvas = within(canvasElement);
 
     // Verify heading is accessible via role
-    await expect(
-      canvas.getByRole('heading', { level: 1 }),
-    ).toHaveTextContent('Welcome to the Documentation');
+    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Welcome to the Documentation',
+    );
 
     // Verify mode toggle buttons are accessible
     const renderedButton = canvas.getByRole('button', { name: /rendered/i });
@@ -938,9 +938,7 @@ export const AccessibilityCheck: Story = {
     await expect(rawButton).toBeInTheDocument();
 
     // Verify content text is visible
-    await expect(
-      canvas.getByText(/comprehensive/i),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText(/comprehensive/i)).toBeInTheDocument();
 
     // Tab navigation should move focus through interactive elements
     await userEvent.tab();

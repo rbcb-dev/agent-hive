@@ -14,6 +14,7 @@ import { SCOUT_BEE_PROMPT } from './agents/scout.js';
 import { FORAGER_BEE_PROMPT } from './agents/forager.js';
 import { HYGIENIC_BEE_PROMPT } from './agents/hygienic.js';
 import { createBuiltinMcps } from './mcp/index.js';
+import { ReviewEventEmitter, createReviewHooks } from './hooks/review-hooks.js';
 
 // ============================================================================
 // Skill Tool - Uses generated registry (no file-based discovery)
@@ -294,6 +295,42 @@ const plugin: Plugin = async (ctx) => {
   // Get filtered skills (globally disabled skills removed)
   // Per-agent skill filtering could be added here based on agent context
   const filteredSkills = getFilteredSkills(disabledSkills);
+
+  // ============================================================================
+  // Review lifecycle event hooks (observability-only, fire-and-forget)
+  // ============================================================================
+  const reviewEmitter = new ReviewEventEmitter();
+  createReviewHooks(reviewEmitter);
+
+  // Bridge service callbacks to emitter
+  planService.onCommentAdded = (feature, commentId, unresolvedCount) => {
+    reviewEmitter.emit('plan.commented', {
+      feature,
+      commentId,
+      unresolvedCount,
+    });
+  };
+  planService.onPlanRevised = (feature, previousCommentCount) => {
+    reviewEmitter.emit('plan.revised', { feature, previousCommentCount });
+  };
+  planService.onPlanApproved = (feature, approvedAt) => {
+    reviewEmitter.emit('plan.approved', { feature, approvedAt });
+  };
+  reviewService.onReviewSubmitted = (feature, sessionId, verdict, status) => {
+    reviewEmitter.emit('review.submitted', {
+      feature,
+      sessionId,
+      verdict,
+      status,
+    });
+  };
+  reviewService.onReviewThreadResolved = (feature, sessionId, threadId) => {
+    reviewEmitter.emit('review.thread.resolved', {
+      feature,
+      sessionId,
+      threadId,
+    });
+  };
   const effectiveAutoLoadSkills =
     configService.getAgentConfig('hive-master').autoLoadSkills ?? [];
   const worktreeService = new WorktreeService({

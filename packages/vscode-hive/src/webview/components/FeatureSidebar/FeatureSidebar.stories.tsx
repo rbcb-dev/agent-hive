@@ -175,10 +175,7 @@ const meta: Meta = {
     (Story, context) => {
       const state = (context.args as any).initialState ?? defaultState;
       return (
-        <HiveWorkspaceProvider
-          initialState={state}
-          onRefreshFeatures={fn()}
-        >
+        <HiveWorkspaceProvider initialState={state} onRefreshFeatures={fn()}>
           <div
             style={{
               width: 320,
@@ -219,9 +216,7 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('No features found')).toBeInTheDocument();
-    await expect(
-      canvas.getByText('No files to display'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText('No files to display')).toBeInTheDocument();
   },
 };
 
@@ -411,9 +406,7 @@ export const DuplicateFileAcrossTasks: Story = {
     await userEvent.click(dbSetupNode);
 
     // At task level, schema.ts should show status A (from db-setup)
-    const taskSchemaFile = canvas.getByTestId(
-      'changed-file-src/db/schema.ts',
-    );
+    const taskSchemaFile = canvas.getByTestId('changed-file-src/db/schema.ts');
     await expect(taskSchemaFile).toBeInTheDocument();
     await expect(
       within(taskSchemaFile).getByTestId('status-badge-A'),

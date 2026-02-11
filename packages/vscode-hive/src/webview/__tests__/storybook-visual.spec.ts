@@ -127,9 +127,20 @@ const storyModules = {
  *   "HiveWorkspaceProvider" → "providers-hiveworkspaceprovider"
  */
 const PRIMITIVE_NAMES = new Set([
-  'Alert', 'Button', 'Card', 'Collapse', 'Flex', 'Layout',
-  'RadioGroup', 'Segmented', 'Space', 'Tabs', 'TextArea',
-  'Tree', 'Typography', 'VirtualList',
+  'Alert',
+  'Button',
+  'Card',
+  'Collapse',
+  'Flex',
+  'Layout',
+  'RadioGroup',
+  'Segmented',
+  'Space',
+  'Tabs',
+  'TextArea',
+  'Tree',
+  'Typography',
+  'VirtualList',
 ]);
 const PROVIDER_NAMES = new Set(['HiveWorkspaceProvider']);
 

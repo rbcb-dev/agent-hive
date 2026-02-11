@@ -120,7 +120,11 @@ export const WithAction: Story = {
     description: 'A new version of the extension is available.',
     type: 'info',
     showIcon: true,
-    action: <Button type="primary" size="small">Update</Button>,
+    action: (
+      <Button type="primary" size="small">
+        Update
+      </Button>
+    ),
   },
 };
 
@@ -142,7 +146,9 @@ export const RenderingTest: Story = {
     await expect(alert).toBeInTheDocument();
 
     // Verify the description text renders
-    await expect(canvas.getByText('Test description content')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Test description content'),
+    ).toBeInTheDocument();
   },
 };
 

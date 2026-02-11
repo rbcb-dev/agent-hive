@@ -209,10 +209,9 @@ describe('FeatureSidebar.Navigator', () => {
 describe('FeatureSidebar.ChangedFiles', () => {
   it('renders file list when feature is selected with file changes', () => {
     const fileChanges = new Map<string, DiffPayload[]>();
-    fileChanges.set(
-      '01-setup',
-      [makeDiffPayload([{ path: 'src/index.ts', status: 'A', additions: 10 }])],
-    );
+    fileChanges.set('01-setup', [
+      makeDiffPayload([{ path: 'src/index.ts', status: 'A', additions: 10 }]),
+    ]);
 
     renderWithProvider(
       <FeatureSidebar>
@@ -227,14 +226,18 @@ describe('FeatureSidebar.ChangedFiles', () => {
   it('dispatches selectFile when a file is clicked', async () => {
     const user = userEvent.setup();
     const fileChanges = new Map<string, DiffPayload[]>();
-    fileChanges.set(
-      '01-setup',
-      [makeDiffPayload([{ path: 'src/app.ts', status: 'M', additions: 5, deletions: 2 }])],
-    );
+    fileChanges.set('01-setup', [
+      makeDiffPayload([
+        { path: 'src/app.ts', status: 'M', additions: 5, deletions: 2 },
+      ]),
+    ]);
 
     render(
       <HiveWorkspaceProvider
-        initialState={createState({ activeFeature: 'feature-alpha', fileChanges })}
+        initialState={createState({
+          activeFeature: 'feature-alpha',
+          fileChanges,
+        })}
         onRefreshFeatures={vi.fn()}
       >
         <FeatureSidebar>
@@ -340,9 +343,7 @@ describe('FeatureSidebar.ChangedFiles', () => {
 
   it('shows rename with old → new path indicator', () => {
     const fileChanges = new Map<string, DiffPayload[]>();
-    const payload = makeDiffPayload([
-      { path: 'src/new-name.ts', status: 'R' },
-    ]);
+    const payload = makeDiffPayload([{ path: 'src/new-name.ts', status: 'R' }]);
     // Add oldPath to the rename file
     (payload.files[0] as any).oldPath = 'src/old-name.ts';
     fileChanges.set('01-setup', [payload]);

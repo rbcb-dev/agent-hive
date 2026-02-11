@@ -345,9 +345,7 @@ export const AccessibilityCheck: Story = {
     const canvas = within(canvasElement);
 
     // Verify annotation text is visible
-    await expect(
-      canvas.getByText(/Check accessibility/i),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText(/Check accessibility/i)).toBeInTheDocument();
 
     // Verify reply textarea is accessible via role
     const replyInput = canvas.getByRole('textbox', {

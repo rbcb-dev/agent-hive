@@ -318,7 +318,9 @@ describe('PlanReview - Adding comments', () => {
     await user.click(submitButton);
 
     // Input should be cleared and hidden
-    expect(screen.queryByPlaceholderText(/add a comment/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/add a comment/i),
+    ).not.toBeInTheDocument();
   });
 });
 

@@ -110,9 +110,7 @@ describe('HiveWorkspaceProvider', () => {
 
 describe('useHiveWorkspace', () => {
   it('throws when called outside provider', () => {
-    const consoleSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useHiveWorkspace());

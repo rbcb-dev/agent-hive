@@ -64,12 +64,14 @@ const defaultItems: CollapseItem[] = [
   {
     key: '2',
     label: 'Task List',
-    children: 'Tasks are generated from the approved plan and executed in order.',
+    children:
+      'Tasks are generated from the approved plan and executed in order.',
   },
   {
     key: '3',
     label: 'Context Files',
-    children: 'Context files store persistent notes, decisions, and reference material.',
+    children:
+      'Context files store persistent notes, decisions, and reference material.',
   },
 ];
 

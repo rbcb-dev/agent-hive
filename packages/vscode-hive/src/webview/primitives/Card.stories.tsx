@@ -54,7 +54,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     title: 'Card Title',
-    children: 'This is card content. Cards are useful for grouping related information.',
+    children:
+      'This is card content. Cards are useful for grouping related information.',
   },
 };
 
@@ -87,7 +88,11 @@ export const Hoverable: Story = {
 export const WithExtra: Story = {
   args: {
     title: 'Feature Details',
-    extra: <Button type="link" size="small">More</Button>,
+    extra: (
+      <Button type="link" size="small">
+        More
+      </Button>
+    ),
     children: 'Card with a header action button.',
   },
 };
@@ -138,6 +143,8 @@ export const AccessibilityCheck: Story = {
 
     // Verify content is present and readable
     await expect(canvas.getByText('Accessible Card')).toBeInTheDocument();
-    await expect(canvas.getByText('This card should have proper heading structure.')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('This card should have proper heading structure.'),
+    ).toBeInTheDocument();
   },
 };

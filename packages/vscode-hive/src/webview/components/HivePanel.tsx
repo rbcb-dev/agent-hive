@@ -76,7 +76,12 @@ function HivePanelContent(): React.ReactElement {
   const handleAddPlanComment = useCallback(
     (line: number, body: string) => {
       if (activeFeature) {
-        postMessage({ type: 'addPlanComment', feature: activeFeature, line, body });
+        postMessage({
+          type: 'addPlanComment',
+          feature: activeFeature,
+          line,
+          body,
+        });
       }
     },
     [activeFeature],
@@ -85,7 +90,11 @@ function HivePanelContent(): React.ReactElement {
   const handleResolvePlanComment = useCallback(
     (commentId: string) => {
       if (activeFeature) {
-        postMessage({ type: 'resolvePlanComment', feature: activeFeature, commentId });
+        postMessage({
+          type: 'resolvePlanComment',
+          feature: activeFeature,
+          commentId,
+        });
       }
     },
     [activeFeature],

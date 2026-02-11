@@ -62,9 +62,15 @@ export const Vertical: Story = {
     size: 'middle',
     children: (
       <>
-        <Button type="primary" block>Step 1</Button>
-        <Button type="default" block>Step 2</Button>
-        <Button type="dashed" block>Step 3</Button>
+        <Button type="primary" block>
+          Step 1
+        </Button>
+        <Button type="default" block>
+          Step 2
+        </Button>
+        <Button type="dashed" block>
+          Step 3
+        </Button>
       </>
     ),
   },
@@ -109,7 +115,9 @@ export const Wrapping: Story = {
     children: (
       <>
         {Array.from({ length: 8 }, (_, i) => (
-          <Button key={i} type="default">Tag {i + 1}</Button>
+          <Button key={i} type="default">
+            Tag {i + 1}
+          </Button>
         ))}
       </>
     ),

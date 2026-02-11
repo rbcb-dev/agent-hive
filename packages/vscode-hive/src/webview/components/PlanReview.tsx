@@ -221,7 +221,10 @@ export function PlanReview({
   const [commentingLine, setCommentingLine] = useState<number | null>(null);
 
   // Group comments by line number
-  const commentsByLine = useMemo(() => groupCommentsByLine(comments), [comments]);
+  const commentsByLine = useMemo(
+    () => groupCommentsByLine(comments),
+    [comments],
+  );
 
   // Parse plan into lines
   const lines = useMemo(() => content.split('\n'), [content]);
@@ -286,8 +289,7 @@ export function PlanReview({
           const hasComments = lineComments && lineComments.length > 0;
           const isExpanded = expandedLine === lineNumber;
           const isCommenting = commentingLine === lineNumber;
-          const allResolved =
-            lineComments?.every((c) => c.resolved) ?? false;
+          const allResolved = lineComments?.every((c) => c.resolved) ?? false;
 
           return (
             <React.Fragment key={lineNumber}>
@@ -335,9 +337,7 @@ export function PlanReview({
                 </span>
 
                 {/* Line content */}
-                <span className="plan-line-content">
-                  {line || '\u00A0'}
-                </span>
+                <span className="plan-line-content">{line || '\u00A0'}</span>
               </div>
 
               {/* Expanded comment thread */}

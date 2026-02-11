@@ -24,6 +24,21 @@ const REVIEWS_DIR = 'reviews';
 const INDEX_FILE = 'index.json';
 
 export class ReviewService {
+  /** Optional callback fired after a review session is submitted */
+  onReviewSubmitted?: (
+    feature: string,
+    sessionId: string,
+    verdict: string,
+    status: string,
+  ) => void;
+
+  /** Optional callback fired after a review thread is resolved */
+  onReviewThreadResolved?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+  ) => void;
+
   constructor(private projectRoot: string) {}
 
   /**
@@ -154,6 +169,13 @@ export class ReviewService {
     }
     await this.saveIndex(session.featureName, index);
 
+    // Fire callback after submission completes (fire-and-forget)
+    try {
+      this.onReviewSubmitted?.(session.featureName, sessionId, verdict, status);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+
     return session;
   }
 
@@ -249,6 +271,13 @@ export class ReviewService {
     session.updatedAt = now;
 
     await this.saveSession(session);
+
+    // Fire callback after resolution completes (fire-and-forget)
+    try {
+      this.onReviewThreadResolved?.(session.featureName, session.id, threadId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
 
     return thread;
   }

@@ -21,7 +21,13 @@ export interface UseWorkspaceContentResult {
 
 export function useWorkspaceContent(): UseWorkspaceContentResult {
   const { state } = useHiveWorkspace();
-  const { activeView, activeFeature, planContent, planComments, contextContent } = state;
+  const {
+    activeView,
+    activeFeature,
+    planContent,
+    planComments,
+    contextContent,
+  } = state;
 
   const prevViewRef = useRef<string | null>(null);
   const prevFeatureRef = useRef<string | null>(null);

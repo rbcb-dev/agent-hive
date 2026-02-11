@@ -29,7 +29,11 @@ import { ReviewSummary } from './components/ReviewSummary';
 import { DiffViewer } from './components/DiffViewer';
 import { CodeViewer } from './components/CodeViewer';
 import { MarkdownViewer } from './components/MarkdownViewer';
-import { useReviewSession, useFileContentCache, useWorkspaceMessages } from './hooks';
+import {
+  useReviewSession,
+  useFileContentCache,
+  useWorkspaceMessages,
+} from './hooks';
 import { addMessageListener } from './vscodeApi';
 import type { ReviewThread, DiffFile } from 'hive-core';
 import type { ExtensionToWebviewMessage } from './types';
@@ -224,9 +228,7 @@ export function App(): React.ReactElement {
                           <Button
                             type="primary"
                             size="small"
-                            icon={
-                              <span className="codicon codicon-comment" />
-                            }
+                            icon={<span className="codicon codicon-comment" />}
                             onClick={handleAddComment}
                             aria-label="Add a comment on this content"
                           >
@@ -275,7 +277,10 @@ export function App(): React.ReactElement {
               borderTop: '1px solid var(--ant-color-border)',
             }}
           >
-            <ReviewSummary onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+            <ReviewSummary
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+            />
           </div>
         </Layout>
       </HiveWorkspaceProvider>

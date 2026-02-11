@@ -116,7 +116,10 @@ describe('DiffViewer', () => {
 
       // Must be called with the file path and corresponding line number
       expect(handleLineClick).toHaveBeenCalledTimes(1);
-      expect(handleLineClick).toHaveBeenCalledWith('src/app.ts', expect.any(Number));
+      expect(handleLineClick).toHaveBeenCalledWith(
+        'src/app.ts',
+        expect.any(Number),
+      );
     });
 
     it('passes correct line number matching the clicked gutter row', () => {
@@ -537,16 +540,14 @@ describe('DiffViewer', () => {
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
       fireEvent.click(cancelButton);
 
-      expect(screen.queryByTestId('inline-thread-composer')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('inline-thread-composer'),
+      ).not.toBeInTheDocument();
     });
 
     it('does not show composer when onAddThread is not provided', () => {
       render(
-        <DiffViewer
-          file={mockFile}
-          onReply={vi.fn()}
-          onResolve={vi.fn()}
-        />,
+        <DiffViewer file={mockFile} onReply={vi.fn()} onResolve={vi.fn()} />,
       );
 
       // Click a gutter — no composer should appear
@@ -555,7 +556,9 @@ describe('DiffViewer', () => {
         fireEvent.click(gutters[0]);
       }
 
-      expect(screen.queryByTestId('inline-thread-composer')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('inline-thread-composer'),
+      ).not.toBeInTheDocument();
     });
 
     it('does not render threads when file is null', () => {

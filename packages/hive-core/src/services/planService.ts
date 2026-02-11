@@ -19,14 +19,39 @@ import {
 import * as fs from 'fs';
 
 export class PlanService {
+  /** Optional callback fired after a comment is added */
+  onCommentAdded?: (
+    featureName: string,
+    commentId: string,
+    unresolvedCount: number,
+  ) => void;
+
+  /** Optional callback fired after a plan is revised (rewritten) */
+  onPlanRevised?: (featureName: string, previousCommentCount: number) => void;
+
+  /** Optional callback fired after a plan is approved */
+  onPlanApproved?: (featureName: string, approvedAt: string) => void;
+
   constructor(private projectRoot: string) {}
 
   write(featureName: string, content: string): string {
     const planPath = getPlanPath(this.projectRoot, featureName);
+
+    // Capture previous comment count before clearing
+    const previousComments = this.getComments(featureName);
+    const previousCommentCount = previousComments.length;
+
     writeText(planPath, content);
 
     this.clearComments(featureName);
     this.revokeApproval(featureName);
+
+    // Fire callback after write completes (fire-and-forget)
+    try {
+      this.onPlanRevised?.(featureName, previousCommentCount);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
 
     return planPath;
   }
@@ -71,6 +96,13 @@ export class PlanService {
       feature.status = 'approved';
       feature.approvedAt = timestamp;
       writeJson(featurePath, feature);
+    }
+
+    // Fire callback after approval completes (fire-and-forget)
+    try {
+      this.onPlanApproved?.(featureName, timestamp);
+    } catch {
+      // fire-and-forget: swallow errors
     }
   }
 
@@ -176,6 +208,17 @@ export class PlanService {
 
     data.threads.push(newComment);
     writeJson(commentsPath, data);
+
+    // Fire callback after comment persisted (fire-and-forget)
+    try {
+      const allComments = data.threads;
+      const unresolvedCount = allComments.filter(
+        (c) => c.resolved !== true,
+      ).length;
+      this.onCommentAdded?.(featureName, newComment.id, unresolvedCount);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
 
     return newComment;
   }

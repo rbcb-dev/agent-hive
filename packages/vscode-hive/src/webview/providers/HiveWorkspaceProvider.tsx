@@ -11,7 +11,12 @@
  * Does NOT directly communicate with the extension host (that's Task 4's job).
  */
 
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+} from 'react';
 import type { FeatureInfo, DiffPayload, PlanComment } from 'hive-core';
 
 // ---------------------------------------------------------------------------
