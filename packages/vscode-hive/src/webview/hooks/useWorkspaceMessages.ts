@@ -72,6 +72,18 @@ export function useWorkspaceMessages(): void {
               session: message.session,
             });
             break;
+          case 'commitHistory':
+            dispatch({
+              type: 'SET_COMMITS',
+              commits: message.commits,
+            });
+            break;
+          case 'commitDiff':
+            dispatch({
+              type: 'SET_COMMIT_DIFF',
+              diffs: message.diffs,
+            });
+            break;
         }
       },
     );
@@ -90,7 +102,7 @@ export function useWorkspaceMessages(): void {
     prevFeatureRef.current = state.activeFeature;
   }, [state.activeFeature]);
 
-  // Request task diff when activeTask changes
+  // Request task diff and commit history when activeTask changes
   useEffect(() => {
     if (
       state.activeTask &&
@@ -99,6 +111,11 @@ export function useWorkspaceMessages(): void {
     ) {
       postMessage({
         type: 'requestTaskDiff',
+        feature: state.activeFeature,
+        task: state.activeTask,
+      });
+      postMessage({
+        type: 'requestCommitHistory',
         feature: state.activeFeature,
         task: state.activeTask,
       });

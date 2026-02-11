@@ -70,6 +70,8 @@ const mockInitialState: HiveWorkspaceState = {
   isLoading: false,
   reviewThreads: [],
   activeReviewSession: null,
+  commits: [],
+  commitDiff: null,
 };
 
 function makeThread(overrides: Partial<ReviewThread> = {}): ReviewThread {
@@ -350,5 +352,122 @@ describe('HiveWorkspaceActions — review thread actions', () => {
     expect(typeof result.current.actions.deleteThread).toBe('function');
     expect(typeof result.current.actions.editAnnotation).toBe('function');
     expect(typeof result.current.actions.deleteAnnotation).toBe('function');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Commit state tests
+// ---------------------------------------------------------------------------
+
+describe('workspaceReducer — commit state', () => {
+  it('SET_COMMITS replaces commits array', () => {
+    const commits = [
+      { sha: 'abc1234', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
+      { sha: 'def5678', message: 'fix: bug fix', timestamp: '2026-01-02T00:00:00Z' },
+    ];
+    const state = workspaceReducer(mockInitialState, {
+      type: 'SET_COMMITS',
+      commits,
+    });
+
+    expect(state.commits).toHaveLength(2);
+    expect(state.commits[0].sha).toBe('abc1234');
+    expect(state.commits[1].message).toBe('fix: bug fix');
+  });
+
+  it('SET_COMMIT_DIFF sets commitDiff payload', () => {
+    const diffs = [{
+      baseRef: 'abc~1',
+      headRef: 'abc',
+      mergeBase: 'abc~1',
+      repoRoot: '/repo',
+      fileRoot: '/repo',
+      diffStats: { files: 1, insertions: 5, deletions: 2 },
+      files: [{ path: 'src/index.ts', status: 'M' as const, additions: 5, deletions: 2, hunks: [] }],
+    }];
+    const state = workspaceReducer(mockInitialState, {
+      type: 'SET_COMMIT_DIFF',
+      diffs,
+    });
+
+    expect(state.commitDiff).toHaveLength(1);
+    expect(state.commitDiff![0].files[0].path).toBe('src/index.ts');
+  });
+
+  it('SET_COMMIT_DIFF with null clears commitDiff', () => {
+    const withDiff: HiveWorkspaceState = {
+      ...mockInitialState,
+      commitDiff: [{
+        baseRef: 'a',
+        headRef: 'b',
+        mergeBase: 'a',
+        repoRoot: '/repo',
+        fileRoot: '/repo',
+        diffStats: { files: 0, insertions: 0, deletions: 0 },
+        files: [],
+      }],
+    };
+    const state = workspaceReducer(withDiff, {
+      type: 'SET_COMMIT_DIFF',
+      diffs: null,
+    });
+
+    expect(state.commitDiff).toBeNull();
+  });
+
+  it('SELECT_FEATURE resets commits and commitDiff', () => {
+    const withCommitState: HiveWorkspaceState = {
+      ...mockInitialState,
+      commits: [{ sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' }],
+      commitDiff: [{
+        baseRef: 'a',
+        headRef: 'b',
+        mergeBase: 'a',
+        repoRoot: '/repo',
+        fileRoot: '/repo',
+        diffStats: { files: 0, insertions: 0, deletions: 0 },
+        files: [],
+      }],
+    };
+    const state = workspaceReducer(withCommitState, {
+      type: 'SELECT_FEATURE',
+      name: 'other-feature',
+    });
+
+    expect(state.commits).toEqual([]);
+    expect(state.commitDiff).toBeNull();
+  });
+
+  it('SELECT_TASK resets commits and commitDiff', () => {
+    const withCommitState: HiveWorkspaceState = {
+      ...mockInitialState,
+      activeFeature: 'feature-one',
+      commits: [{ sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' }],
+      commitDiff: [{
+        baseRef: 'a',
+        headRef: 'b',
+        mergeBase: 'a',
+        repoRoot: '/repo',
+        fileRoot: '/repo',
+        diffStats: { files: 0, insertions: 0, deletions: 0 },
+        files: [],
+      }],
+    };
+    const state = workspaceReducer(withCommitState, {
+      type: 'SELECT_TASK',
+      folder: 'task-b',
+    });
+
+    expect(state.commits).toEqual([]);
+    expect(state.commitDiff).toBeNull();
+  });
+
+  it('provides initial commits as empty array and commitDiff as null', () => {
+    const { result } = renderHook(() => useHiveWorkspace(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.state.commits).toEqual([]);
+    expect(result.current.state.commitDiff).toBeNull();
   });
 });

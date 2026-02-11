@@ -12,7 +12,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import type { FeatureInfo, DiffPayload, ReviewThread } from 'hive-core';
+import type {
+  FeatureInfo,
+  DiffPayload,
+  ReviewThread,
+  TaskCommit,
+} from 'hive-core';
 
 import {
   HiveWorkspaceProvider,
@@ -107,6 +112,8 @@ function createState(
     isLoading: false,
     reviewThreads: [],
     activeReviewSession: null,
+    commits: [],
+    commitDiff: null,
     ...overrides,
   };
 }
@@ -358,7 +365,9 @@ describe('HivePanel - Review mode compatibility', () => {
 // Helpers: Review thread test data
 // ---------------------------------------------------------------------------
 
-function makeThread(overrides: Partial<ReviewThread> & { id: string; uri: string | null }): ReviewThread {
+function makeThread(
+  overrides: Partial<ReviewThread> & { id: string; uri: string | null },
+): ReviewThread {
   return {
     entityId: 'task-a',
     range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
@@ -470,7 +479,9 @@ describe('HivePanel - Thread prop wiring', () => {
     const threadElements = screen.queryAllByTestId('inline-diff-thread');
     expect(threadElements.length).toBeGreaterThanOrEqual(1);
     // Verify thread-1 is rendered
-    const threadIds = threadElements.map((el) => el.getAttribute('data-thread-id'));
+    const threadIds = threadElements.map((el) =>
+      el.getAttribute('data-thread-id'),
+    );
     expect(threadIds).toContain('thread-1');
     // thread-2 (other file) should NOT be rendered
     expect(threadIds).not.toContain('thread-2');
@@ -542,12 +553,18 @@ describe('HivePanel - Thread prop wiring', () => {
     const thread1 = makeThread({
       id: 'thread-same-1',
       uri: 'src/index.ts',
-      range: { start: { line: 2, character: 0 }, end: { line: 2, character: 0 } },
+      range: {
+        start: { line: 2, character: 0 },
+        end: { line: 2, character: 0 },
+      },
     });
     const thread2 = makeThread({
       id: 'thread-same-2',
       uri: 'src/index.ts',
-      range: { start: { line: 2, character: 0 }, end: { line: 2, character: 0 } },
+      range: {
+        start: { line: 2, character: 0 },
+        end: { line: 2, character: 0 },
+      },
     });
 
     renderHivePanel({
@@ -560,7 +577,9 @@ describe('HivePanel - Thread prop wiring', () => {
 
     // Both threads should be rendered (not overwritten)
     const threadElements = screen.queryAllByTestId('inline-diff-thread');
-    const threadIds = threadElements.map((el) => el.getAttribute('data-thread-id'));
+    const threadIds = threadElements.map((el) =>
+      el.getAttribute('data-thread-id'),
+    );
     expect(threadIds).toContain('thread-same-1');
     expect(threadIds).toContain('thread-same-2');
   });
@@ -606,5 +625,94 @@ describe('HivePanel - Thread prop wiring', () => {
     const diffArea = document.querySelector('.diff-viewer .file-path');
     expect(diffArea).toBeInTheDocument();
     expect(diffArea!.textContent).toBe('src/index.ts');
+  });
+});
+
+// Tests: Commit history wiring
+// ---------------------------------------------------------------------------
+
+const mockPostMessage = vi.mocked((await import('../vscodeApi')).postMessage);
+
+describe('HivePanel - Commit history wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('task view renders CommitHistory with real commit data from state', () => {
+    const commits: TaskCommit[] = [
+      {
+        sha: 'abc1234567890',
+        message: 'feat: add feature',
+        timestamp: '2026-01-01T00:00:00Z',
+      },
+      {
+        sha: 'def5678901234',
+        message: 'fix: bug fix',
+        timestamp: '2026-01-02T00:00:00Z',
+      },
+    ];
+
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits,
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // CommitHistory renders with real commits — should show short SHA codes
+    expect(within(content).getByText('abc1234')).toBeInTheDocument();
+    expect(within(content).getByText('def5678')).toBeInTheDocument();
+    // Should show commit messages
+    expect(within(content).getByText('feat: add feature')).toBeInTheDocument();
+    expect(within(content).getByText('fix: bug fix')).toBeInTheDocument();
+    // Should NOT show "No commits yet"
+    expect(
+      within(content).queryByText('No commits yet'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('commit selection sends requestCommitDiff message with correct SHA', async () => {
+    const user = userEvent.setup();
+    const commits: TaskCommit[] = [
+      {
+        sha: 'abc1234567890',
+        message: 'feat: add feature',
+        timestamp: '2026-01-01T00:00:00Z',
+      },
+    ];
+
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits,
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // Click the commit item
+    const commitItem = within(content).getByRole('listitem', {
+      name: /Commit abc1234/,
+    });
+    await user.click(commitItem);
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'requestCommitDiff',
+      feature: 'feature-one',
+      task: 'task-a',
+      sha: 'abc1234567890',
+    });
+  });
+
+  it('task view with empty commits still shows "No commits yet"', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits: [],
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    expect(within(content).getByText('No commits yet')).toBeInTheDocument();
   });
 });

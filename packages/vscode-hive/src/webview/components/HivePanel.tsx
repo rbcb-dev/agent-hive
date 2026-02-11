@@ -62,8 +62,16 @@ function resolveFileFromChanges(
 
 function HivePanelContent(): React.ReactElement {
   const { state, actions } = useHiveWorkspace();
-  const { activeView, activeFeature, activeTask, activeFile, fileChanges, reviewThreads } =
-    state;
+  const {
+    activeView,
+    activeFeature,
+    activeTask,
+    activeFile,
+    fileChanges,
+    reviewThreads,
+    commits,
+    commitDiff,
+  } = state;
   const { planContent, planComments, contextContent } = useWorkspaceContent();
 
   // Resolve the selected diff file from workspace state
@@ -83,7 +91,10 @@ function HivePanelContent(): React.ReactElement {
     (path: string, line: number, body: string) => {
       if (activeFeature) {
         const entityId = activeTask ?? activeFeature;
-        const range = { start: { line, character: 0 }, end: { line, character: 0 } };
+        const range = {
+          start: { line, character: 0 },
+          end: { line, character: 0 },
+        };
         actions.addThread(entityId, path, range, body, 'comment');
       }
     },
@@ -146,6 +157,21 @@ function HivePanelContent(): React.ReactElement {
     [activeFeature],
   );
 
+  // Commit selection callback — request diff for the selected commit
+  const handleCommitSelect = useCallback(
+    (sha: string) => {
+      if (activeFeature && activeTask) {
+        postMessage({
+          type: 'requestCommitDiff',
+          feature: activeFeature,
+          task: activeTask,
+          sha,
+        });
+      }
+    },
+    [activeFeature, activeTask],
+  );
+
   // No feature selected — show welcome prompt
   if (!activeFeature) {
     return (
@@ -181,16 +207,27 @@ function HivePanelContent(): React.ReactElement {
         <div className="hive-panel-task">
           <h3>{activeTask}</h3>
           <p>Task details for {activeTask ?? 'no task selected'}</p>
-          <CommitHistory commits={[]} />
+          <CommitHistory
+            commits={commits}
+            onCommitSelect={handleCommitSelect}
+          />
         </div>
       );
 
     case 'diff':
-    case 'code':
+    case 'code': {
+      // If commitDiff is available, resolve from it; otherwise from fileChanges
+      const diffFile = commitDiff
+        ? (commitDiff
+            .flatMap((d) => d.files)
+            .find((f) => f.path === activeFile) ??
+          commitDiff[0]?.files[0] ??
+          null)
+        : selectedDiffFile;
       return (
         <div className="hive-panel-diff">
           <DiffViewer
-            file={selectedDiffFile}
+            file={diffFile}
             threads={fileThreads}
             onAddThread={handleAddThread}
             onReply={handleReply}
@@ -198,6 +235,7 @@ function HivePanelContent(): React.ReactElement {
           />
         </div>
       );
+    }
 
     default:
       return (
