@@ -25,7 +25,13 @@
  * ```
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, {
+  useMemo,
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import { Layout } from '../primitives';
 import { FeatureSidebar } from './FeatureSidebar';
 import { CommitHistory } from './CommitHistory';
@@ -115,6 +121,44 @@ function HivePanelContent(): React.ReactElement {
     [actions],
   );
 
+  // Context line highlight state (visual feedback only)
+  const [highlightedLine, setHighlightedLine] = useState<number | null>(null);
+  const contextRef = useRef<HTMLDivElement>(null);
+
+  // Apply/remove highlight CSS class and gutter indicator on the active line
+  useEffect(() => {
+    const container = contextRef.current;
+    if (!container) return;
+
+    // Remove previous highlight
+    const prev = container.querySelector('.context-line-highlight');
+    if (prev) {
+      prev.classList.remove('context-line-highlight');
+      const oldGutter = prev.querySelector('.context-line-gutter');
+      oldGutter?.remove();
+    }
+
+    // Apply new highlight
+    if (highlightedLine !== null) {
+      const lineEl = container.querySelector(
+        `[data-testid="line-${highlightedLine}"]`,
+      );
+      if (lineEl) {
+        lineEl.classList.add('context-line-highlight');
+        // Add gutter indicator
+        const gutter = document.createElement('span');
+        gutter.className = 'context-line-gutter';
+        gutter.setAttribute('aria-hidden', 'true');
+        lineEl.insertBefore(gutter, lineEl.firstChild);
+      }
+    }
+  }, [highlightedLine]);
+
+  // Handle context line click
+  const handleContextLineClick = useCallback((lineNumber: number) => {
+    setHighlightedLine(lineNumber);
+  }, []);
+
   // Plan comment callbacks — send messages to extension
   const handleAddPlanComment = useCallback(
     (range: Range, body: string) => {
@@ -197,8 +241,11 @@ function HivePanelContent(): React.ReactElement {
 
     case 'context':
       return (
-        <div className="hive-panel-context">
-          <MarkdownViewer content={contextContent} />
+        <div className="hive-panel-context" ref={contextRef}>
+          <MarkdownViewer
+            content={contextContent}
+            onLineClick={handleContextLineClick}
+          />
         </div>
       );
 
