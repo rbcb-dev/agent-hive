@@ -453,4 +453,333 @@ describe('ThreadView', () => {
       expect(container).toBeNull();
     });
   });
+
+  describe('unresolve functionality', () => {
+    const resolvedThread = { ...mockThread, status: 'resolved' as const };
+    const mockOnUnresolve = vi.fn();
+
+    it('shows Unresolve button when thread is resolved and onUnresolve provided', () => {
+      render(
+        <ThreadView
+          thread={resolvedThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onUnresolve={mockOnUnresolve}
+        />,
+      );
+
+      expect(
+        screen.getByRole('button', { name: /unresolve/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('hides Unresolve button when thread is open', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onUnresolve={mockOnUnresolve}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('button', { name: /unresolve/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('hides Resolve button when thread is resolved', () => {
+      render(
+        <ThreadView
+          thread={resolvedThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onUnresolve={mockOnUnresolve}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('button', { name: /^resolve$/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('calls onUnresolve when Unresolve button clicked', () => {
+      render(
+        <ThreadView
+          thread={resolvedThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onUnresolve={mockOnUnresolve}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /unresolve/i }));
+      expect(mockOnUnresolve).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('delete thread functionality', () => {
+    const mockOnDelete = vi.fn();
+
+    it('shows Delete button when onDelete provided', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDelete={mockOnDelete}
+        />,
+      );
+
+      expect(
+        screen.getByRole('button', { name: /delete thread/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('does not show Delete button when onDelete not provided', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('button', { name: /delete thread/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows confirmation dialog on Delete click, does not call onDelete immediately', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDelete={mockOnDelete}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /delete thread/i }));
+      expect(mockOnDelete).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole('button', { name: /confirm delete/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('calls onDelete when confirmation is accepted', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDelete={mockOnDelete}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /delete thread/i }));
+      fireEvent.click(screen.getByRole('button', { name: /confirm delete/i }));
+      expect(mockOnDelete).toHaveBeenCalledTimes(1);
+    });
+
+    it('hides confirmation when cancel is clicked', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDelete={mockOnDelete}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /delete thread/i }));
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+      expect(mockOnDelete).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole('button', { name: /confirm delete/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('edit annotation functionality', () => {
+    const mockOnEditAnnotation = vi.fn();
+
+    it('shows edit button on annotations when onEditAnnotation provided', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onEditAnnotation={mockOnEditAnnotation}
+        />,
+      );
+
+      const editButtons = screen.getAllByRole('button', {
+        name: /edit annotation/i,
+      });
+      expect(editButtons.length).toBe(2); // one per annotation
+    });
+
+    it('enters edit mode with pre-filled body on edit click', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onEditAnnotation={mockOnEditAnnotation}
+        />,
+      );
+
+      const editButtons = screen.getAllByRole('button', {
+        name: /edit annotation/i,
+      });
+      fireEvent.click(editButtons[0]);
+
+      const textarea = screen.getByDisplayValue(
+        'This looks good but could be improved',
+      );
+      expect(textarea).toBeInTheDocument();
+    });
+
+    it('calls onEditAnnotation with new body when save clicked', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onEditAnnotation={mockOnEditAnnotation}
+        />,
+      );
+
+      const editButtons = screen.getAllByRole('button', {
+        name: /edit annotation/i,
+      });
+      fireEvent.click(editButtons[0]);
+
+      const textarea = screen.getByDisplayValue(
+        'This looks good but could be improved',
+      );
+      fireEvent.change(textarea, {
+        target: { value: 'Updated comment body' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /save edit/i }));
+      expect(mockOnEditAnnotation).toHaveBeenCalledWith(
+        'ann-1',
+        'Updated comment body',
+      );
+    });
+
+    it('exits edit mode when cancel clicked', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onEditAnnotation={mockOnEditAnnotation}
+        />,
+      );
+
+      const editButtons = screen.getAllByRole('button', {
+        name: /edit annotation/i,
+      });
+      fireEvent.click(editButtons[0]);
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /cancel edit/i }),
+      );
+
+      // Original body should be visible again (not textarea)
+      expect(
+        screen.getByText('This looks good but could be improved'),
+      ).toBeInTheDocument();
+      expect(mockOnEditAnnotation).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete annotation functionality', () => {
+    const mockOnDeleteAnnotation = vi.fn();
+
+    it('shows delete button on annotations when onDeleteAnnotation provided', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDeleteAnnotation={mockOnDeleteAnnotation}
+        />,
+      );
+
+      const deleteButtons = screen.getAllByRole('button', {
+        name: /delete annotation/i,
+      });
+      expect(deleteButtons.length).toBe(2); // one per annotation
+    });
+
+    it('shows confirmation on delete annotation click', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDeleteAnnotation={mockOnDeleteAnnotation}
+        />,
+      );
+
+      const deleteButtons = screen.getAllByRole('button', {
+        name: /delete annotation/i,
+      });
+      fireEvent.click(deleteButtons[0]);
+
+      expect(mockOnDeleteAnnotation).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole('button', { name: /confirm delete annotation/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('calls onDeleteAnnotation when confirmation accepted', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDeleteAnnotation={mockOnDeleteAnnotation}
+        />,
+      );
+
+      const deleteButtons = screen.getAllByRole('button', {
+        name: /delete annotation/i,
+      });
+      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(
+        screen.getByRole('button', { name: /confirm delete annotation/i }),
+      );
+
+      expect(mockOnDeleteAnnotation).toHaveBeenCalledWith('ann-1');
+    });
+
+    it('hides confirmation when cancel annotation delete clicked', () => {
+      render(
+        <ThreadView
+          thread={mockThread}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onDeleteAnnotation={mockOnDeleteAnnotation}
+        />,
+      );
+
+      const deleteButtons = screen.getAllByRole('button', {
+        name: /delete annotation/i,
+      });
+      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(
+        screen.getByRole('button', { name: /cancel annotation delete/i }),
+      );
+
+      expect(mockOnDeleteAnnotation).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole('button', { name: /confirm delete annotation/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });
