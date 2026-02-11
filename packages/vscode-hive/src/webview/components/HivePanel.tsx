@@ -25,11 +25,14 @@
  * ```
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Layout } from '../primitives';
 import { FeatureSidebar } from './FeatureSidebar';
 import { DiffViewer } from './DiffViewer';
+import { MarkdownViewer } from './MarkdownViewer';
 import { useHiveWorkspace } from '../providers/HiveWorkspaceProvider';
+import { useWorkspaceContent } from '../hooks/useWorkspaceContent';
+import type { DiffFile } from 'hive-core';
 
 const { Sider, Content } = Layout;
 
@@ -37,9 +40,34 @@ const { Sider, Content } = Layout;
 // Content routing
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve the selected file from workspace fileChanges.
+ * Searches across all task DiffPayloads for a matching file path.
+ */
+function resolveFileFromChanges(
+  fileChanges: Map<string, import('hive-core').DiffPayload[]>,
+  filePath: string,
+): DiffFile | null {
+  for (const payloads of fileChanges.values()) {
+    for (const payload of payloads) {
+      const found = payload.files.find((f) => f.path === filePath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 function HivePanelContent(): React.ReactElement {
   const { state } = useHiveWorkspace();
-  const { activeView, activeFeature, activeTask, activeFile } = state;
+  const { activeView, activeFeature, activeTask, activeFile, fileChanges } =
+    state;
+  const { planContent, contextContent } = useWorkspaceContent();
+
+  // Resolve the selected diff file from workspace state
+  const selectedDiffFile = useMemo(() => {
+    if (!activeFile || fileChanges.size === 0) return null;
+    return resolveFileFromChanges(fileChanges, activeFile);
+  }, [activeFile, fileChanges]);
 
   // No feature selected — show welcome prompt
   if (!activeFeature) {
@@ -54,14 +82,14 @@ function HivePanelContent(): React.ReactElement {
     case 'plan':
       return (
         <div className="hive-panel-plan">
-          <p>Plan view for {activeFeature}</p>
+          <MarkdownViewer content={planContent} filePath="plan.md" />
         </div>
       );
 
     case 'context':
       return (
         <div className="hive-panel-context">
-          <p>Context view for {activeFeature}</p>
+          <MarkdownViewer content={contextContent} />
         </div>
       );
 
@@ -70,6 +98,9 @@ function HivePanelContent(): React.ReactElement {
         <div className="hive-panel-task">
           <h3>{activeTask}</h3>
           <p>Task details for {activeTask ?? 'no task selected'}</p>
+          <p className="hive-panel-task-placeholder">
+            Commit history will be wired in a future task
+          </p>
         </div>
       );
 
@@ -77,10 +108,7 @@ function HivePanelContent(): React.ReactElement {
     case 'code':
       return (
         <div className="hive-panel-diff">
-          <DiffViewer file={null} />
-          {activeFile && (
-            <p className="hive-panel-file-path">{activeFile}</p>
-          )}
+          <DiffViewer file={selectedDiffFile} />
         </div>
       );
 

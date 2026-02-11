@@ -25,7 +25,7 @@ import type {
   WebviewToExtensionMessage,
   ExtensionToWebviewMessage,
 } from '../types';
-import type { FeatureInfo, DiffPayload } from 'hive-core';
+import type { FeatureInfo, DiffPayload, PlanComment } from 'hive-core';
 
 // Mock vscodeApi
 const mockPostMessage = vi.fn();
@@ -84,6 +84,9 @@ const DEFAULT_STATE: HiveWorkspaceState = {
   activeFile: null,
   activeView: 'plan',
   fileChanges: new Map(),
+  planContent: null,
+  planComments: [],
+  contextContent: null,
   isLoading: false,
 };
 
@@ -352,6 +355,73 @@ describe('useWorkspaceMessages — mounted integration', () => {
     // Only requestFeatures should have been sent, not requestFeatureDiffs
     expect(mockPostMessage).toHaveBeenCalledTimes(1);
     expect(mockPostMessage).toHaveBeenCalledWith({ type: 'requestFeatures' });
+  });
+
+  it('handles planContent response and dispatches to provider state', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          activeFeature: 'feature-one',
+          activeView: 'plan',
+        }),
+      },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    const mockComments: PlanComment[] = [
+      {
+        id: 'c1',
+        line: 5,
+        body: 'Looks good',
+        author: 'human',
+        timestamp: '2026-01-01T00:00:00Z',
+      },
+    ];
+
+    act(() => {
+      capturedHandler!({
+        type: 'planContent',
+        feature: 'feature-one',
+        content: '# My Plan',
+        comments: mockComments,
+      });
+    });
+
+    expect(result.current.state.planContent).toBe('# My Plan');
+    expect(result.current.state.planComments).toEqual(mockComments);
+  });
+
+  it('handles contextContent response and dispatches to provider state', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          activeFeature: 'feature-one',
+          activeView: 'context',
+        }),
+      },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    act(() => {
+      capturedHandler!({
+        type: 'contextContent',
+        feature: 'feature-one',
+        name: 'research',
+        content: '# Research Notes',
+      });
+    });
+
+    expect(result.current.state.contextContent).toBe('# Research Notes');
   });
 
   it('does not send requestTaskDiff when no task is active', () => {

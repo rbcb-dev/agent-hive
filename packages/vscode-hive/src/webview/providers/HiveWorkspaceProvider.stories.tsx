@@ -122,6 +122,9 @@ const defaultInitialState: HiveWorkspaceState = {
   activeFile: null,
   activeView: 'plan',
   fileChanges: new Map(),
+  planContent: null,
+  planComments: [],
+  contextContent: null,
   isLoading: false,
 };
 

@@ -135,6 +135,9 @@ const defaultState: HiveWorkspaceState = {
   activeFile: null,
   activeView: 'plan',
   fileChanges,
+  planContent: null,
+  planComments: [],
+  contextContent: null,
   isLoading: false,
 };
 

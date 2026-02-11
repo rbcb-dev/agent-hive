@@ -96,6 +96,9 @@ function createState(
     activeFile: null,
     activeView: 'plan',
     fileChanges: new Map(),
+    planContent: null,
+    planComments: [],
+    contextContent: null,
     isLoading: false,
     ...overrides,
   };
@@ -231,6 +234,98 @@ describe('HivePanel - Sidebar integration', () => {
     });
 
     expect(screen.getByText('src/app.ts')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: Content area renders real components (not static placeholders)
+// ---------------------------------------------------------------------------
+
+describe('HivePanel - Real content rendering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('plan view renders MarkdownViewer (not static placeholder)', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'plan',
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // Should NOT render old static placeholder
+    expect(
+      within(content).queryByText('Plan view for feature-one'),
+    ).not.toBeInTheDocument();
+    // Should render MarkdownViewer component (has markdown-viewer class)
+    const planArea = content.querySelector('.hive-panel-plan');
+    expect(planArea).toBeInTheDocument();
+    expect(planArea!.querySelector('.markdown-viewer')).toBeInTheDocument();
+  });
+
+  it('context view renders MarkdownViewer (not static placeholder)', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'context',
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // Should NOT render old static placeholder
+    expect(
+      within(content).queryByText('Context view for feature-one'),
+    ).not.toBeInTheDocument();
+    // Should render MarkdownViewer component
+    const contextArea = content.querySelector('.hive-panel-context');
+    expect(contextArea).toBeInTheDocument();
+    expect(contextArea!.querySelector('.markdown-viewer')).toBeInTheDocument();
+  });
+
+  it('diff view renders DiffViewer with file data from workspace state', () => {
+    const fileChanges = new Map<string, DiffPayload[]>();
+    fileChanges.set('task-a', [
+      makeDiffPayload([
+        { path: 'src/index.ts', status: 'M', additions: 10, deletions: 2 },
+      ]),
+    ]);
+
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeFile: 'src/index.ts',
+      activeView: 'diff',
+      fileChanges,
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // DiffViewer should render with the file path from the resolved DiffFile
+    expect(within(content).getByText('src/index.ts')).toBeInTheDocument();
+  });
+
+  it('diff view renders DiffViewer empty state when file not found in changes', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeFile: 'nonexistent.ts',
+      activeView: 'diff',
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // DiffViewer shows "Select a file to view diff" when file is null
+    expect(
+      within(content).getByText('Select a file to view diff'),
+    ).toBeInTheDocument();
+  });
+
+  it('task view renders task summary with heading and commit history placeholder', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    const heading = within(content).getByRole('heading', { level: 3 });
+    expect(heading).toHaveTextContent('task-a');
+    // Should have placeholder for commit history (wired in task 11)
+    expect(within(content).getByText(/commit history/i)).toBeInTheDocument();
   });
 });
 

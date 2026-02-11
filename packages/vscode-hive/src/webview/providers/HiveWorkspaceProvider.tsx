@@ -12,7 +12,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import type { FeatureInfo, DiffPayload } from 'hive-core';
+import type { FeatureInfo, DiffPayload, PlanComment } from 'hive-core';
 
 // ---------------------------------------------------------------------------
 // State
@@ -25,6 +25,9 @@ export interface HiveWorkspaceState {
   activeFile: string | null;
   activeView: 'plan' | 'context' | 'task' | 'diff' | 'code';
   fileChanges: Map<string, DiffPayload[]>;
+  planContent: string | null;
+  planComments: PlanComment[];
+  contextContent: string | null;
   isLoading: boolean;
 }
 
@@ -39,6 +42,12 @@ export type HiveWorkspaceAction =
   | { type: 'SELECT_VIEW'; view: HiveWorkspaceState['activeView'] }
   | { type: 'SET_FEATURES'; features: FeatureInfo[] }
   | { type: 'SET_FILE_CHANGES'; fileChanges: Map<string, DiffPayload[]> }
+  | {
+      type: 'SET_PLAN_CONTENT';
+      content: string;
+      comments: PlanComment[];
+    }
+  | { type: 'SET_CONTEXT_CONTENT'; content: string }
   | { type: 'SET_LOADING'; isLoading: boolean };
 
 export interface HiveWorkspaceActions {
@@ -65,6 +74,9 @@ export function workspaceReducer(
         activeTask: null,
         activeFile: null,
         activeView: 'plan',
+        planContent: null,
+        planComments: [],
+        contextContent: null,
       };
     case 'SELECT_TASK':
       return {
@@ -99,6 +111,17 @@ export function workspaceReducer(
         ...state,
         isLoading: action.isLoading,
       };
+    case 'SET_PLAN_CONTENT':
+      return {
+        ...state,
+        planContent: action.content,
+        planComments: action.comments,
+      };
+    case 'SET_CONTEXT_CONTENT':
+      return {
+        ...state,
+        contextContent: action.content,
+      };
     default:
       return state;
   }
@@ -129,6 +152,9 @@ export const DEFAULT_WORKSPACE_STATE: HiveWorkspaceState = {
   activeFile: null,
   activeView: 'plan',
   fileChanges: new Map(),
+  planContent: null,
+  planComments: [],
+  contextContent: null,
   isLoading: false,
 };
 

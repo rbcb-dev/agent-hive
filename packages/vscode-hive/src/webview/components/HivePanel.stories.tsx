@@ -125,6 +125,9 @@ function createState(
     activeFile: null,
     activeView: 'plan',
     fileChanges,
+    planContent: null,
+    planComments: [],
+    contextContent: null,
     isLoading: false,
     ...overrides,
   };
