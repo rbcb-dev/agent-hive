@@ -16,6 +16,7 @@ import {
   PlanCommentReply,
   PlanReadResult,
 } from '../types.js';
+import type { Range } from '../types.js';
 import * as fs from 'fs';
 
 export class PlanService {
@@ -141,15 +142,28 @@ export class PlanService {
 
   /**
    * Migrate a comment from old format to the current schema.
-   * Old format may lack author, timestamp, or have replies as string[].
+   * Old format may lack author, timestamp, have replies as string[],
+   * or use `line: number` instead of `range: Range`.
    */
   private migrateComment(
     raw: Record<string, unknown>,
     commentsPath: string,
   ): PlanComment {
+    // Migrate line → range: if old `line` field exists but no `range`, convert
+    let range: Range;
+    if (raw.range && typeof raw.range === 'object') {
+      range = raw.range as Range;
+    } else {
+      const line = typeof raw.line === 'number' ? raw.line : 0;
+      range = {
+        start: { line, character: 0 },
+        end: { line, character: 0 },
+      };
+    }
+
     const comment: PlanComment = {
       id: (raw.id as string) || `comment-${Date.now()}`,
-      line: (raw.line as number) || 0,
+      range,
       body: (raw.body as string) || '',
       author: (raw.author as 'human' | 'agent') || 'human',
       timestamp: (raw.timestamp as string) || this.getFileMtime(commentsPath),

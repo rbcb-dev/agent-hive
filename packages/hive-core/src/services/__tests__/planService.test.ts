@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PlanService } from '../planService';
-import type { CommentsJson } from '../../types';
+import type { CommentsJson, Range } from '../../types';
 
 const TEST_DIR = '/tmp/hive-core-planservice-test-' + process.pid;
 const PROJECT_ROOT = TEST_DIR;
@@ -132,7 +132,7 @@ describe('PlanService', () => {
       writePlan(feature, '# Plan');
 
       const comment = service.addComment(feature, {
-        line: 3,
+        range: { start: { line: 3, character: 0 }, end: { line: 3, character: 0 } },
         body: 'Needs more detail',
         author: 'human',
       });
@@ -141,7 +141,7 @@ describe('PlanService', () => {
       expect(comment.timestamp).toBeTruthy();
       expect(comment.body).toBe('Needs more detail');
       expect(comment.author).toBe('human');
-      expect(comment.line).toBe(3);
+      expect(comment.range.start.line).toBe(3);
 
       // Verify persisted
       const comments = service.getComments(feature);
@@ -155,12 +155,12 @@ describe('PlanService', () => {
       writePlan(feature, '# Plan');
 
       service.addComment(feature, {
-        line: 1,
+        range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
         body: 'First comment',
         author: 'human',
       });
       service.addComment(feature, {
-        line: 5,
+        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 0 } },
         body: 'Second comment',
         author: 'agent',
       });
@@ -489,7 +489,7 @@ describe('PlanService', () => {
       };
 
       service.addComment(feature, {
-        line: 1,
+        range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
         body: 'A comment',
         author: 'human',
       });
@@ -564,7 +564,7 @@ describe('PlanService', () => {
       // No callbacks set — should not throw
       expect(() => {
         service.addComment(feature, {
-          line: 1,
+          range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
           body: 'Comment',
           author: 'human',
         });
@@ -658,6 +658,165 @@ describe('PlanService', () => {
           author: 'human',
         }),
       ).toThrow(/not found/i);
+    });
+  });
+
+  describe('range-based comment anchoring', () => {
+    const makeRange = (
+      startLine: number,
+      startChar: number,
+      endLine: number,
+      endChar: number,
+    ): Range => ({
+      start: { line: startLine, character: startChar },
+      end: { line: endLine, character: endChar },
+    });
+
+    it('addComment accepts range instead of line', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan\n\nSome content\nMore content');
+
+      const range = makeRange(1, 0, 2, 12);
+      const comment = service.addComment(feature, {
+        range,
+        body: 'This section needs work',
+        author: 'human',
+      });
+
+      expect(comment.range).toEqual(range);
+      expect(comment.range.start.line).toBe(1);
+      expect(comment.range.start.character).toBe(0);
+      expect(comment.range.end.line).toBe(2);
+      expect(comment.range.end.character).toBe(12);
+      // 'line' property should no longer exist
+      expect((comment as unknown as Record<string, unknown>).line).toBeUndefined();
+    });
+
+    it('getComments returns comments with range anchors', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan\n\nLine 2\nLine 3');
+
+      const range = makeRange(0, 0, 0, 6);
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range,
+            body: 'Header comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const comments = service.getComments(feature);
+      expect(comments).toHaveLength(1);
+      expect(comments[0].range).toEqual(range);
+      expect((comments[0] as unknown as Record<string, unknown>).line).toBeUndefined();
+    });
+
+    it('resolveComment works with range-based comments', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      const range = makeRange(0, 0, 0, 6);
+      const comment = service.addComment(feature, {
+        range,
+        body: 'Fix this',
+        author: 'human',
+      });
+
+      service.resolveComment(feature, comment.id);
+
+      const comments = service.getComments(feature);
+      expect(comments[0].resolved).toBe(true);
+      expect(comments[0].range).toEqual(range);
+    });
+
+    it('addReply works with range-based comments', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      const range = makeRange(2, 5, 4, 10);
+      const comment = service.addComment(feature, {
+        range,
+        body: 'Discussion point',
+        author: 'human',
+      });
+
+      const reply = service.addReply(feature, comment.id, {
+        body: 'Agreed',
+        author: 'agent',
+      });
+
+      expect(reply.body).toBe('Agreed');
+      const comments = service.getComments(feature);
+      expect(comments[0].range).toEqual(range);
+      expect(comments[0].replies).toHaveLength(1);
+      expect(comments[0].replies![0].body).toBe('Agreed');
+    });
+
+    it('migrates old line-only comments to range format', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      // Old format: line-only (no range)
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'old-1',
+            line: 5,
+            body: 'Old line-based comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const comments = service.getComments(feature);
+      expect(comments).toHaveLength(1);
+      // Should be migrated to a single-line range
+      expect(comments[0].range).toEqual({
+        start: { line: 5, character: 0 },
+        end: { line: 5, character: 0 },
+      });
+      expect((comments[0] as unknown as Record<string, unknown>).line).toBeUndefined();
+    });
+
+    it('approval blocks on unresolved range-based comments', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      service.addComment(feature, {
+        range: makeRange(0, 0, 1, 0),
+        body: 'Unresolved range comment',
+        author: 'human',
+      });
+
+      expect(() => service.approve(feature)).toThrow(/unresolved comment/i);
+    });
+
+    it('approval succeeds when range-based comments are all resolved', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      const comment = service.addComment(feature, {
+        range: makeRange(0, 0, 1, 0),
+        body: 'Resolved range comment',
+        author: 'human',
+      });
+
+      service.resolveComment(feature, comment.id);
+
+      expect(() => service.approve(feature)).not.toThrow();
+      expect(service.isApproved(feature)).toBe(true);
     });
   });
 });
