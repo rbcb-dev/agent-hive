@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import type { FeatureInfo, DiffPayload } from 'hive-core';
+import type { FeatureInfo, DiffPayload, TaskCommit } from 'hive-core';
 
 import {
   HiveWorkspaceProvider,
@@ -105,6 +105,10 @@ function createState(
     planComments: [],
     contextContent: null,
     isLoading: false,
+    reviewThreads: [],
+    activeReviewSession: null,
+    commits: [],
+    commitDiff: null,
     ...overrides,
   };
 }
@@ -349,5 +353,81 @@ describe('HivePanel - Review mode compatibility', () => {
     // The component should use antd Layout
     const layout = document.querySelector('.ant-layout');
     expect(layout).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: Commit history wiring
+// ---------------------------------------------------------------------------
+
+const mockPostMessage = vi.mocked(
+  (await import('../vscodeApi')).postMessage,
+);
+
+describe('HivePanel - Commit history wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('task view renders CommitHistory with real commit data from state', () => {
+    const commits: TaskCommit[] = [
+      { sha: 'abc1234567890', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
+      { sha: 'def5678901234', message: 'fix: bug fix', timestamp: '2026-01-02T00:00:00Z' },
+    ];
+
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits,
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // CommitHistory renders with real commits — should show short SHA codes
+    expect(within(content).getByText('abc1234')).toBeInTheDocument();
+    expect(within(content).getByText('def5678')).toBeInTheDocument();
+    // Should show commit messages
+    expect(within(content).getByText('feat: add feature')).toBeInTheDocument();
+    expect(within(content).getByText('fix: bug fix')).toBeInTheDocument();
+    // Should NOT show "No commits yet"
+    expect(within(content).queryByText('No commits yet')).not.toBeInTheDocument();
+  });
+
+  it('commit selection sends requestCommitDiff message with correct SHA', async () => {
+    const user = userEvent.setup();
+    const commits: TaskCommit[] = [
+      { sha: 'abc1234567890', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
+    ];
+
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits,
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    // Click the commit item
+    const commitItem = within(content).getByRole('listitem', { name: /Commit abc1234/ });
+    await user.click(commitItem);
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'requestCommitDiff',
+      feature: 'feature-one',
+      task: 'task-a',
+      sha: 'abc1234567890',
+    });
+  });
+
+  it('task view with empty commits still shows "No commits yet"', () => {
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeTask: 'task-a',
+      activeView: 'task',
+      commits: [],
+    });
+
+    const content = screen.getByTestId('hive-panel-content');
+    expect(within(content).getByText('No commits yet')).toBeInTheDocument();
   });
 });

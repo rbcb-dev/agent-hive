@@ -62,7 +62,7 @@ function resolveFileFromChanges(
 
 function HivePanelContent(): React.ReactElement {
   const { state } = useHiveWorkspace();
-  const { activeView, activeFeature, activeTask, activeFile, fileChanges } =
+  const { activeView, activeFeature, activeTask, activeFile, fileChanges, commits, commitDiff } =
     state;
   const { planContent, planComments, contextContent } = useWorkspaceContent();
 
@@ -114,6 +114,21 @@ function HivePanelContent(): React.ReactElement {
     [activeFeature],
   );
 
+  // Commit selection callback — request diff for the selected commit
+  const handleCommitSelect = useCallback(
+    (sha: string) => {
+      if (activeFeature && activeTask) {
+        postMessage({
+          type: 'requestCommitDiff',
+          feature: activeFeature,
+          task: activeTask,
+          sha,
+        });
+      }
+    },
+    [activeFeature, activeTask],
+  );
+
   // No feature selected — show welcome prompt
   if (!activeFeature) {
     return (
@@ -149,17 +164,22 @@ function HivePanelContent(): React.ReactElement {
         <div className="hive-panel-task">
           <h3>{activeTask}</h3>
           <p>Task details for {activeTask ?? 'no task selected'}</p>
-          <CommitHistory commits={[]} />
+          <CommitHistory commits={commits} onCommitSelect={handleCommitSelect} />
         </div>
       );
 
     case 'diff':
-    case 'code':
+    case 'code': {
+      // If commitDiff is available, resolve from it; otherwise from fileChanges
+      const diffFile = commitDiff
+        ? commitDiff.flatMap((d) => d.files).find((f) => f.path === activeFile) ?? commitDiff[0]?.files[0] ?? null
+        : selectedDiffFile;
       return (
         <div className="hive-panel-diff">
-          <DiffViewer file={selectedDiffFile} />
+          <DiffViewer file={diffFile} />
         </div>
       );
+    }
 
     default:
       return (

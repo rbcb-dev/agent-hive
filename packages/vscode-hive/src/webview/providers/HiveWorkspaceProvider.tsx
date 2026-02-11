@@ -17,7 +17,7 @@ import React, {
   useReducer,
   useCallback,
 } from 'react';
-import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread, ReviewSession, Range } from 'hive-core';
+import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread, ReviewSession, Range, TaskCommit } from 'hive-core';
 import { postMessage } from '../vscodeApi';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +37,8 @@ export interface HiveWorkspaceState {
   isLoading: boolean;
   reviewThreads: ReviewThread[];
   activeReviewSession: ReviewSession | null;
+  commits: TaskCommit[];
+  commitDiff: DiffPayload[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,7 +60,9 @@ export type HiveWorkspaceAction =
   | { type: 'SET_CONTEXT_CONTENT'; content: string }
   | { type: 'SET_LOADING'; isLoading: boolean }
   | { type: 'SET_REVIEW_THREADS'; threads: ReviewThread[] }
-  | { type: 'SET_REVIEW_SESSION'; session: ReviewSession | null };
+  | { type: 'SET_REVIEW_SESSION'; session: ReviewSession | null }
+  | { type: 'SET_COMMITS'; commits: TaskCommit[] }
+  | { type: 'SET_COMMIT_DIFF'; diffs: DiffPayload[] | null };
 
 export interface HiveWorkspaceActions {
   selectFeature: (name: string) => void;
@@ -97,6 +101,8 @@ export function workspaceReducer(
         contextContent: null,
         reviewThreads: [],
         activeReviewSession: null,
+        commits: [],
+        commitDiff: null,
       };
     case 'SELECT_TASK':
       return {
@@ -104,6 +110,8 @@ export function workspaceReducer(
         activeTask: action.folder,
         activeFile: null,
         activeView: 'task',
+        commits: [],
+        commitDiff: null,
       };
     case 'SELECT_FILE':
       return {
@@ -152,6 +160,17 @@ export function workspaceReducer(
         ...state,
         activeReviewSession: action.session,
       };
+    case 'SET_COMMITS':
+      return {
+        ...state,
+        commits: action.commits,
+      };
+    case 'SET_COMMIT_DIFF':
+      return {
+        ...state,
+        commitDiff: action.diffs,
+        ...(action.diffs ? { activeView: 'diff' as const } : {}),
+      };
     default:
       return state;
   }
@@ -188,6 +207,8 @@ export const DEFAULT_WORKSPACE_STATE: HiveWorkspaceState = {
   isLoading: false,
   reviewThreads: [],
   activeReviewSession: null,
+  commits: [],
+  commitDiff: null,
 };
 
 export interface HiveWorkspaceProviderProps {

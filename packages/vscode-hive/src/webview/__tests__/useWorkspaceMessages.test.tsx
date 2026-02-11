@@ -90,6 +90,8 @@ const DEFAULT_STATE: HiveWorkspaceState = {
   isLoading: false,
   reviewThreads: [],
   activeReviewSession: null,
+  commits: [],
+  commitDiff: null,
 };
 
 function createWrapper(initialState?: Partial<HiveWorkspaceState>) {
@@ -705,5 +707,138 @@ describe('useWorkspaceMessages — review action messages', () => {
       threadId: 'thread-1',
       annotationId: 'ann-1',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Commit history and diff message handling tests
+// ---------------------------------------------------------------------------
+
+describe('useWorkspaceMessages — commit history messages', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedHandler = null;
+  });
+
+  it('sends requestCommitHistory when task is selected', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          features: mockFeatures,
+          activeFeature: 'feature-one',
+        }),
+      },
+    );
+
+    mockPostMessage.mockClear();
+
+    act(() => {
+      result.current.actions.selectTask('task-a');
+    });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'requestCommitHistory',
+      feature: 'feature-one',
+      task: 'task-a',
+    });
+  });
+
+  it('handles commitHistory response and updates state', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          activeFeature: 'feature-one',
+          activeTask: 'task-a',
+        }),
+      },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    const commits = [
+      { sha: 'abc1234567890', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
+      { sha: 'def5678901234', message: 'fix: bug fix', timestamp: '2026-01-02T00:00:00Z' },
+    ];
+
+    act(() => {
+      capturedHandler!({
+        type: 'commitHistory',
+        feature: 'feature-one',
+        task: 'task-a',
+        commits,
+      });
+    });
+
+    expect(result.current.state.commits).toHaveLength(2);
+    expect(result.current.state.commits[0].sha).toBe('abc1234567890');
+  });
+
+  it('handles commitDiff response and updates state', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          activeFeature: 'feature-one',
+          activeTask: 'task-a',
+        }),
+      },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    act(() => {
+      capturedHandler!({
+        type: 'commitDiff',
+        feature: 'feature-one',
+        task: 'task-a',
+        sha: 'abc1234',
+        diffs: [mockDiffPayload],
+      });
+    });
+
+    expect(result.current.state.commitDiff).toHaveLength(1);
+    expect(result.current.state.commitDiff![0].files[0].path).toBe('src/index.ts');
+  });
+
+  it('commitDiff response switches view to diff', () => {
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          activeFeature: 'feature-one',
+          activeTask: 'task-a',
+          activeView: 'task',
+        }),
+      },
+    );
+
+    expect(capturedHandler).toBeDefined();
+
+    act(() => {
+      capturedHandler!({
+        type: 'commitDiff',
+        feature: 'feature-one',
+        task: 'task-a',
+        sha: 'abc1234',
+        diffs: [mockDiffPayload],
+      });
+    });
+
+    // Should switch to diff view to display commit changes
+    expect(result.current.state.activeView).toBe('diff');
   });
 });
