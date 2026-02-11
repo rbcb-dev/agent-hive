@@ -720,8 +720,11 @@ Expand your Discovery section and try again.`;
             return 'Error: No feature specified. Create a feature or provide feature param.';
           captureSession(feature, toolContext);
           const comments = planService.getComments(feature);
-          if (comments.length > 0) {
-            return `Error: Cannot approve - ${comments.length} unresolved comment(s). Address them first.`;
+          const unresolvedComments = comments.filter(
+            (c) => c.resolved !== true,
+          );
+          if (unresolvedComments.length > 0) {
+            return `Error: Cannot approve - ${unresolvedComments.length} unresolved comment(s). Address them first.`;
           }
           planService.approve(feature);
           return 'Plan approved. Run hive_tasks_sync to generate tasks.';

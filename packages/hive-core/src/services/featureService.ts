@@ -98,7 +98,8 @@ export class FeatureService {
     const comments = readJson<CommentsJson>(
       getCommentsPath(this.projectRoot, name),
     );
-    const commentCount = comments?.threads?.length || 0;
+    const commentCount =
+      comments?.threads?.filter((c) => c.resolved !== true).length || 0;
 
     return {
       name: feature.name,
