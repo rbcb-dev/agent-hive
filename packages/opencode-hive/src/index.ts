@@ -170,6 +170,7 @@ import {
   type ContextFile,
   type CompletedTask,
 } from './utils/worker-prompt';
+import { buildReviewStatus } from './utils/status.js';
 import {
   calculatePromptMeta,
   calculatePayloadMeta,
@@ -1528,6 +1529,20 @@ Re-run with updated summary showing verification results.`;
                   ? 'locked'
                   : 'none';
 
+          // Build review session summary
+          const reviewSessions =
+            await reviewService.listSessions(feature);
+          const activeInProgress = reviewSessions.find(
+            (s) => s.status === 'in_progress',
+          );
+          const activeSession = activeInProgress
+            ? await reviewService.getSession(activeInProgress.id)
+            : null;
+          const review = buildReviewStatus(
+            reviewSessions,
+            activeSession,
+          );
+
           return JSON.stringify({
             feature: {
               name: feature,
@@ -1553,6 +1568,7 @@ Re-run with updated summary showing verification results.`;
               fileCount: contextFiles.length,
               files: contextSummary,
             },
+            review,
             nextAction: getNextAction(planStatus, tasksSummary, runnable),
           });
         },
