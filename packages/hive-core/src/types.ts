@@ -92,12 +92,21 @@ export interface TaskStatus {
   dependsOn?: string[];
 }
 
+export interface PlanCommentReply {
+  id: string;
+  body: string;
+  author: 'human' | 'agent';
+  timestamp: string;
+}
+
 export interface PlanComment {
   id: string;
   line: number;
   body: string;
-  author: string;
+  author: 'human' | 'agent';
   timestamp: string;
+  resolved?: boolean;
+  replies?: PlanCommentReply[];
 }
 
 export interface CommentsJson {

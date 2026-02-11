@@ -11,14 +11,22 @@
 import React from 'react';
 import type { ReviewAnnotation, Range } from 'hive-core';
 export type DiffViewMode = 'split' | 'unified';
+export type SuggestionStatus = {
+    status: 'pending';
+} | {
+    status: 'applying';
+} | {
+    status: 'applied';
+} | {
+    status: 'conflict';
+    conflictDetails?: string;
+};
 export interface SuggestionPreviewProps {
     annotation: ReviewAnnotation;
     oldCode: string;
     uri: string;
     range: Range;
     onApply: (annotationId: string) => void;
-    isApplied: boolean;
-    isApplying?: boolean;
-    hasConflict?: boolean;
+    suggestionStatus: SuggestionStatus;
 }
-export declare function SuggestionPreview({ annotation, oldCode, uri, range, onApply, isApplied, isApplying, hasConflict, }: SuggestionPreviewProps): React.ReactElement | null;
+export declare function SuggestionPreview({ annotation, oldCode, uri, range, onApply, suggestionStatus, }: SuggestionPreviewProps): React.ReactElement | null;

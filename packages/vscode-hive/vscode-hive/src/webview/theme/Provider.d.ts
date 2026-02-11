@@ -5,11 +5,19 @@
  * - CSS isolation via StyleProvider with @layer (prevents style leakage)
  * - Centralized theming with design tokens
  * - Dark/light mode switching
+ * - Auto-detection from VS Code's data-vscode-theme-kind attribute
+ * - Dynamic theme updates via MutationObserver
  * - App wrapper for message/notification/modal APIs
  * - ThemeContext for child components to access current theme mode
  *
  * Usage:
  * ```tsx
+ * // Auto-detect from VS Code theme (recommended)
+ * <HiveThemeProvider>
+ *   <YourApp />
+ * </HiveThemeProvider>
+ *
+ * // Explicit override
  * <HiveThemeProvider mode="dark">
  *   <YourApp />
  * </HiveThemeProvider>
@@ -26,8 +34,9 @@
 import type { ReactNode } from 'react';
 export interface HiveThemeProviderProps {
     /**
-     * Theme mode - 'light' or 'dark'
-     * @default 'light'
+     * Theme mode - 'light' or 'dark'.
+     * When omitted, auto-detects from document.body.dataset.vscodeThemeKind
+     * and observes changes via MutationObserver.
      */
     mode?: 'light' | 'dark';
     /**
@@ -43,6 +52,10 @@ export interface HiveThemeProviderProps {
  * 2. StyleProvider (layer) - CSS isolation using @layer
  * 3. ConfigProvider - Theme configuration
  * 4. App - Message/notification/modal context
+ *
+ * When no `mode` prop is provided, the provider auto-detects the theme
+ * from `document.body.dataset.vscodeThemeKind` and watches for changes
+ * via MutationObserver to stay in sync with VS Code theme switches.
  *
  * @param props - Provider props
  * @returns Wrapped children with theme context
