@@ -35,7 +35,7 @@ import { PlanReview } from './PlanReview';
 import { useHiveWorkspace } from '../providers/HiveWorkspaceProvider';
 import { useWorkspaceContent } from '../hooks/useWorkspaceContent';
 import { postMessage } from '../vscodeApi';
-import type { DiffFile } from 'hive-core';
+import type { DiffFile, Range } from 'hive-core';
 
 const { Sider, Content } = Layout;
 
@@ -117,12 +117,12 @@ function HivePanelContent(): React.ReactElement {
 
   // Plan comment callbacks — send messages to extension
   const handleAddPlanComment = useCallback(
-    (line: number, body: string) => {
+    (range: Range, body: string) => {
       if (activeFeature) {
         postMessage({
           type: 'addPlanComment',
           feature: activeFeature,
-          line,
+          range,
           body,
         });
       }

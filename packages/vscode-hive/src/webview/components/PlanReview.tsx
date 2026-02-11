@@ -5,12 +5,17 @@
  * Users can click on a line gutter to add a new comment, and click on
  * existing comment markers to expand/collapse comment threads.
  *
+ * Supports range-based commenting:
+ * - Click a line gutter for single-line comments
+ * - Mouse-select across lines for multi-line range comments
+ * - Comments use 0-based Range internally; display uses 1-based line numbers
+ *
  * This component is read-only for the plan content — it does not edit markdown.
  * It renders annotations (comments) inline, similar to CodeViewer's thread pattern.
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import type { PlanComment } from 'hive-core';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import type { PlanComment, Range } from 'hive-core';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,8 +26,8 @@ export interface PlanReviewProps {
   content: string;
   /** Existing comments on the plan */
   comments: PlanComment[];
-  /** Called when user adds a new comment on a line */
-  onAddComment: (line: number, body: string) => void;
+  /** Called when user adds a new comment on a range (0-based) */
+  onAddComment: (range: Range, body: string) => void;
   /** Called when user resolves a comment */
   onResolveComment: (commentId: string) => void;
   /** Called when user replies to a comment */
@@ -33,18 +38,46 @@ export interface PlanReviewProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Group comments by line number */
+/** Create a 0-based Range for plan lines (character always 0) */
+function makeRange(startLine: number, endLine: number): Range {
+  return {
+    start: { line: startLine, character: 0 },
+    end: { line: endLine, character: 0 },
+  };
+}
+
+/**
+ * Group comments by their start line (display line number, 1-based).
+ * Uses range.start.line (0-based) + 1 for the display line key.
+ */
 function groupCommentsByLine(
   comments: PlanComment[],
 ): Map<number, PlanComment[]> {
   const map = new Map<number, PlanComment[]>();
   for (const comment of comments) {
-    if (!map.has(comment.line)) {
-      map.set(comment.line, []);
+    const displayLine = comment.range.start.line + 1;
+    if (!map.has(displayLine)) {
+      map.set(displayLine, []);
     }
-    map.get(comment.line)!.push(comment);
+    map.get(displayLine)!.push(comment);
   }
   return map;
+}
+
+/**
+ * Compute the set of display lines (1-based) covered by a list of comments.
+ * Each comment's range spans from start.line to end.line (inclusive, 0-based).
+ */
+function getHighlightedLines(comments: PlanComment[]): Set<number> {
+  const lines = new Set<number>();
+  for (const comment of comments) {
+    const startDisplay = comment.range.start.line + 1;
+    const endDisplay = comment.range.end.line + 1;
+    for (let i = startDisplay; i <= endDisplay; i++) {
+      lines.add(i);
+    }
+  }
+  return lines;
 }
 
 // ---------------------------------------------------------------------------
@@ -215,10 +248,21 @@ export function PlanReview({
   onResolveComment,
   onReplyToComment,
 }: PlanReviewProps): React.ReactElement {
-  // Track which line has expanded comments
+  // Track which line has expanded comments (1-based display line)
   const [expandedLine, setExpandedLine] = useState<number | null>(null);
-  // Track which line is receiving a new comment
+  // Track which line is receiving a new comment (1-based display line)
   const [commentingLine, setCommentingLine] = useState<number | null>(null);
+
+  // Selection state for range-based commenting (1-based display lines)
+  const [selectionStart, setSelectionStart] = useState<number | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+
+  // Pending range for the "Add Comment" button (after selection)
+  const [pendingRange, setPendingRange] = useState<{
+    startLine: number;
+    endLine: number;
+  } | null>(null);
 
   // Group comments by line number
   const commentsByLine = useMemo(
@@ -226,12 +270,35 @@ export function PlanReview({
     [comments],
   );
 
+  // Compute highlighted lines for expanded comments
+  const highlightedLines = useMemo(() => {
+    if (expandedLine === null) return new Set<number>();
+    const lineComments = commentsByLine.get(expandedLine);
+    if (!lineComments) return new Set<number>();
+    return getHighlightedLines(lineComments);
+  }, [expandedLine, commentsByLine]);
+
   // Parse plan into lines
   const lines = useMemo(() => content.split('\n'), [content]);
+
+  // Compute normalized selection range (always min→max)
+  const normalizedSelection = useMemo(() => {
+    if (selectionStart === null) return null;
+    const end = selectionEnd ?? selectionStart;
+    return {
+      startLine: Math.min(selectionStart, end),
+      endLine: Math.max(selectionStart, end),
+    };
+  }, [selectionStart, selectionEnd]);
 
   // Handle gutter click — open comment input for this line
   const handleGutterClick = useCallback(
     (lineNumber: number) => {
+      // Clear any active selection
+      setPendingRange(null);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+
       if (commentingLine === lineNumber) {
         setCommentingLine(null);
       } else {
@@ -245,6 +312,11 @@ export function PlanReview({
   // Handle comment marker click — expand/collapse existing comments
   const handleMarkerClick = useCallback(
     (lineNumber: number) => {
+      // Clear any active selection
+      setPendingRange(null);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+
       if (expandedLine === lineNumber) {
         setExpandedLine(null);
       } else {
@@ -255,13 +327,86 @@ export function PlanReview({
     [expandedLine],
   );
 
-  // Handle new comment submission
+  // Handle new comment submission (from gutter click — single line)
   const handleAddComment = useCallback(
     (lineNumber: number, body: string) => {
-      onAddComment(lineNumber, body);
+      // Convert 1-based display line to 0-based Range
+      const range = makeRange(lineNumber - 1, lineNumber - 1);
+      onAddComment(range, body);
       setCommentingLine(null);
     },
     [onAddComment],
+  );
+
+  // Handle new comment submission (from range selection)
+  const handleAddRangeComment = useCallback(
+    (body: string) => {
+      if (pendingRange) {
+        // Convert 1-based display lines to 0-based Range
+        const range = makeRange(
+          pendingRange.startLine - 1,
+          pendingRange.endLine - 1,
+        );
+        onAddComment(range, body);
+        setPendingRange(null);
+        setCommentingLine(null);
+        setSelectionStart(null);
+        setSelectionEnd(null);
+      }
+    },
+    [pendingRange, onAddComment],
+  );
+
+  // Mouse selection handlers
+  const handleMouseDown = useCallback(
+    (lineNumber: number) => {
+      setIsSelecting(true);
+      setSelectionStart(lineNumber);
+      setSelectionEnd(lineNumber);
+      setPendingRange(null);
+      setCommentingLine(null);
+      setExpandedLine(null);
+    },
+    [],
+  );
+
+  const handleMouseEnter = useCallback(
+    (lineNumber: number) => {
+      if (isSelecting) {
+        setSelectionEnd(lineNumber);
+      }
+    },
+    [isSelecting],
+  );
+
+  const handleMouseUp = useCallback(
+    (_lineNumber: number) => {
+      if (isSelecting && selectionStart !== null) {
+        const end = selectionEnd ?? selectionStart;
+        const startLine = Math.min(selectionStart, end);
+        const endLine = Math.max(selectionStart, end);
+        setPendingRange({ startLine, endLine });
+        setIsSelecting(false);
+      }
+    },
+    [isSelecting, selectionStart, selectionEnd],
+  );
+
+  // Handle "Add Comment" button click from selection
+  const handleAddCommentFromSelection = useCallback(() => {
+    if (pendingRange) {
+      setCommentingLine(pendingRange.startLine);
+    }
+  }, [pendingRange]);
+
+  // Check if a line is in the current selection
+  const isLineSelected = useCallback(
+    (lineNumber: number): boolean => {
+      const range = pendingRange ?? normalizedSelection;
+      if (!range) return false;
+      return lineNumber >= range.startLine && lineNumber <= range.endLine;
+    },
+    [pendingRange, normalizedSelection],
   );
 
   // Empty state
@@ -290,12 +435,26 @@ export function PlanReview({
           const isExpanded = expandedLine === lineNumber;
           const isCommenting = commentingLine === lineNumber;
           const allResolved = lineComments?.every((c) => c.resolved) ?? false;
+          const selected = isLineSelected(lineNumber);
+          const commentActive = highlightedLines.has(lineNumber);
+
+          // Build CSS class list
+          const lineClasses = [
+            'plan-line',
+            selected ? 'plan-line-selected' : '',
+            commentActive ? 'plan-line-comment-active' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <React.Fragment key={lineNumber}>
               <div
-                className="plan-line"
+                className={lineClasses}
                 data-testid={`plan-line-${lineNumber}`}
+                onMouseDown={() => handleMouseDown(lineNumber)}
+                onMouseEnter={() => handleMouseEnter(lineNumber)}
+                onMouseUp={() => handleMouseUp(lineNumber)}
               >
                 {/* Comment gutter — click to add a comment */}
                 <span
@@ -323,7 +482,7 @@ export function PlanReview({
                       aria-label={`${lineComments.length} comment${lineComments.length > 1 ? 's' : ''} on line ${lineNumber}`}
                       aria-expanded={isExpanded}
                     >
-                      {lineComments.length > 1 ? lineComments.length : '💬'}
+                      {lineComments.length > 1 ? lineComments.length : '\uD83D\uDCAC'}
                     </button>
                   ) : null}
                 </span>
@@ -340,6 +499,22 @@ export function PlanReview({
                 <span className="plan-line-content">{line || '\u00A0'}</span>
               </div>
 
+              {/* "Add Comment" button after selection ends on this line */}
+              {pendingRange &&
+                lineNumber === pendingRange.endLine &&
+                !isCommenting ? (
+                <div className="plan-selection-actions">
+                  <button
+                    type="button"
+                    aria-label="Add comment"
+                    className="plan-selection-add-comment-btn"
+                    onClick={handleAddCommentFromSelection}
+                  >
+                    Add Comment
+                  </button>
+                </div>
+              ) : null}
+
               {/* Expanded comment thread */}
               {isExpanded && lineComments ? (
                 <div className="plan-comment-container">
@@ -351,12 +526,27 @@ export function PlanReview({
                 </div>
               ) : null}
 
-              {/* New comment input */}
-              {isCommenting ? (
+              {/* New comment input (from gutter click — single line) */}
+              {isCommenting && !pendingRange ? (
                 <div className="plan-comment-container">
                   <CommentInput
                     onSubmit={(body) => handleAddComment(lineNumber, body)}
                     onCancel={() => setCommentingLine(null)}
+                  />
+                </div>
+              ) : null}
+
+              {/* New comment input (from range selection) */}
+              {isCommenting && pendingRange && lineNumber === pendingRange.startLine ? (
+                <div className="plan-comment-container">
+                  <CommentInput
+                    onSubmit={handleAddRangeComment}
+                    onCancel={() => {
+                      setCommentingLine(null);
+                      setPendingRange(null);
+                      setSelectionStart(null);
+                      setSelectionEnd(null);
+                    }}
                   />
                 </div>
               ) : null}
