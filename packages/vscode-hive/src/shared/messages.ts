@@ -34,6 +34,14 @@ export type WebviewToExtensionMessage =
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
   | {
+      /**
+       * Apply a code suggestion to a file. The extension handler (`_handleApplySuggestion`
+       * in reviewPanel.ts) is fully implemented, but **no production webview component
+       * currently sends this message**. It is exercised only in type-level tests
+       * (messages.test.ts, reviewPanel.test.ts). Wire a real sender in review mode
+       * (e.g. from SuggestionPreview's onApply callback) when suggestion-apply UX
+       * is ready, or remove this variant if the feature is abandoned.
+       */
       type: 'applySuggestion';
       threadId: string;
       annotationId: string;
@@ -70,7 +78,15 @@ export type ExtensionToWebviewMessage =
       config: ReviewConfig;
     }
   | { type: 'sessionUpdate'; session: ReviewSession }
-  | { type: 'configUpdate'; config: ReviewConfig }
+  | {
+      /**
+       * Declared but **never emitted** by the extension host. Kept for forward
+       * compatibility — emit this when review config hot-reload is implemented,
+       * or remove if the feature is abandoned.
+       */
+      type: 'configUpdate';
+      config: ReviewConfig;
+    }
   | { type: 'error'; message: string }
   | {
       type: 'scopeChanged';
@@ -86,6 +102,12 @@ export type ExtensionToWebviewMessage =
     }
   | { type: 'fileError'; uri: string; error: string }
   | {
+      /**
+       * Emitted by the extension host after handling 'applySuggestion', but
+       * **not consumed by any webview hook or component** yet. The webview
+       * should listen for this to update SuggestionPreview status (pending →
+       * applied/conflict) once the applySuggestion sender is wired.
+       */
       type: 'suggestionApplied';
       threadId: string;
       annotationId: string;

@@ -706,13 +706,15 @@ export class ReviewPanel {
 
         case 'context': {
           // Load first context file (usually the most important)
-          const contextsDir = path.join(featureDir, 'contexts');
-          if (fs.existsSync(contextsDir)) {
+          // NOTE: The canonical directory name is 'context' (singular), as defined
+          // by CONTEXT_DIR in hive-core/src/utils/paths.ts. Must stay in sync.
+          const contextDir = path.join(featureDir, 'context');
+          if (fs.existsSync(contextDir)) {
             const files = fs
-              .readdirSync(contextsDir)
+              .readdirSync(contextDir)
               .filter((f) => f.endsWith('.md'));
             if (files.length > 0) {
-              const firstFile = path.join(contextsDir, files[0]);
+              const firstFile = path.join(contextDir, files[0]);
               const content = fs.readFileSync(firstFile, 'utf-8');
               scopeContent = {
                 uri: firstFile,
@@ -762,7 +764,12 @@ export class ReviewPanel {
   }
 
   /**
-   * Handle code suggestion application
+   * Handle code suggestion application.
+   *
+   * NOTE: This handler is fully implemented but no production webview component
+   * currently sends the 'applySuggestion' message. It is only exercised by
+   * type-level tests. Wire a real sender (e.g. SuggestionPreview → postMessage)
+   * when the suggestion-apply UX is ready.
    */
   private async _handleApplySuggestion(message: any): Promise<void> {
     console.log('[HIVE WEBVIEW] Applying suggestion');
