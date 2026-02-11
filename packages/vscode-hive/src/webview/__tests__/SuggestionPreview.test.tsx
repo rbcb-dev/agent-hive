@@ -36,7 +36,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -57,7 +57,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -80,7 +80,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -96,7 +96,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -122,7 +122,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -131,7 +131,7 @@ describe('SuggestionPreview', () => {
   });
 
   describe('Apply button', () => {
-    it('renders Apply button when not applied', () => {
+    it('renders Apply button when pending', () => {
       render(
         <SuggestionPreview
           annotation={mockAnnotation}
@@ -139,7 +139,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -157,7 +157,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={onApply}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -176,7 +176,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={true}
+          suggestionStatus={{ status: 'applied' }}
         />,
       );
 
@@ -192,8 +192,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
-          isApplying={true}
+          suggestionStatus={{ status: 'applying' }}
         />,
       );
 
@@ -203,7 +202,7 @@ describe('SuggestionPreview', () => {
   });
 
   describe('conflict detection', () => {
-    it('shows conflict warning when hasConflict is true', () => {
+    it('shows conflict warning when status is conflict', () => {
       render(
         <SuggestionPreview
           annotation={mockAnnotation}
@@ -211,8 +210,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
-          hasConflict={true}
+          suggestionStatus={{ status: 'conflict' }}
         />,
       );
 
@@ -228,8 +226,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
-          hasConflict={true}
+          suggestionStatus={{ status: 'conflict' }}
         />,
       );
 
@@ -247,7 +244,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -267,7 +264,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -284,7 +281,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -301,7 +298,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -322,7 +319,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
@@ -351,7 +348,7 @@ describe('SuggestionPreview', () => {
           uri="src/utils.ts"
           range={mockRange}
           onApply={vi.fn()}
-          isApplied={false}
+          suggestionStatus={{ status: 'pending' }}
         />,
       );
 
