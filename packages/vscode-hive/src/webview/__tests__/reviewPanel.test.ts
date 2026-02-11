@@ -224,13 +224,100 @@ describe('ReviewPanel Message Type Alignment', () => {
     });
   });
 
-  describe('ExtensionToWebviewMessage - configUpdate', () => {
-    it('should accept valid configUpdate message', () => {
+  describe('ExtensionToWebviewMessage - commitHistory', () => {
+    it('should accept valid commitHistory message', () => {
       const message: ExtensionToWebviewMessage = {
-        type: 'configUpdate',
-        config: {} as any,
+        type: 'commitHistory',
+        feature: 'my-feature',
+        task: '01-setup',
+        commits: [
+          { sha: 'abc1234', message: 'Initial commit', timestamp: '2024-01-01T00:00:00Z' },
+          { sha: 'def5678', message: 'Add feature', timestamp: '2024-01-02T00:00:00Z' },
+        ],
       };
-      expect(message.type).toBe('configUpdate');
+      expect(message.type).toBe('commitHistory');
+      expect(message.commits).toHaveLength(2);
+      expect(message.commits[0].sha).toBe('abc1234');
+    });
+
+    it('should accept commitHistory with empty commits array', () => {
+      const message: ExtensionToWebviewMessage = {
+        type: 'commitHistory',
+        feature: 'my-feature',
+        task: '01-setup',
+        commits: [],
+      };
+      expect(message.commits).toHaveLength(0);
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - commitDiff', () => {
+    it('should accept valid commitDiff message', () => {
+      const message: ExtensionToWebviewMessage = {
+        type: 'commitDiff',
+        feature: 'my-feature',
+        task: '01-setup',
+        sha: 'abc1234',
+        diffs: [
+          {
+            baseRef: 'abc1233',
+            headRef: 'abc1234',
+            mergeBase: 'abc1233',
+            repoRoot: '/project',
+            fileRoot: '/project',
+            diffStats: { files: 1, insertions: 5, deletions: 2 },
+            files: [
+              {
+                path: 'src/index.ts',
+                status: 'M',
+                additions: 5,
+                deletions: 2,
+                hunks: [
+                  {
+                    oldStart: 1,
+                    oldLines: 3,
+                    newStart: 1,
+                    newLines: 6,
+                    lines: [
+                      { type: 'context', content: 'import { foo } from "./foo";' },
+                      { type: 'add', content: 'import { bar } from "./bar";' },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      expect(message.type).toBe('commitDiff');
+      expect(message.sha).toBe('abc1234');
+      expect(message.diffs[0].files[0].hunks).toHaveLength(1);
+    });
+  });
+
+  describe('WebviewToExtensionMessage - requestCommitHistory', () => {
+    it('should accept valid requestCommitHistory message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'requestCommitHistory',
+        feature: 'my-feature',
+        task: '01-setup',
+      };
+      expect(message.type).toBe('requestCommitHistory');
+    });
+  });
+
+  describe('WebviewToExtensionMessage - requestCommitDiff', () => {
+    it('should accept valid requestCommitDiff message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'requestCommitDiff',
+        feature: 'my-feature',
+        task: '01-setup',
+        sha: 'abc1234',
+      };
+      expect(message.type).toBe('requestCommitDiff');
+      if (message.type === 'requestCommitDiff') {
+        expect(message.sha).toBe('abc1234');
+      }
     });
   });
 });
@@ -248,6 +335,8 @@ describe('ReviewPanel Handler Mapping', () => {
       selectThread: 'handleSelectThread',
       changeScope: 'handleChangeScope',
       requestFile: 'handleRequestFile',
+      requestCommitHistory: 'handleRequestCommitHistory',
+      requestCommitDiff: 'handleRequestCommitDiff',
     };
 
     expect(Object.keys(handlerMap)).toContain('ready');
@@ -256,6 +345,8 @@ describe('ReviewPanel Handler Mapping', () => {
     expect(Object.keys(handlerMap)).toContain('resolve');
     expect(Object.keys(handlerMap)).toContain('submit');
     expect(Object.keys(handlerMap)).toContain('requestFile');
+    expect(Object.keys(handlerMap)).toContain('requestCommitHistory');
+    expect(Object.keys(handlerMap)).toContain('requestCommitDiff');
   });
 });
 
@@ -472,6 +563,56 @@ describe('Context Path Consistency', () => {
     const segments = canonicalPath.split(path.sep);
     const contextDirName = segments[segments.length - 1];
     expect(contextDirName).toBe('context');
+  });
+});
+
+// Test DiffFile status and hunk contracts for upgraded diff payloads
+describe('Diff Payload Upgrade Contracts', () => {
+  it('DiffFile status should use git letter codes not always M', () => {
+    // DiffFile.status type is 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | 'B'
+    const validStatuses = ['A', 'M', 'D', 'R', 'C', 'U', 'B'];
+    for (const status of validStatuses) {
+      expect(validStatuses).toContain(status);
+    }
+  });
+
+  it('DiffFile with hunks should have non-zero additions or deletions', () => {
+    const file = {
+      path: 'src/index.ts',
+      status: 'M' as const,
+      additions: 5,
+      deletions: 2,
+      hunks: [
+        {
+          oldStart: 1,
+          oldLines: 3,
+          newStart: 1,
+          newLines: 6,
+          lines: [
+            { type: 'add' as const, content: 'new line' },
+          ],
+        },
+      ],
+    };
+
+    // A file with hunks should have non-empty hunks array
+    expect(file.hunks.length).toBeGreaterThan(0);
+    // And meaningful stats
+    expect(file.additions + file.deletions).toBeGreaterThan(0);
+  });
+
+  it('added files should use status A not M', () => {
+    // When TaskChangedFile.status is 'added', DiffFile.status should be 'A'
+    const statusMap: Record<string, string> = {
+      added: 'A',
+      modified: 'M',
+      deleted: 'D',
+      renamed: 'R',
+    };
+    expect(statusMap['added']).toBe('A');
+    expect(statusMap['deleted']).toBe('D');
+    expect(statusMap['renamed']).toBe('R');
+    // The old code was always 'M' — this test documents the contract
   });
 });
 

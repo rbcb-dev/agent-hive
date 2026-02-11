@@ -7,6 +7,7 @@ import {
   FeatureService,
   PlanService,
   ContextService,
+  TaskService,
   createWorktreeService,
 } from 'hive-core';
 import type {
@@ -18,7 +19,9 @@ import type {
   DiffFile,
   FeatureInfo,
   PlanComment,
+  TaskCommit,
 } from 'hive-core';
+import { parseDiffContent, mergeDetailedWithParsed } from './shared/diffUtils.js';
 import type {
   WebviewToExtensionMessage,
   ExtensionToWebviewMessage,
@@ -46,6 +49,7 @@ export class ReviewPanel {
   private readonly _featureService: FeatureService;
   private readonly _planService: PlanService;
   private readonly _contextService: ContextService;
+  private readonly _taskService: TaskService;
   private _currentSession: ReviewSession | null = null;
 
   public static createOrShow(
@@ -98,6 +102,7 @@ export class ReviewPanel {
     this._featureService = new FeatureService(workspaceRoot);
     this._planService = new PlanService(workspaceRoot);
     this._contextService = new ContextService(workspaceRoot);
+    this._taskService = new TaskService(workspaceRoot);
 
     console.log(
       '[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel',
@@ -278,7 +283,7 @@ export class ReviewPanel {
       case 'addPlanComment':
         await this._handleAddPlanComment(
           message.feature,
-          message.line,
+          message.range,
           message.body,
         );
         break;
@@ -295,6 +300,31 @@ export class ReviewPanel {
           message.feature,
           message.commentId,
           message.body,
+        );
+        break;
+
+      case 'requestCommitHistory':
+        await this._handleRequestCommitHistory(message.feature, message.task);
+        break;
+
+      case 'requestCommitDiff':
+        await this._handleRequestCommitDiff(
+          message.feature,
+          message.task,
+          message.sha,
+        );
+        break;
+
+      // Comment lifecycle messages handled by Task 6 — no-op for now
+      case 'unresolve':
+      case 'deleteThread':
+      case 'editComment':
+      case 'deleteComment':
+      case 'unresolvePlanComment':
+      case 'deletePlanComment':
+      case 'editPlanComment':
+        console.log(
+          `[HIVE WEBVIEW] Unhandled message type (pending Task 6): ${message.type}`,
         );
         break;
     }
@@ -865,6 +895,21 @@ export class ReviewPanel {
           const diffResult = await worktreeService.getDiff(feature, wt.step);
 
           if (diffResult.hasDiff) {
+            // Get per-file detailed stats (status, insertions, deletions)
+            const detailedFiles = await worktreeService.getDetailedDiff(
+              feature,
+              wt.step,
+            );
+
+            // Parse unified diff content into structured hunks
+            const parsedFiles = parseDiffContent(diffResult.diffContent);
+
+            // Build file list: merge detailed stats with parsed hunks
+            const files: DiffFile[] = mergeDetailedWithParsed(
+              detailedFiles,
+              parsedFiles,
+            );
+
             const payload: DiffPayload = {
               baseRef: wt.commit,
               headRef: 'HEAD',
@@ -872,19 +917,11 @@ export class ReviewPanel {
               repoRoot: this._workspaceRoot,
               fileRoot: wt.path,
               diffStats: {
-                files: diffResult.filesChanged.length,
+                files: files.length,
                 insertions: diffResult.insertions,
                 deletions: diffResult.deletions,
               },
-              files: diffResult.filesChanged.map(
-                (filePath): DiffFile => ({
-                  path: filePath,
-                  status: 'M',
-                  additions: 0,
-                  deletions: 0,
-                  hunks: [],
-                }),
-              ),
+              files,
             };
             diffs[wt.step] = [payload];
           }
@@ -921,6 +958,22 @@ export class ReviewPanel {
 
       if (diffResult.hasDiff) {
         const worktreeInfo = await worktreeService.get(feature, task);
+
+        // Get per-file detailed stats (status, insertions, deletions)
+        const detailedFiles = await worktreeService.getDetailedDiff(
+          feature,
+          task,
+        );
+
+        // Parse unified diff content into structured hunks
+        const parsedFiles = parseDiffContent(diffResult.diffContent);
+
+        // Build file list: merge detailed stats with parsed hunks
+        const files: DiffFile[] = mergeDetailedWithParsed(
+          detailedFiles,
+          parsedFiles,
+        );
+
         const payload: DiffPayload = {
           baseRef: worktreeInfo?.commit || 'unknown',
           headRef: 'HEAD',
@@ -928,19 +981,11 @@ export class ReviewPanel {
           repoRoot: this._workspaceRoot,
           fileRoot: worktreeInfo?.path || this._workspaceRoot,
           diffStats: {
-            files: diffResult.filesChanged.length,
+            files: files.length,
             insertions: diffResult.insertions,
             deletions: diffResult.deletions,
           },
-          files: diffResult.filesChanged.map(
-            (filePath): DiffFile => ({
-              path: filePath,
-              status: 'M',
-              additions: 0,
-              deletions: 0,
-              hunks: [],
-            }),
-          ),
+          files,
         };
         diffs.push(payload);
       }
@@ -950,6 +995,105 @@ export class ReviewPanel {
       const errorMsg =
         error instanceof Error ? error.message : 'Failed to get task diff';
       console.error('[HIVE WEBVIEW] Error getting task diff:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for commit history of a task.
+   * Reads task status via TaskService.getRawStatus() and extracts the commits array.
+   */
+  private async _handleRequestCommitHistory(
+    feature: string,
+    task: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling requestCommitHistory:',
+      feature,
+      task,
+    );
+
+    try {
+      const taskStatus = this._taskService.getRawStatus(feature, task);
+      const commits: TaskCommit[] = taskStatus?.commits ?? [];
+
+      this._postMessage({
+        type: 'commitHistory',
+        feature,
+        task,
+        commits,
+      });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to get commit history';
+      console.error('[HIVE WEBVIEW] Error getting commit history:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for diff of a specific commit SHA.
+   * Uses worktreeService to generate diff for the commit via `SHA~1..SHA`.
+   */
+  private async _handleRequestCommitDiff(
+    feature: string,
+    task: string,
+    sha: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling requestCommitDiff:',
+      feature,
+      task,
+      sha,
+    );
+
+    try {
+      const worktreeService = createWorktreeService(this._workspaceRoot);
+      const worktreeInfo = await worktreeService.get(feature, task);
+
+      if (!worktreeInfo) {
+        this._postMessage({
+          type: 'error',
+          message: `Worktree not found for ${feature}/${task}`,
+        });
+        return;
+      }
+
+      // Get diff for the specific commit: SHA~1..SHA
+      const diffResult = await worktreeService.getDiff(
+        feature,
+        task,
+        `${sha}~1`,
+      );
+      const diffs: DiffPayload[] = [];
+
+      if (diffResult.hasDiff) {
+        // Parse the unified diff content into structured hunks
+        const files = parseDiffContent(diffResult.diffContent);
+
+        const payload: DiffPayload = {
+          baseRef: `${sha}~1`,
+          headRef: sha,
+          mergeBase: `${sha}~1`,
+          repoRoot: this._workspaceRoot,
+          fileRoot: worktreeInfo.path,
+          diffStats: {
+            files: files.length,
+            insertions: diffResult.insertions,
+            deletions: diffResult.deletions,
+          },
+          files,
+        };
+        diffs.push(payload);
+      }
+
+      this._postMessage({ type: 'commitDiff', feature, task, sha, diffs });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to get commit diff';
+      console.error('[HIVE WEBVIEW] Error getting commit diff:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
   }
@@ -1023,14 +1167,14 @@ export class ReviewPanel {
    */
   private async _handleAddPlanComment(
     feature: string,
-    line: number,
+    range: Range,
     body: string,
   ): Promise<void> {
-    console.log('[HIVE WEBVIEW] Handling addPlanComment:', feature, line);
+    console.log('[HIVE WEBVIEW] Handling addPlanComment:', feature, range);
 
     try {
       this._planService.addComment(feature, {
-        line,
+        range,
         body,
         author: 'human',
       });
