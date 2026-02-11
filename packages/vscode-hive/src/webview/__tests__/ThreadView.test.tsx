@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from './test-utils';
 import { ThreadView } from '../components/ThreadView';
 import type { ReviewThread } from 'hive-core';
+import type { SuggestionStatus } from '../components/SuggestionPreview';
 
 const mockThread: ReviewThread = {
   id: 'thread-1',
@@ -87,7 +88,7 @@ describe('ThreadView', () => {
       expect(aiBadges.length).toBe(1);
     });
 
-    it('displays suggestion replacement code', () => {
+    it('displays suggestion replacement code via SuggestionPreview', () => {
       const threadWithSuggestion: ReviewThread = {
         ...mockThread,
         annotations: [
@@ -111,6 +112,10 @@ describe('ThreadView', () => {
         />,
       );
 
+      // SuggestionPreview should render (not raw <pre>)
+      expect(
+        screen.getByRole('region', { name: /suggestion preview/i }),
+      ).toBeInTheDocument();
       expect(screen.getByText('const x = 1;')).toBeInTheDocument();
     });
   });
@@ -342,6 +347,110 @@ describe('ThreadView', () => {
 
       const input = screen.getByPlaceholderText(/reply/i);
       expect(input).toHaveAccessibleName();
+    });
+  });
+
+  describe('SuggestionPreview integration', () => {
+    const threadWithSuggestion: ReviewThread = {
+      ...mockThread,
+      annotations: [
+        {
+          id: 'ann-suggest',
+          type: 'suggestion',
+          body: 'Use const instead of let',
+          author: { type: 'llm', name: 'Claude' },
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+          suggestion: { replacement: 'const x = 1;' },
+        },
+      ],
+    };
+
+    const mockOnApplySuggestion = vi.fn();
+    const pendingStatus: SuggestionStatus = { status: 'pending' };
+
+    it('renders SuggestionPreview for annotations with suggestions', () => {
+      render(
+        <ThreadView
+          thread={threadWithSuggestion}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onApplySuggestion={mockOnApplySuggestion}
+          suggestionStatus={pendingStatus}
+        />,
+      );
+
+      // SuggestionPreview renders a region with aria-label "Suggestion preview"
+      expect(
+        screen.getByRole('region', { name: /suggestion preview/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('does not render raw <pre> for suggestions when SuggestionPreview props provided', () => {
+      const { container } = render(
+        <ThreadView
+          thread={threadWithSuggestion}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onApplySuggestion={mockOnApplySuggestion}
+          suggestionStatus={pendingStatus}
+        />,
+      );
+
+      // The old <pre className="suggestion-code"> should not exist
+      expect(container.querySelector('pre.suggestion-code')).toBeNull();
+    });
+
+    it('passes onApply callback through to SuggestionPreview', () => {
+      render(
+        <ThreadView
+          thread={threadWithSuggestion}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onApplySuggestion={mockOnApplySuggestion}
+          suggestionStatus={pendingStatus}
+        />,
+      );
+
+      // SuggestionPreview renders an Apply button when pending
+      const applyButton = screen.getByRole('button', {
+        name: /apply suggestion/i,
+      });
+      fireEvent.click(applyButton);
+
+      expect(mockOnApplySuggestion).toHaveBeenCalledWith('ann-suggest');
+    });
+
+    it('shows applied status when suggestionStatus is applied', () => {
+      render(
+        <ThreadView
+          thread={threadWithSuggestion}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+          onApplySuggestion={mockOnApplySuggestion}
+          suggestionStatus={{ status: 'applied' }}
+        />,
+      );
+
+      expect(screen.getByText(/applied/i)).toBeInTheDocument();
+    });
+
+    it('renders SuggestionPreview with defaults when props not explicitly provided', () => {
+      render(
+        <ThreadView
+          thread={threadWithSuggestion}
+          onReply={mockOnReply}
+          onResolve={mockOnResolve}
+        />,
+      );
+
+      // SuggestionPreview should render even without explicit props (uses defaults)
+      expect(
+        screen.getByRole('region', { name: /suggestion preview/i }),
+      ).toBeInTheDocument();
+      // No raw <pre> should exist
+      const container = document.querySelector('pre.suggestion-code');
+      expect(container).toBeNull();
     });
   });
 });
