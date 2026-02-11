@@ -354,9 +354,7 @@ export const AccessibilityCheck: Story = {
     uri: defaultUri,
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: false,
-    hasConflict: false,
+    suggestionStatus: { status: 'pending' },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
