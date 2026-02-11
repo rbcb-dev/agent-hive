@@ -661,6 +661,484 @@ describe('PlanService', () => {
     });
   });
 
+  describe('unresolveComment', () => {
+    it('sets resolved to false on a previously resolved comment', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Resolved comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            resolved: true,
+          },
+        ],
+      });
+
+      service.unresolveComment(feature, 'c1');
+
+      const comments = service.getComments(feature);
+      expect(comments[0].resolved).toBe(false);
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() => service.unresolveComment(feature, 'nonexistent')).toThrow(
+        /not found/i,
+      );
+    });
+
+    it('fires onCommentUnresolved callback', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            resolved: true,
+          },
+        ],
+      });
+
+      const events: Array<{ feature: string; commentId: string }> = [];
+      service.onCommentUnresolved = (f, cId) => {
+        events.push({ feature: f, commentId: cId });
+      };
+
+      service.unresolveComment(feature, 'c1');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toBe('c1');
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('removes a comment from threads array', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'To delete',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'c2',
+            range: {
+              start: { line: 3, character: 0 },
+              end: { line: 3, character: 0 },
+            },
+            body: 'To keep',
+            author: 'agent',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      service.deleteComment(feature, 'c1');
+
+      const comments = service.getComments(feature);
+      expect(comments).toHaveLength(1);
+      expect(comments[0].id).toBe('c2');
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() => service.deleteComment(feature, 'nonexistent')).toThrow(
+        /not found/i,
+      );
+    });
+
+    it('fires onCommentDeleted callback', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const events: Array<{ feature: string; commentId: string }> = [];
+      service.onCommentDeleted = (f, cId) => {
+        events.push({ feature: f, commentId: cId });
+      };
+
+      service.deleteComment(feature, 'c1');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toBe('c1');
+    });
+  });
+
+  describe('editComment', () => {
+    it('updates body and timestamp of a comment', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Old body',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      service.editComment(feature, 'c1', 'New body');
+
+      const comments = service.getComments(feature);
+      expect(comments[0].body).toBe('New body');
+      expect(comments[0].timestamp).not.toBe('2025-01-01T00:00:00.000Z');
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() =>
+        service.editComment(feature, 'nonexistent', 'New body'),
+      ).toThrow(/not found/i);
+    });
+
+    it('fires onCommentEdited callback', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Old body',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const events: Array<{ feature: string; commentId: string }> = [];
+      service.onCommentEdited = (f, cId) => {
+        events.push({ feature: f, commentId: cId });
+      };
+
+      service.editComment(feature, 'c1', 'New body');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toBe('c1');
+    });
+  });
+
+  describe('editReply', () => {
+    it('updates body and timestamp of a reply', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [
+              {
+                id: 'r1',
+                body: 'Old reply body',
+                author: 'agent',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      });
+
+      service.editReply(feature, 'c1', 'r1', 'New reply body');
+
+      const comments = service.getComments(feature);
+      expect(comments[0].replies![0].body).toBe('New reply body');
+      expect(comments[0].replies![0].timestamp).not.toBe(
+        '2025-01-01T00:00:00.000Z',
+      );
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() =>
+        service.editReply(feature, 'nonexistent', 'r1', 'New body'),
+      ).toThrow(/comment.*not found/i);
+    });
+
+    it('throws when reply id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [],
+          },
+        ],
+      });
+
+      expect(() =>
+        service.editReply(feature, 'c1', 'nonexistent', 'New body'),
+      ).toThrow(/reply.*not found/i);
+    });
+
+    it('fires onReplyEdited callback', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [
+              {
+                id: 'r1',
+                body: 'Old reply',
+                author: 'agent',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      });
+
+      const events: Array<{
+        feature: string;
+        commentId: string;
+        replyId: string;
+      }> = [];
+      service.onReplyEdited = (f, cId, rId) => {
+        events.push({ feature: f, commentId: cId, replyId: rId });
+      };
+
+      service.editReply(feature, 'c1', 'r1', 'New reply');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toBe('c1');
+      expect(events[0].replyId).toBe('r1');
+    });
+  });
+
+  describe('deleteReply', () => {
+    it('removes a reply from the comment', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [
+              {
+                id: 'r1',
+                body: 'Reply to delete',
+                author: 'agent',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+              {
+                id: 'r2',
+                body: 'Reply to keep',
+                author: 'human',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      });
+
+      service.deleteReply(feature, 'c1', 'r1');
+
+      const comments = service.getComments(feature);
+      expect(comments[0].replies).toHaveLength(1);
+      expect(comments[0].replies![0].id).toBe('r2');
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() =>
+        service.deleteReply(feature, 'nonexistent', 'r1'),
+      ).toThrow(/comment.*not found/i);
+    });
+
+    it('throws when reply id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [],
+          },
+        ],
+      });
+
+      expect(() =>
+        service.deleteReply(feature, 'c1', 'nonexistent'),
+      ).toThrow(/reply.*not found/i);
+    });
+
+    it('fires onReplyDeleted callback', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [
+              {
+                id: 'r1',
+                body: 'Reply',
+                author: 'agent',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      });
+
+      const events: Array<{
+        feature: string;
+        commentId: string;
+        replyId: string;
+      }> = [];
+      service.onReplyDeleted = (f, cId, rId) => {
+        events.push({ feature: f, commentId: cId, replyId: rId });
+      };
+
+      service.deleteReply(feature, 'c1', 'r1');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toBe('c1');
+      expect(events[0].replyId).toBe('r1');
+    });
+  });
+
   describe('range-based comment anchoring', () => {
     const makeRange = (
       startLine: number,
