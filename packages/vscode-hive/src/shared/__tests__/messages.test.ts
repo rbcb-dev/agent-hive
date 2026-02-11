@@ -14,6 +14,8 @@ import type {
 import type {
   ReviewSession,
   ReviewConfig,
+  ReviewThread,
+  TaskCommit,
   Range,
   FeatureInfo,
   DiffPayload,
@@ -31,7 +33,6 @@ function _extensionSideSend(post: (msg: ExtensionToWebviewMessage) => void) {
   // Extension must be able to send all response messages
   post({ type: 'sessionData', session, config });
   post({ type: 'sessionUpdate', session });
-  post({ type: 'configUpdate', config });
   post({ type: 'error', message: 'something went wrong' });
   post({
     type: 'scopeChanged',
@@ -78,6 +79,24 @@ function _extensionSideSend(post: (msg: ExtensionToWebviewMessage) => void) {
     name: 'decisions',
     content: '# Decisions',
   });
+  // New extension→webview message types
+  post({
+    type: 'commitHistory',
+    feature: 'feat',
+    task: 'task-1',
+    commits: [] as TaskCommit[],
+  });
+  post({
+    type: 'commitDiff',
+    feature: 'feat',
+    task: 'task-1',
+    sha: 'abc123',
+    diffs: [] as DiffPayload[],
+  });
+  post({
+    type: 'reviewThreadsUpdate',
+    threads: [] as ReviewThread[],
+  });
 }
 
 function _webviewSideSend(post: (msg: WebviewToExtensionMessage) => void) {
@@ -120,6 +139,46 @@ function _webviewSideSend(post: (msg: WebviewToExtensionMessage) => void) {
     feature: 'feat',
     name: 'decisions',
   });
+  // New webview→extension message types
+  post({ type: 'unresolve', threadId: 't1' });
+  post({ type: 'deleteThread', threadId: 't1' });
+  post({
+    type: 'editComment',
+    threadId: 't1',
+    annotationId: 'a1',
+    body: 'updated body',
+  });
+  post({ type: 'deleteComment', threadId: 't1', annotationId: 'a1' });
+  post({
+    type: 'unresolvePlanComment',
+    feature: 'feat',
+    commentId: 'c1',
+  });
+  post({ type: 'deletePlanComment', feature: 'feat', commentId: 'c1' });
+  post({
+    type: 'editPlanComment',
+    feature: 'feat',
+    commentId: 'c1',
+    body: 'updated plan comment',
+  });
+  post({
+    type: 'requestCommitHistory',
+    feature: 'feat',
+    task: 'task-1',
+  });
+  post({
+    type: 'requestCommitDiff',
+    feature: 'feat',
+    task: 'task-1',
+    sha: 'abc123',
+  });
+  // Updated addPlanComment uses range instead of line
+  post({
+    type: 'addPlanComment',
+    feature: 'feat',
+    range,
+    body: 'new plan comment',
+  });
 }
 
 // -- Runtime tests (thin; the real value is the compile-time checks above) --
@@ -133,6 +192,10 @@ describe('shared message protocol types', () => {
       'addComment',
       'reply',
       'resolve',
+      'unresolve',
+      'deleteThread',
+      'editComment',
+      'deleteComment',
       'applySuggestion',
       'submit',
       'selectFile',
@@ -144,15 +207,22 @@ describe('shared message protocol types', () => {
       'requestTaskDiff',
       'requestPlanContent',
       'requestContextContent',
+      'addPlanComment',
+      'resolvePlanComment',
+      'replyToPlanComment',
+      'unresolvePlanComment',
+      'deletePlanComment',
+      'editPlanComment',
+      'requestCommitHistory',
+      'requestCommitDiff',
     ];
-    expect(messageTypes).toHaveLength(15);
+    expect(messageTypes).toHaveLength(27);
   });
 
   it('ExtensionToWebviewMessage covers all extension→webview message types', () => {
     const messageTypes: ExtensionToWebviewMessage['type'][] = [
       'sessionData',
       'sessionUpdate',
-      'configUpdate',
       'error',
       'scopeChanged',
       'fileContent',
@@ -163,8 +233,116 @@ describe('shared message protocol types', () => {
       'taskDiff',
       'planContent',
       'contextContent',
+      'commitHistory',
+      'commitDiff',
+      'reviewThreadsUpdate',
     ];
-    expect(messageTypes).toHaveLength(13);
+    expect(messageTypes).toHaveLength(15);
+  });
+
+  it('addPlanComment uses Range instead of line number', () => {
+    // Compile-time check: addPlanComment must accept 'range' field with Range type
+    const msg: WebviewToExtensionMessage = {
+      type: 'addPlanComment',
+      feature: 'feat',
+      range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+      body: 'comment text',
+    };
+    expect(msg.type).toBe('addPlanComment');
+  });
+
+  it('configUpdate is no longer in ExtensionToWebviewMessage', () => {
+    // Compile-time exhaustiveness: if configUpdate is removed from the union,
+    // then 'configUpdate' should NOT be assignable to ExtensionToWebviewMessage['type'].
+    // This is enforced at compile time by the typed array above lacking 'configUpdate'.
+    // Runtime check: the type array should not include 'configUpdate'.
+    const messageTypes: ExtensionToWebviewMessage['type'][] = [
+      'sessionData',
+      'sessionUpdate',
+      'error',
+      'scopeChanged',
+      'fileContent',
+      'fileError',
+      'suggestionApplied',
+      'featuresData',
+      'featureDiffs',
+      'taskDiff',
+      'planContent',
+      'contextContent',
+      'commitHistory',
+      'commitDiff',
+      'reviewThreadsUpdate',
+    ];
+    expect(messageTypes).not.toContain('configUpdate');
+  });
+
+  it('type exhaustiveness: every WebviewToExtensionMessage type has a handler case', () => {
+    // Ensures a switch over all message types is exhaustive at compile time.
+    // If a new variant is added to the union but not here, TypeScript will error.
+    function assertExhaustive(msg: WebviewToExtensionMessage): string {
+      switch (msg.type) {
+        case 'ready': return 'ready';
+        case 'addComment': return 'addComment';
+        case 'reply': return 'reply';
+        case 'resolve': return 'resolve';
+        case 'unresolve': return 'unresolve';
+        case 'deleteThread': return 'deleteThread';
+        case 'editComment': return 'editComment';
+        case 'deleteComment': return 'deleteComment';
+        case 'applySuggestion': return 'applySuggestion';
+        case 'submit': return 'submit';
+        case 'selectFile': return 'selectFile';
+        case 'selectThread': return 'selectThread';
+        case 'changeScope': return 'changeScope';
+        case 'requestFile': return 'requestFile';
+        case 'requestFeatures': return 'requestFeatures';
+        case 'requestFeatureDiffs': return 'requestFeatureDiffs';
+        case 'requestTaskDiff': return 'requestTaskDiff';
+        case 'requestPlanContent': return 'requestPlanContent';
+        case 'requestContextContent': return 'requestContextContent';
+        case 'addPlanComment': return 'addPlanComment';
+        case 'resolvePlanComment': return 'resolvePlanComment';
+        case 'replyToPlanComment': return 'replyToPlanComment';
+        case 'unresolvePlanComment': return 'unresolvePlanComment';
+        case 'deletePlanComment': return 'deletePlanComment';
+        case 'editPlanComment': return 'editPlanComment';
+        case 'requestCommitHistory': return 'requestCommitHistory';
+        case 'requestCommitDiff': return 'requestCommitDiff';
+        default: {
+          const _exhaustiveCheck: never = msg;
+          return _exhaustiveCheck;
+        }
+      }
+    }
+    // Exercise one case to satisfy runtime
+    expect(assertExhaustive({ type: 'ready' })).toBe('ready');
+  });
+
+  it('type exhaustiveness: every ExtensionToWebviewMessage type has a handler case', () => {
+    function assertExhaustive(msg: ExtensionToWebviewMessage): string {
+      switch (msg.type) {
+        case 'sessionData': return 'sessionData';
+        case 'sessionUpdate': return 'sessionUpdate';
+        case 'error': return 'error';
+        case 'scopeChanged': return 'scopeChanged';
+        case 'fileContent': return 'fileContent';
+        case 'fileError': return 'fileError';
+        case 'suggestionApplied': return 'suggestionApplied';
+        case 'featuresData': return 'featuresData';
+        case 'featureDiffs': return 'featureDiffs';
+        case 'taskDiff': return 'taskDiff';
+        case 'planContent': return 'planContent';
+        case 'contextContent': return 'contextContent';
+        case 'commitHistory': return 'commitHistory';
+        case 'commitDiff': return 'commitDiff';
+        case 'reviewThreadsUpdate': return 'reviewThreadsUpdate';
+        default: {
+          const _exhaustiveCheck: never = msg;
+          return _exhaustiveCheck;
+        }
+      }
+    }
+    expect(assertExhaustive({ type: 'error', message: 'test' })).toBe('error');
   });
 
   it('types are importable from shared/messages', () => {
