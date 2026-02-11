@@ -271,6 +271,87 @@ describe('useReviewSession', () => {
     });
   });
 
+  it('resets isSubmitting when sessionUpdate arrives with terminal status', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Load initial session
+    act(() => {
+      handler({ type: 'sessionData', session: mockSession });
+    });
+
+    // Submit a review
+    act(() => {
+      result.current.handleSubmit('approve', 'Looks good!');
+    });
+    expect(result.current.isSubmitting).toBe(true);
+
+    // Receive sessionUpdate with terminal status 'approved'
+    const approvedSession = { ...mockSession, status: 'approved' as const };
+    act(() => {
+      handler({ type: 'sessionUpdate', session: approvedSession });
+    });
+
+    expect(result.current.isSubmitting).toBe(false);
+  });
+
+  it('resets isSubmitting for changes_requested status', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Load initial session and submit
+    act(() => {
+      handler({ type: 'sessionData', session: mockSession });
+    });
+    act(() => {
+      result.current.handleSubmit('request_changes', 'Needs work');
+    });
+    expect(result.current.isSubmitting).toBe(true);
+
+    // Receive sessionUpdate with terminal status 'changes_requested'
+    const updatedSession = {
+      ...mockSession,
+      status: 'changes_requested' as const,
+    };
+    act(() => {
+      handler({ type: 'sessionUpdate', session: updatedSession });
+    });
+
+    expect(result.current.isSubmitting).toBe(false);
+  });
+
+  it('does not reset isSubmitting for non-terminal sessionUpdate', async () => {
+    const { addMessageListener } = await import('../../vscodeApi');
+    const { result } = renderHook(() => useReviewSession());
+
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Load initial session and submit
+    act(() => {
+      handler({ type: 'sessionData', session: mockSession });
+    });
+    act(() => {
+      result.current.handleSubmit('approve', 'Looks good!');
+    });
+    expect(result.current.isSubmitting).toBe(true);
+
+    // Receive sessionUpdate that still shows 'in_progress' (e.g. a thread change)
+    const inProgressSession = {
+      ...mockSession,
+      status: 'in_progress' as const,
+    };
+    act(() => {
+      handler({ type: 'sessionUpdate', session: inProgressSession });
+    });
+
+    // isSubmitting should still be true since session hasn't reached terminal state
+    expect(result.current.isSubmitting).toBe(true);
+  });
+
   it('adds new comment to session threads', async () => {
     const { addMessageListener } = await import('../../vscodeApi');
     const { result } = renderHook(() => useReviewSession());

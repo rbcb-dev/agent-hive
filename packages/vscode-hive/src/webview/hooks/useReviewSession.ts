@@ -105,6 +105,9 @@ export function useReviewSession(): UseReviewSessionResult {
       case 'sessionData':
       case 'sessionUpdate':
         setSession(message.session);
+        if (message.session.status !== 'in_progress') {
+          setIsSubmitting(false);
+        }
         break;
       case 'scopeChanged':
         setActiveScope(message.scope);
@@ -174,7 +177,7 @@ export function useReviewSession(): UseReviewSessionResult {
     (verdict: ReviewVerdict, summary: string) => {
       setIsSubmitting(true);
       postMessage({ type: 'submit', verdict, summary });
-      // Note: isSubmitting will be reset when we receive a session update
+      // Note: isSubmitting is reset when we receive a session update with terminal status
     },
     [],
   );
