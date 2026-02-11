@@ -8,7 +8,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from './test-utils';
 import { DiffViewer } from '../components/DiffViewer';
-import type { DiffFile } from 'hive-core';
+import type { DiffFile, ReviewThread } from 'hive-core';
 
 describe('DiffViewer', () => {
   const mockFile: DiffFile = {
@@ -263,6 +263,300 @@ describe('DiffViewer', () => {
         const firstDiffLine = diffLines[0];
         expect(firstDiffLine.closest('table')).not.toBeNull();
       }
+    });
+  });
+
+  describe('inline comment threads', () => {
+    // Thread anchored to line 3 (an inserted line in the diff: 'const newVar = 2;')
+    const mockThread: ReviewThread = {
+      id: 'thread-1',
+      entityId: 'entity-1',
+      uri: 'src/app.ts',
+      range: {
+        start: { line: 3, character: 0 },
+        end: { line: 3, character: 0 },
+      },
+      status: 'open',
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T00:00:00Z',
+      annotations: [
+        {
+          id: 'ann-1',
+          type: 'comment',
+          body: 'Consider using a more descriptive variable name.',
+          author: { type: 'human', name: 'Reviewer' },
+          createdAt: '2025-01-01T00:00:00Z',
+          updatedAt: '2025-01-01T00:00:00Z',
+        },
+      ],
+    };
+
+    it('renders InlineDiffThread widget when threads are provided', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // The inline thread component should be rendered
+      expect(screen.getByTestId('inline-diff-thread')).toBeInTheDocument();
+    });
+
+    it('renders thread annotation body text', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      expect(
+        screen.getByText('Consider using a more descriptive variable name.'),
+      ).toBeInTheDocument();
+    });
+
+    it('renders thread indicator on the gutter for lines with threads', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // A thread indicator icon should be present
+      const indicator = document.querySelector('.thread-indicator');
+      expect(indicator).toBeInTheDocument();
+    });
+
+    it('does not render threads when threads prop is empty', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      expect(
+        screen.queryByTestId('inline-diff-thread'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('renders resolve action in thread', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // ThreadView renders a Resolve button
+      expect(
+        screen.getByRole('button', { name: /resolve/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('renders reply input in thread', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByPlaceholderText(/reply/i)).toBeInTheDocument();
+    });
+
+    it('calls onReply when reply is submitted', () => {
+      const handleReply = vi.fn();
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={handleReply}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      const replyInput = screen.getByPlaceholderText(/reply/i);
+      fireEvent.change(replyInput, { target: { value: 'Sounds good' } });
+
+      const replyButton = screen.getByRole('button', { name: /^reply$/i });
+      fireEvent.click(replyButton);
+
+      expect(handleReply).toHaveBeenCalledWith('thread-1', 'Sounds good');
+    });
+
+    it('calls onResolve when resolve is clicked', () => {
+      const handleResolve = vi.fn();
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={handleResolve}
+        />,
+      );
+
+      const resolveButton = screen.getByRole('button', { name: /resolve/i });
+      fireEvent.click(resolveButton);
+
+      expect(handleResolve).toHaveBeenCalledWith('thread-1');
+    });
+
+    it('renders multiple threads at different lines', () => {
+      const secondThread: ReviewThread = {
+        id: 'thread-2',
+        entityId: 'entity-2',
+        uri: 'src/app.ts',
+        range: {
+          start: { line: 2, character: 0 },
+          end: { line: 2, character: 0 },
+        },
+        status: 'open',
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+        annotations: [
+          {
+            id: 'ann-2',
+            type: 'comment',
+            body: 'Why was this removed?',
+            author: { type: 'human', name: 'Bob' },
+            createdAt: '2025-01-01T00:00:00Z',
+            updatedAt: '2025-01-01T00:00:00Z',
+          },
+        ],
+      };
+
+      render(
+        <DiffViewer
+          file={mockFile}
+          threads={[mockThread, secondThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      const threadWidgets = screen.getAllByTestId('inline-diff-thread');
+      expect(threadWidgets).toHaveLength(2);
+    });
+
+    it('shows inline composer when gutter is clicked and onAddThread is provided', () => {
+      const handleAddThread = vi.fn();
+      render(
+        <DiffViewer
+          file={mockFile}
+          onAddThread={handleAddThread}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // Click a gutter element to open the inline composer
+      const gutters = document.querySelectorAll('.diff-gutter');
+      expect(gutters.length).toBeGreaterThan(0);
+      fireEvent.click(gutters[0]);
+
+      // An inline thread composer should appear
+      expect(screen.getByTestId('inline-thread-composer')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/add a comment/i)).toBeInTheDocument();
+    });
+
+    it('calls onAddThread with path, line, and body when composer is submitted', () => {
+      const handleAddThread = vi.fn();
+      render(
+        <DiffViewer
+          file={mockFile}
+          onAddThread={handleAddThread}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // Click a gutter to open composer
+      const gutters = document.querySelectorAll('.diff-gutter');
+      fireEvent.click(gutters[0]);
+
+      // Type a comment and submit
+      const commentInput = screen.getByPlaceholderText(/add a comment/i);
+      fireEvent.change(commentInput, { target: { value: 'This needs a fix' } });
+
+      const submitButton = screen.getByRole('button', { name: /comment$/i });
+      fireEvent.click(submitButton);
+
+      expect(handleAddThread).toHaveBeenCalledWith(
+        'src/app.ts',
+        expect.any(Number),
+        'This needs a fix',
+      );
+    });
+
+    it('closes composer when cancel is clicked', () => {
+      const handleAddThread = vi.fn();
+      render(
+        <DiffViewer
+          file={mockFile}
+          onAddThread={handleAddThread}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // Open composer
+      const gutters = document.querySelectorAll('.diff-gutter');
+      fireEvent.click(gutters[0]);
+      expect(screen.getByTestId('inline-thread-composer')).toBeInTheDocument();
+
+      // Cancel
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      fireEvent.click(cancelButton);
+
+      expect(screen.queryByTestId('inline-thread-composer')).not.toBeInTheDocument();
+    });
+
+    it('does not show composer when onAddThread is not provided', () => {
+      render(
+        <DiffViewer
+          file={mockFile}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      // Click a gutter — no composer should appear
+      const gutters = document.querySelectorAll('.diff-gutter');
+      if (gutters.length > 0) {
+        fireEvent.click(gutters[0]);
+      }
+
+      expect(screen.queryByTestId('inline-thread-composer')).not.toBeInTheDocument();
+    });
+
+    it('does not render threads when file is null', () => {
+      render(
+        <DiffViewer
+          file={null}
+          threads={[mockThread]}
+          onReply={vi.fn()}
+          onResolve={vi.fn()}
+        />,
+      );
+
+      expect(
+        screen.queryByTestId('inline-diff-thread'),
+      ).not.toBeInTheDocument();
     });
   });
 });

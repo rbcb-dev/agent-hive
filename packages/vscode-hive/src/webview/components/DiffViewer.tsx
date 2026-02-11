@@ -5,21 +5,28 @@
  * internally using react-diff-view for better rendering and features.
  */
 
-import React, { useMemo } from 'react';
-import { Diff, Hunk, parseDiff } from 'react-diff-view';
+import React, { useMemo, useState, useCallback } from 'react';
+import { Diff, Hunk, parseDiff, getChangeKey } from 'react-diff-view';
 import type {
   HunkData,
   ChangeData,
   ChangeEventArgs,
   EventMap,
+  RenderGutter,
 } from 'react-diff-view';
-import type { DiffFile } from 'hive-core';
+import type { DiffFile, ReviewThread } from 'hive-core';
+import { InlineDiffThread } from './InlineDiffThread';
+import { InlineThreadComposer } from './InlineThreadComposer';
 import 'react-diff-view/style/index.css';
 
 export interface DiffViewerProps {
   file: DiffFile | null;
   viewType?: 'unified' | 'split';
   onLineClick?: (path: string, lineNumber: number) => void;
+  threads?: ReviewThread[];
+  onAddThread?: (path: string, line: number, body: string) => void;
+  onReply?: (threadId: string, body: string) => void;
+  onResolve?: (threadId: string) => void;
 }
 
 /**
@@ -79,7 +86,20 @@ export function DiffViewer({
   file,
   viewType = 'unified',
   onLineClick,
+  threads,
+  onAddThread,
+  onReply,
+  onResolve,
 }: DiffViewerProps): React.ReactElement {
+  // Track which change key has the composer open (null = closed)
+  const [composerChangeKey, setComposerChangeKey] = useState<string | null>(
+    null,
+  );
+  // Track the line number for the composer (needed for onAddThread callback)
+  const [composerLineNumber, setComposerLineNumber] = useState<number | null>(
+    null,
+  );
+
   // Parse the diff using react-diff-view
   const parsedFiles = useMemo(() => {
     if (!file || file.isBinary || file.hunks.length === 0) {
@@ -117,28 +137,141 @@ export function DiffViewer({
   const diffType = getDiffType(file.status);
   const parsedFile = parsedFiles[0];
 
-  // Handle gutter click events for line selection
-  const gutterEvents: EventMap | undefined = onLineClick
-    ? {
-        onClick: (args: ChangeEventArgs) => {
-          const { change } = args;
-          if (change) {
-            // Get line number from the change - handle different change types
-            let lineNumber: number | undefined;
-            if (change.type === 'insert') {
-              lineNumber = change.lineNumber;
-            } else if (change.type === 'delete') {
-              lineNumber = change.lineNumber;
-            } else if (change.type === 'normal') {
-              lineNumber = change.newLineNumber;
-            }
-            if (lineNumber !== undefined) {
-              onLineClick(file.path, lineNumber);
-            }
-          }
-        },
+  // Build a set of line numbers that have threads for gutter indicators
+  const threadLineNumbers = useMemo(() => {
+    if (!threads || threads.length === 0) return new Set<number>();
+    return new Set(threads.map((t) => t.range.start.line));
+  }, [threads]);
+
+  // Build widgets map: changeKey → InlineDiffThread widget + composer widget
+  const widgets = useMemo(() => {
+    const widgetMap: Record<string, React.ReactNode> = {};
+
+    // Add thread widgets
+    if (threads && threads.length > 0 && parsedFile) {
+      const allChanges: ChangeData[] = parsedFile.hunks.reduce<ChangeData[]>(
+        (acc, hunk) => [...acc, ...hunk.changes],
+        [],
+      );
+
+      for (const thread of threads) {
+        const targetLine = thread.range.start.line;
+
+        // Find the change matching this line number
+        const matchingChange = allChanges.find((change) => {
+          if (change.type === 'insert') return change.lineNumber === targetLine;
+          if (change.type === 'delete') return change.lineNumber === targetLine;
+          if (change.type === 'normal')
+            return (
+              change.newLineNumber === targetLine ||
+              change.oldLineNumber === targetLine
+            );
+          return false;
+        });
+
+        if (matchingChange) {
+          const key = getChangeKey(matchingChange);
+          widgetMap[key] = (
+            <InlineDiffThread
+              thread={thread}
+              onReply={onReply ?? (() => {})}
+              onResolve={onResolve ?? (() => {})}
+            />
+          );
+        }
       }
-    : undefined;
+    }
+
+    // Add composer widget if active
+    if (composerChangeKey && onAddThread && file) {
+      widgetMap[composerChangeKey] = (
+        <InlineThreadComposer
+          onSubmit={(body) => {
+            if (composerLineNumber !== null) {
+              onAddThread(file.path, composerLineNumber, body);
+            }
+            setComposerChangeKey(null);
+            setComposerLineNumber(null);
+          }}
+          onCancel={() => {
+            setComposerChangeKey(null);
+            setComposerLineNumber(null);
+          }}
+        />
+      );
+    }
+
+    return Object.keys(widgetMap).length > 0 ? widgetMap : undefined;
+  }, [
+    threads,
+    parsedFile,
+    onReply,
+    onResolve,
+    composerChangeKey,
+    composerLineNumber,
+    onAddThread,
+    file,
+  ]);
+
+  // Custom gutter renderer to show thread indicators
+  const renderGutter: RenderGutter | undefined = useMemo(() => {
+    if (threadLineNumbers.size === 0) return undefined;
+
+    return ({ change, side, renderDefault, inHoverState, wrapInAnchor }) => {
+      const lineNumber =
+        change.type === 'insert'
+          ? change.lineNumber
+          : change.type === 'delete'
+            ? change.lineNumber
+            : change.newLineNumber;
+
+      if (lineNumber !== undefined && threadLineNumbers.has(lineNumber)) {
+        return (
+          <>
+            {renderDefault()}
+            <span className="thread-indicator" title="Has comment thread">
+              💬
+            </span>
+          </>
+        );
+      }
+
+      return renderDefault();
+    };
+  }, [threadLineNumbers]);
+
+  // Helper to extract line number from a change
+  const getLineNumber = useCallback((change: ChangeData): number | undefined => {
+    if (change.type === 'insert') return change.lineNumber;
+    if (change.type === 'delete') return change.lineNumber;
+    if (change.type === 'normal') return change.newLineNumber;
+    return undefined;
+  }, []);
+
+  // Handle gutter click events for line selection and thread creation
+  const gutterEvents: EventMap | undefined =
+    onLineClick || onAddThread
+      ? {
+          onClick: (args: ChangeEventArgs) => {
+            const { change } = args;
+            if (change) {
+              const lineNumber = getLineNumber(change);
+              if (lineNumber !== undefined) {
+                // If onAddThread is provided, open the composer
+                if (onAddThread) {
+                  const key = getChangeKey(change);
+                  setComposerChangeKey(key);
+                  setComposerLineNumber(lineNumber);
+                }
+                // Also fire onLineClick if provided
+                if (onLineClick && file) {
+                  onLineClick(file.path, lineNumber);
+                }
+              }
+            }
+          },
+        }
+      : undefined;
 
   return (
     <div className="diff-viewer">
@@ -156,6 +289,8 @@ export function DiffViewer({
             diffType={diffType}
             hunks={parsedFile.hunks}
             gutterEvents={gutterEvents}
+            widgets={widgets}
+            renderGutter={renderGutter}
           >
             {(hunks: HunkData[]) =>
               hunks.map((hunk) => (
