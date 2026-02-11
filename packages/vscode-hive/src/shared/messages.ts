@@ -50,7 +50,15 @@ export type WebviewToExtensionMessage =
   | { type: 'requestFeatureDiffs'; feature: string }
   | { type: 'requestTaskDiff'; feature: string; task: string }
   | { type: 'requestPlanContent'; feature: string }
-  | { type: 'requestContextContent'; feature: string; name: string };
+  | { type: 'requestContextContent'; feature: string; name: string }
+  | { type: 'addPlanComment'; feature: string; line: number; body: string }
+  | { type: 'resolvePlanComment'; feature: string; commentId: string }
+  | {
+      type: 'replyToPlanComment';
+      feature: string;
+      commentId: string;
+      body: string;
+    };
 
 /**
  * Messages sent from extension to webview
