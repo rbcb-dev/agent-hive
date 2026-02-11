@@ -238,10 +238,9 @@ class HiveExtension {
             return;
           }
 
-          featureName = await vscode.window.showQuickPick(
-            features.map((f) => f.name),
-            { placeHolder: 'Select a feature to review' },
-          );
+          featureName = await vscode.window.showQuickPick(features, {
+            placeHolder: 'Select a feature to review',
+          });
 
           if (!featureName) return;
         }
