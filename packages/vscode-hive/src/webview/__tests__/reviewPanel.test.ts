@@ -12,6 +12,10 @@ import {
   isPathWithinWorkspace,
   LARGE_FILE_THRESHOLD,
 } from '../fileUtils';
+import type {
+  WebviewToExtensionMessage,
+  ExtensionToWebviewMessage,
+} from '../types';
 
 // Test the URI rewriting logic
 describe('ReviewPanel URI Utilities', () => {
@@ -170,6 +174,62 @@ describe('ReviewPanel Messages', () => {
       };
       expect(message.type).toBe('error');
       expect(message.message).toBe('Something went wrong');
+    });
+  });
+});
+
+// Test message type alignment with reviewPanel.ts
+describe('ReviewPanel Message Type Alignment', () => {
+  describe('WebviewToExtensionMessage - applySuggestion', () => {
+    it('should accept valid applySuggestion message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'applySuggestion',
+        threadId: 'thread-123',
+        annotationId: 'ann-456',
+        uri: 'src/file.ts',
+        range: {
+          start: { line: 10, character: 0 },
+          end: { line: 15, character: 0 },
+        },
+        replacement: 'const x = 1;',
+      };
+      expect(message.type).toBe('applySuggestion');
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - suggestionApplied', () => {
+    it('should accept valid suggestionApplied message', () => {
+      const message: ExtensionToWebviewMessage = {
+        type: 'suggestionApplied',
+        threadId: 'thread-123',
+        annotationId: 'ann-456',
+        success: true,
+      };
+      expect(message.type).toBe('suggestionApplied');
+    });
+
+    it('should accept suggestionApplied with error', () => {
+      const message: ExtensionToWebviewMessage = {
+        type: 'suggestionApplied',
+        threadId: 'thread-123',
+        annotationId: 'ann-456',
+        success: false,
+        error: 'File not found',
+      };
+      expect(message.type).toBe('suggestionApplied');
+      expect(message.type === 'suggestionApplied' && message.error).toBe(
+        'File not found',
+      );
+    });
+  });
+
+  describe('ExtensionToWebviewMessage - configUpdate', () => {
+    it('should accept valid configUpdate message', () => {
+      const message: ExtensionToWebviewMessage = {
+        type: 'configUpdate',
+        config: {} as any,
+      };
+      expect(message.type).toBe('configUpdate');
     });
   });
 });

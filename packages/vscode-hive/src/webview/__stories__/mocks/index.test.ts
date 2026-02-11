@@ -7,10 +7,8 @@ import {
   createMockReviewThread,
   createMockDiffFile,
   createMockAnnotation,
-  createMockFileTreeItem,
 } from './index';
 import type { ReviewThread, DiffFile, ReviewAnnotation } from 'hive-core';
-import type { FileTreeItem } from '../../types';
 
 describe('createMockReviewThread', () => {
   it('creates a default ReviewThread with sensible defaults', () => {
@@ -185,64 +183,5 @@ describe('createMockAnnotation', () => {
   it('returns type-safe ReviewAnnotation', () => {
     const annotation: ReviewAnnotation = createMockAnnotation();
     expect(annotation).toBeDefined();
-  });
-});
-
-describe('createMockFileTreeItem', () => {
-  it('creates a default FileTreeItem', () => {
-    const item = createMockFileTreeItem();
-
-    expect(item.path).toBeDefined();
-    expect(item.name).toBeDefined();
-    expect(item.status).toBe('M');
-    expect(item.commentCount).toBe(0);
-    expect(item.additions).toBeGreaterThanOrEqual(0);
-    expect(item.deletions).toBeGreaterThanOrEqual(0);
-  });
-
-  it('extracts name from path', () => {
-    const item = createMockFileTreeItem({
-      path: 'src/components/Button.tsx',
-    });
-
-    expect(item.path).toBe('src/components/Button.tsx');
-    expect(item.name).toBe('Button.tsx');
-  });
-
-  it('allows overriding all properties', () => {
-    const item = createMockFileTreeItem({
-      path: 'src/test.ts',
-      status: 'A',
-      commentCount: 5,
-      additions: 100,
-      deletions: 50,
-    });
-
-    expect(item.status).toBe('A');
-    expect(item.commentCount).toBe(5);
-    expect(item.additions).toBe(100);
-    expect(item.deletions).toBe(50);
-  });
-
-  it('supports all file statuses', () => {
-    const statuses: FileTreeItem['status'][] = [
-      'A',
-      'M',
-      'D',
-      'R',
-      'C',
-      'U',
-      'B',
-    ];
-
-    for (const status of statuses) {
-      const item = createMockFileTreeItem({ status });
-      expect(item.status).toBe(status);
-    }
-  });
-
-  it('returns type-safe FileTreeItem', () => {
-    const item: FileTreeItem = createMockFileTreeItem();
-    expect(item).toBeDefined();
   });
 });
