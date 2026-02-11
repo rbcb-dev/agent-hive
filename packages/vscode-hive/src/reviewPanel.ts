@@ -277,6 +277,29 @@ export class ReviewPanel {
           message.name,
         );
         break;
+
+      case 'addPlanComment':
+        await this._handleAddPlanComment(
+          message.feature,
+          message.line,
+          message.body,
+        );
+        break;
+
+      case 'resolvePlanComment':
+        await this._handleResolvePlanComment(
+          message.feature,
+          message.commentId,
+        );
+        break;
+
+      case 'replyToPlanComment':
+        await this._handleReplyToPlanComment(
+          message.feature,
+          message.commentId,
+          message.body,
+        );
+        break;
     }
   }
 
@@ -994,6 +1017,98 @@ export class ReviewPanel {
           ? error.message
           : 'Failed to read context content';
       console.error('[HIVE WEBVIEW] Error reading context:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle adding a plan comment from webview
+   */
+  private async _handleAddPlanComment(
+    feature: string,
+    line: number,
+    body: string,
+  ): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling addPlanComment:', feature, line);
+
+    try {
+      this._planService.addComment(feature, {
+        line,
+        body,
+        author: 'human',
+      });
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to add plan comment';
+      console.error('[HIVE WEBVIEW] Error adding plan comment:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle resolving a plan comment from webview
+   */
+  private async _handleResolvePlanComment(
+    feature: string,
+    commentId: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling resolvePlanComment:',
+      feature,
+      commentId,
+    );
+
+    try {
+      this._planService.resolveComment(feature, commentId);
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to resolve plan comment';
+      console.error('[HIVE WEBVIEW] Error resolving plan comment:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle replying to a plan comment from webview
+   */
+  private async _handleReplyToPlanComment(
+    feature: string,
+    commentId: string,
+    body: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling replyToPlanComment:',
+      feature,
+      commentId,
+    );
+
+    try {
+      this._planService.addReply(feature, commentId, {
+        body,
+        author: 'human',
+      });
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to reply to plan comment';
+      console.error(
+        '[HIVE WEBVIEW] Error replying to plan comment:',
+        errorMsg,
+      );
       this._postMessage({ type: 'error', message: errorMsg });
     }
   }

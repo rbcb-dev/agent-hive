@@ -402,4 +402,161 @@ describe('PlanService', () => {
       expect(service.isApproved(feature)).toBe(false);
     });
   });
+
+  describe('resolveComment', () => {
+    it('marks a comment as resolved by id', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            line: 1,
+            body: 'Fix this',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      service.resolveComment(feature, 'c1');
+
+      const comments = service.getComments(feature);
+      expect(comments).toHaveLength(1);
+      expect(comments[0].resolved).toBe(true);
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() => service.resolveComment(feature, 'nonexistent')).toThrow(
+        /not found/i,
+      );
+    });
+
+    it('preserves other comments when resolving one', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            line: 1,
+            body: 'First',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'c2',
+            line: 5,
+            body: 'Second',
+            author: 'agent',
+            timestamp: '2025-01-02T00:00:00.000Z',
+          },
+        ],
+      });
+
+      service.resolveComment(feature, 'c1');
+
+      const comments = service.getComments(feature);
+      expect(comments).toHaveLength(2);
+      expect(comments[0].resolved).toBe(true);
+      expect(comments[1].resolved).toBeUndefined();
+    });
+  });
+
+  describe('addReply', () => {
+    it('adds a reply to an existing comment', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            line: 1,
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const reply = service.addReply(feature, 'c1', {
+        body: 'My reply',
+        author: 'agent',
+      });
+
+      expect(reply.id).toMatch(/^reply-/);
+      expect(reply.body).toBe('My reply');
+      expect(reply.author).toBe('agent');
+      expect(reply.timestamp).toBeTruthy();
+
+      // Verify persisted
+      const comments = service.getComments(feature);
+      expect(comments[0].replies).toHaveLength(1);
+      expect(comments[0].replies![0].id).toBe(reply.id);
+      expect(comments[0].replies![0].body).toBe('My reply');
+    });
+
+    it('appends to existing replies', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            line: 1,
+            body: 'Main comment',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+            replies: [
+              {
+                id: 'r1',
+                body: 'Existing reply',
+                author: 'human',
+                timestamp: '2025-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      });
+
+      service.addReply(feature, 'c1', {
+        body: 'New reply',
+        author: 'agent',
+      });
+
+      const comments = service.getComments(feature);
+      expect(comments[0].replies).toHaveLength(2);
+      expect(comments[0].replies![0].body).toBe('Existing reply');
+      expect(comments[0].replies![1].body).toBe('New reply');
+    });
+
+    it('throws when comment id does not exist', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      writeComments(feature, { threads: [] });
+
+      expect(() =>
+        service.addReply(feature, 'nonexistent', {
+          body: 'Reply',
+          author: 'human',
+        }),
+      ).toThrow(/not found/i);
+    });
+  });
 });
