@@ -1,23 +1,27 @@
 /**
  * Main App component - Hive Review UI
  *
- * This component now uses custom hooks for state management:
- * - useReviewSession: Manages session state, scope, file/thread selection, and extension messaging
+ * This component integrates the new HivePanel (sidebar + content) layout
+ * with the existing review session functionality:
+ * - HiveWorkspaceProvider: Shared workspace state for sidebar navigation
+ * - HivePanel: Master-detail layout with FeatureSidebar and content area
+ * - useReviewSession: Manages review session state for review mode
  * - useFileContentCache: Manages file content caching with TTL
  *
  * Layout:
  * Uses antd Layout components with HiveThemeProvider for theming:
  * - Layout: Root container with minHeight 100vh
- * - Header: Contains ScopeTabs for navigation
- * - Sider: Collapsible sidebar with FileNavigator and ThreadList
- * - Content: Main content area with DiffViewer/CodeViewer/MarkdownViewer
- * - Footer: ReviewSummary for submission
+ * - Header: Contains ScopeTabs for review-specific navigation
+ * - Main: HivePanel (sidebar + content area driven by HiveWorkspaceProvider)
+ * - Footer: ReviewSummary for submission (when in review mode)
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Layout, Button } from './primitives';
 import { HiveThemeProvider } from './theme/Provider';
+import { HiveWorkspaceProvider } from './providers/HiveWorkspaceProvider';
 import { ScopeTabs } from './components/ScopeTabs';
+import { HivePanel } from './components/HivePanel';
 import { FileNavigator } from './components/FileNavigator';
 import { ThreadList } from './components/ThreadList';
 import { ThreadPanel } from './components/ThreadPanel';
@@ -132,120 +136,133 @@ export function App(): React.ReactElement {
       ? extractContentFromDiff(selectedFileData)
       : null;
 
+  // Determine if we're in review mode (session has data)
+  const isReviewMode = !!session;
+
   return (
     <HiveThemeProvider>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Header
-          style={{
-            padding: '0 16px',
-            display: 'flex',
-            alignItems: 'center',
-            background: 'var(--ant-color-bg-container)',
-          }}
-        >
-          <ScopeTabs
-            scopes={SCOPES}
-            activeScope={activeScope}
-            onScopeChange={handleScopeChange}
-          />
-        </Header>
-        <Layout hasSider>
-          <Sider
-            width={280}
-            collapsible
-            collapsed={collapsed}
-            onCollapse={setCollapsed}
-            style={{ background: 'var(--ant-color-bg-container)' }}
+      <HiveWorkspaceProvider>
+        <Layout style={{ minHeight: '100vh' }}>
+          <Header
+            style={{
+              padding: '0 16px',
+              display: 'flex',
+              alignItems: 'center',
+              background: 'var(--ant-color-bg-container)',
+            }}
           >
-            <nav
-              role="navigation"
-              style={{ padding: collapsed ? '8px' : '16px' }}
-            >
-              <div className="sidebar-section">
-                {!collapsed && <h3>Files</h3>}
-                <FileNavigator
-                  files={filePaths}
-                  threads={threads}
-                  selectedFile={selectedFile}
-                  onSelectFile={handleSelectFile}
-                />
-              </div>
-              <div className="sidebar-section">
-                {!collapsed && <h3>Threads</h3>}
-                <ThreadList
-                  threads={threadSummaries}
-                  selectedThread={selectedThread}
-                  onSelectThread={handleSelectThread}
-                />
-              </div>
-            </nav>
-          </Sider>
-          <Layout>
-            <Content style={{ padding: 16, overflow: 'auto' }} role="main">
-              <div className="content-area">
-                {activeScope === 'code' && isSelectedFileMarkdown && (
-                  <MarkdownViewer
-                    content={markdownContent}
-                    filePath={selectedFile || undefined}
-                  />
-                )}
-                {activeScope === 'code' && !isSelectedFileMarkdown && (
-                  <DiffViewer file={selectedFileData} />
-                )}
-                {activeScope !== 'code' && scopeContent && (
-                  <>
-                    <div className="scope-toolbar">
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<span className="codicon codicon-comment" />}
-                        onClick={handleAddComment}
-                        aria-label="Add a comment on this content"
-                      >
-                        Add Comment
-                      </Button>
-                    </div>
-                    {scopeContent.language === 'markdown' ? (
+            <ScopeTabs
+              scopes={SCOPES}
+              activeScope={activeScope}
+              onScopeChange={handleScopeChange}
+            />
+          </Header>
+          {isReviewMode ? (
+            /* Review mode: existing layout with FileNavigator, ThreadList, etc. */
+            <Layout hasSider>
+              <Sider
+                width={280}
+                collapsible
+                collapsed={collapsed}
+                onCollapse={setCollapsed}
+                style={{ background: 'var(--ant-color-bg-container)' }}
+              >
+                <nav
+                  role="navigation"
+                  style={{ padding: collapsed ? '8px' : '16px' }}
+                >
+                  <div className="sidebar-section">
+                    {!collapsed && <h3>Files</h3>}
+                    <FileNavigator
+                      files={filePaths}
+                      threads={threads}
+                      selectedFile={selectedFile}
+                      onSelectFile={handleSelectFile}
+                    />
+                  </div>
+                  <div className="sidebar-section">
+                    {!collapsed && <h3>Threads</h3>}
+                    <ThreadList
+                      threads={threadSummaries}
+                      selectedThread={selectedThread}
+                      onSelectThread={handleSelectThread}
+                    />
+                  </div>
+                </nav>
+              </Sider>
+              <Layout>
+                <Content style={{ padding: 16, overflow: 'auto' }} role="main">
+                  <div className="content-area">
+                    {activeScope === 'code' && isSelectedFileMarkdown && (
                       <MarkdownViewer
-                        content={scopeContent.content}
-                        filePath={scopeContent.uri}
-                      />
-                    ) : (
-                      <CodeViewer
-                        code={scopeContent.content}
-                        language={scopeContent.language}
-                        threads={[]}
-                        onThreadClick={handleCodeViewerThreadClick}
+                        content={markdownContent}
+                        filePath={selectedFile || undefined}
                       />
                     )}
-                  </>
-                )}
-                {activeScope !== 'code' && !scopeContent && (
-                  <div className="scope-content">
-                    <p>No content available for {activeScope} scope</p>
+                    {activeScope === 'code' && !isSelectedFileMarkdown && (
+                      <DiffViewer file={selectedFileData} />
+                    )}
+                    {activeScope !== 'code' && scopeContent && (
+                      <>
+                        <div className="scope-toolbar">
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={
+                              <span className="codicon codicon-comment" />
+                            }
+                            onClick={handleAddComment}
+                            aria-label="Add a comment on this content"
+                          >
+                            Add Comment
+                          </Button>
+                        </div>
+                        {scopeContent.language === 'markdown' ? (
+                          <MarkdownViewer
+                            content={scopeContent.content}
+                            filePath={scopeContent.uri}
+                          />
+                        ) : (
+                          <CodeViewer
+                            code={scopeContent.content}
+                            language={scopeContent.language}
+                            threads={[]}
+                            onThreadClick={handleCodeViewerThreadClick}
+                          />
+                        )}
+                      </>
+                    )}
+                    {activeScope !== 'code' && !scopeContent && (
+                      <div className="scope-content">
+                        <p>No content available for {activeScope} scope</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <aside className="thread-sidebar">
-                <ThreadPanel
-                  thread={selectedThreadData}
-                  onReply={handleReply}
-                  onResolve={handleResolve}
-                />
-              </aside>
-            </Content>
-          </Layout>
+                  <aside className="thread-sidebar">
+                    <ThreadPanel
+                      thread={selectedThreadData}
+                      onReply={handleReply}
+                      onResolve={handleResolve}
+                    />
+                  </aside>
+                </Content>
+              </Layout>
+            </Layout>
+          ) : (
+            /* Workspace mode: HivePanel with sidebar navigation */
+            <HivePanel style={{ flex: 1 }} />
+          )}
+          <div
+            style={{
+              padding: 16,
+              borderTop: '1px solid var(--ant-color-border)',
+            }}
+          >
+            <ReviewSummary onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          </div>
         </Layout>
-        <div
-          style={{
-            padding: 16,
-            borderTop: '1px solid var(--ant-color-border)',
-          }}
-        >
-          <ReviewSummary onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-        </div>
-      </Layout>
+      </HiveWorkspaceProvider>
     </HiveThemeProvider>
   );
 }

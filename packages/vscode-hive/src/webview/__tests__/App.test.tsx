@@ -30,11 +30,11 @@ describe('App', () => {
     expect(screen.getByText('Code')).toBeInTheDocument();
   });
 
-  it('renders sidebar navigation', () => {
+  it('renders sidebar area', () => {
     render(<App />);
 
-    // Sidebar should show files or threads list
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    // In default workspace mode, sidebar is provided by HivePanel
+    expect(screen.getByTestId('hive-panel-sidebar')).toBeInTheDocument();
   });
 
   it('renders main content area', () => {
@@ -101,24 +101,115 @@ describe('App - Antd Layout', () => {
   it('uses antd Layout components', () => {
     render(<App />);
 
-    // Should use antd Layout structure with semantic elements
-    // The layout wraps the entire app
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
-    expect(screen.getByRole('main')).toBeInTheDocument();
+    // Should use antd Layout structure
+    const layout = document.querySelector('.ant-layout');
+    expect(layout).toBeInTheDocument();
   });
 
-  it('renders a collapsible sidebar', () => {
+  it('uses HiveThemeProvider wrapper', () => {
     render(<App />);
 
-    // Should have a collapsible sider with trigger
+    // The App should be wrapped with antd's ConfigProvider (via HiveThemeProvider)
+    // We can verify this by checking that antd styles are applied
+    const layout = document.querySelector('.ant-layout');
+    expect(layout).toBeInTheDocument();
+  });
+});
+
+describe('App - Workspace Mode (no session)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders HivePanel when no review session is active', () => {
+    render(<App />);
+
+    // In workspace mode, HivePanel should be rendered
+    expect(screen.getByTestId('hive-panel')).toBeInTheDocument();
+  });
+
+  it('renders HivePanel sidebar and content area', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('hive-panel-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('hive-panel-content')).toBeInTheDocument();
+  });
+
+  it('does not render collapsible review sidebar', () => {
+    render(<App />);
+
+    // No collapsible sider trigger in workspace mode
+    const siderTrigger = document.querySelector('.ant-layout-sider-trigger');
+    expect(siderTrigger).not.toBeInTheDocument();
+  });
+});
+
+describe('App - Review Mode (with session)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * Helper to render App and simulate receiving a sessionData message
+   * to put it into review mode.
+   */
+  async function renderInReviewMode() {
+    const { addMessageListener } = await import('../vscodeApi');
+    render(<App />);
+
+    // Get the handler that was passed to addMessageListener
+    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+
+    // Simulate receiving sessionData to enter review mode
+    act(() => {
+      handler({
+        type: 'sessionData',
+        session: {
+          schemaVersion: 1 as const,
+          id: 'test-session',
+          featureName: 'test-feature',
+          scope: 'feature' as const,
+          status: 'in_progress' as const,
+          verdict: null,
+          summary: null,
+          threads: [],
+          diffs: {},
+          gitMeta: {
+            repoRoot: '/repo',
+            baseRef: 'main',
+            headRef: 'feature-branch',
+            mergeBase: 'abc123',
+            capturedAt: new Date().toISOString(),
+            diffStats: { files: 0, insertions: 0, deletions: 0 },
+            diffSummary: [],
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        config: {
+          autoOpen: false,
+          defaultScope: 'feature',
+        },
+      } as any);
+    });
+  }
+
+  it('renders sidebar navigation in review mode', async () => {
+    await renderInReviewMode();
+
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+  });
+
+  it('renders a collapsible sidebar in review mode', async () => {
+    await renderInReviewMode();
+
     const siderTrigger = document.querySelector('.ant-layout-sider-trigger');
     expect(siderTrigger).toBeInTheDocument();
   });
 
-  it('collapses sidebar when trigger is clicked', () => {
-    render(<App />);
+  it('collapses sidebar when trigger is clicked in review mode', async () => {
+    await renderInReviewMode();
 
-    // Get the sider element
     const sider = document.querySelector('.ant-layout-sider');
     expect(sider).toBeInTheDocument();
 
@@ -135,13 +226,16 @@ describe('App - Antd Layout', () => {
     expect(sider).toHaveClass('ant-layout-sider-collapsed');
   });
 
-  it('uses HiveThemeProvider wrapper', () => {
-    render(<App />);
+  it('renders main content area in review mode', async () => {
+    await renderInReviewMode();
 
-    // The App should be wrapped with antd's ConfigProvider (via HiveThemeProvider)
-    // We can verify this by checking that antd styles are applied
-    const layout = document.querySelector('.ant-layout');
-    expect(layout).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+
+  it('does not render HivePanel in review mode', async () => {
+    await renderInReviewMode();
+
+    expect(screen.queryByTestId('hive-panel')).not.toBeInTheDocument();
   });
 });
 

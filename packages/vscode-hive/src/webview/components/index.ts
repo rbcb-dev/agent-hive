@@ -27,3 +27,6 @@ export { ThreadView } from './ThreadView';
 export type { ThreadViewProps } from './ThreadView';
 
 export { FeatureSidebar } from './FeatureSidebar';
+
+export { HivePanel } from './HivePanel';
+export type { HivePanelProps } from './HivePanel';
