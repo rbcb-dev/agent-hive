@@ -359,8 +359,14 @@ const plugin: Plugin = async (ctx) => {
     return null;
   };
 
-  // Create review tools for code review workflow
-  const reviewTools = createReviewTools(reviewService, resolveFeature);
+  // Create review tools for code review workflow (wired with config from ConfigService)
+  const reviewConfig = configService.getReviewConfig();
+  const reviewTools = createReviewTools(
+    reviewService,
+    resolveFeature,
+    reviewConfig,
+    planService,
+  );
 
   const captureSession = (feature: string, toolContext: unknown) => {
     const ctx = toolContext as ToolContext;
@@ -570,7 +576,13 @@ To unblock: Remove .hive/features/${feature}/BLOCKED`;
       hive_review_suggest: reviewTools.hive_review_suggest,
       hive_review_reply: reviewTools.hive_review_reply,
       hive_review_resolve: reviewTools.hive_review_resolve,
+      hive_review_unresolve: reviewTools.hive_review_unresolve,
+      hive_review_delete_thread: reviewTools.hive_review_delete_thread,
+      hive_review_edit: reviewTools.hive_review_edit,
+      hive_review_mark_applied: reviewTools.hive_review_mark_applied,
       hive_review_submit: reviewTools.hive_review_submit,
+      hive_plan_comment_resolve: reviewTools.hive_plan_comment_resolve,
+      hive_plan_comment_reply: reviewTools.hive_plan_comment_reply,
 
       hive_feature_create: tool({
         description: 'Create a new feature and set it as active',
