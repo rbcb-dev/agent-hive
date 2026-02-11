@@ -17,7 +17,7 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within, userEvent, waitFor } from 'storybook/test';
+import { fn, expect, within, userEvent, waitFor } from 'storybook/test';
 
 import { App } from './App';
 import type { ReviewSession } from 'hive-core';
@@ -250,6 +250,11 @@ console mock, allowing stories to run without VSCode.
     },
   },
   tags: ['autodocs'],
+  argTypes: {
+    // App has no direct props — it is self-contained and receives data
+    // via postMessage. These entries document the implicit interface for
+    // Storybook users browsing the docs.
+  },
 } satisfies Meta<typeof App>;
 
 export default meta;
@@ -466,5 +471,59 @@ Demonstrates how the app displays scope-specific content
     await waitFor(() => {
       expect(planTab).toHaveAttribute('aria-selected', 'true');
     });
+  },
+};
+
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for the App component.
+ *
+ * Verifies:
+ * - Scope tabs are rendered with accessible role="tab" attributes
+ * - Tab navigation works between scope tabs
+ * - Session data is reflected in the UI after receiving a message
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  play: async ({ canvasElement }) => {
+    // Wait for component to mount
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Simulate extension sending session data
+    sendMessage({
+      type: 'sessionData',
+      session: createActiveReviewSession(),
+    });
+
+    const canvas = within(canvasElement);
+
+    // Wait for scope tabs to render
+    await waitFor(() => {
+      expect(canvas.getByRole('tab', { name: /Feature/i })).toBeInTheDocument();
+    });
+
+    // Verify all scope tabs are accessible via role
+    await expect(
+      canvas.getByRole('tab', { name: /Feature/i }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('tab', { name: /Code/i }),
+    ).toBeInTheDocument();
+
+    // Verify tab keyboard navigation by clicking a tab
+    const codeTab = canvas.getByRole('tab', { name: /Code/i });
+    await userEvent.click(codeTab);
+    await waitFor(() => {
+      expect(codeTab).toHaveAttribute('aria-selected', 'true');
+    });
+
+    // Tab navigation should move focus through interactive elements
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
   },
 };

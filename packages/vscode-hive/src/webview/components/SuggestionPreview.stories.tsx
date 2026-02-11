@@ -350,6 +350,56 @@ export const ToggleDiffView: Story = {
   },
 };
 
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for SuggestionPreview.
+ *
+ * Verifies:
+ * - Suggestion body text is visible for screen readers
+ * - Apply button is accessible via role query
+ * - Diff view labels (Before/After) are visible
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    annotation: defaultAnnotation,
+    oldCode: defaultOldCode,
+    uri: defaultUri,
+    range: defaultRange,
+    onApply: fn(),
+    isApplied: false,
+    isApplying: false,
+    hasConflict: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify suggestion body text is visible
+    await expect(
+      canvas.getByText(/more descriptive variable name/i),
+    ).toBeInTheDocument();
+
+    // Verify Apply button is accessible via role
+    const applyButton = canvas.getByRole('button', { name: /Apply/i });
+    await expect(applyButton).toBeInTheDocument();
+    await expect(applyButton).not.toBeDisabled();
+
+    // Verify diff view labels are present
+    await expect(canvas.getByText('Before:')).toBeInTheDocument();
+    await expect(canvas.getByText('After:')).toBeInTheDocument();
+
+    // Tab navigation should move focus through interactive elements
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
+  },
+};
+
 /**
  * Suggestion with markdown formatting in the body
  */
