@@ -343,9 +343,7 @@ export const AccessibilityCheck: Story = {
   tags: ['a11y'],
   args: {
     files: sampleFiles,
-    threads: [
-      ...createThreadsForFile('src/components/Button.tsx', 2),
-    ],
+    threads: [...createThreadsForFile('src/components/Button.tsx', 2)],
     selectedFile: null,
     onSelectFile: fn(),
   },

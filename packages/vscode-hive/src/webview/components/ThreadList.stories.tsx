@@ -239,7 +239,9 @@ export const AccessibilityCheck: Story = {
 
     // Verify thread preview text is visible
     await expect(canvas.getByText(/async\/await/i)).toBeInTheDocument();
-    await expect(canvas.getByText(/simplified with reduce/i)).toBeInTheDocument();
+    await expect(
+      canvas.getByText(/simplified with reduce/i),
+    ).toBeInTheDocument();
 
     // Verify status indicators are visible as text (readable by screen readers)
     const openIndicators = canvas.getAllByText('open');

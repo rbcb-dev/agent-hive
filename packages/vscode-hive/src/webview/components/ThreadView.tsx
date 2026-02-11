@@ -6,10 +6,7 @@
 import React, { useState } from 'react';
 import type { ReviewThread, ReviewAnnotation } from 'hive-core';
 import { Button } from '../primitives';
-import {
-  SuggestionPreview,
-  type SuggestionStatus,
-} from './SuggestionPreview';
+import { SuggestionPreview, type SuggestionStatus } from './SuggestionPreview';
 
 export interface ThreadViewProps {
   /** The thread to display */

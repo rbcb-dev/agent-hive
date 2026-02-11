@@ -112,25 +112,29 @@ export const CustomRender: Story = {
     itemHeight: 60,
     itemKey: 'id' as keyof ListItem,
     children: (item: ListItem, index: number) => (
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}>
-        <div style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: '#1677ff',
-          color: '#fff',
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #f0f0f0',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 12,
-          flexShrink: 0,
-        }}>
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: '#1677ff',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            flexShrink: 0,
+          }}
+        >
           {index + 1}
         </div>
         <div>
@@ -177,7 +181,10 @@ export const AccessibilityCheck: Story = {
     itemHeight: 40,
     itemKey: 'id' as keyof ListItem,
     children: (item: ListItem) => (
-      <div role="listitem" style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+      <div
+        role="listitem"
+        style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}
+      >
         {item.title}
       </div>
     ),

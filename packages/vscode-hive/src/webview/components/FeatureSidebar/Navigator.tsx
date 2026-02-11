@@ -86,9 +86,7 @@ function groupFeaturesByStatus(features: FeatureInfo[]): StatusGroup[] {
 // Tree data construction
 // ---------------------------------------------------------------------------
 
-function buildNavigatorTree(
-  groups: StatusGroup[],
-): TreeDataNode[] {
+function buildNavigatorTree(groups: StatusGroup[]): TreeDataNode[] {
   return groups.map((group) => ({
     key: `group-${group.status}`,
     title: group.label,
@@ -183,7 +181,12 @@ export function Navigator(): React.ReactElement {
       if (!key) return;
 
       // Feature node: feature-<name>
-      if (key.startsWith('feature-') && !key.includes('-plan') && !key.includes('-context') && !key.includes('-tasks')) {
+      if (
+        key.startsWith('feature-') &&
+        !key.includes('-plan') &&
+        !key.includes('-context') &&
+        !key.includes('-tasks')
+      ) {
         const name = key.replace('feature-', '');
         actions.selectFeature(name);
         return;
@@ -253,10 +256,7 @@ export function Navigator(): React.ReactElement {
               aria-hidden="true"
             />
             <Text style={{ marginLeft: 4 }}>{feature.name}</Text>
-            <Text
-              type="secondary"
-              style={{ marginLeft: 8, fontSize: 11 }}
-            >
+            <Text type="secondary" style={{ marginLeft: 8, fontSize: 11 }}>
               {getTaskProgress(feature)}
             </Text>
           </span>
@@ -272,10 +272,7 @@ export function Navigator(): React.ReactElement {
             <span className="codicon codicon-book" aria-hidden="true" />
             <Text style={{ marginLeft: 4 }}>Plan</Text>
             {feature && feature.commentCount > 0 && (
-              <Text
-                type="secondary"
-                style={{ marginLeft: 8, fontSize: 11 }}
-              >
+              <Text type="secondary" style={{ marginLeft: 8, fontSize: 11 }}>
                 ({feature.commentCount})
               </Text>
             )}

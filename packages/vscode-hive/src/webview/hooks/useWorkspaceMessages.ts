@@ -69,10 +69,7 @@ export function useWorkspaceMessages(): void {
 
   // Request feature diffs when activeFeature changes
   useEffect(() => {
-    if (
-      state.activeFeature &&
-      state.activeFeature !== prevFeatureRef.current
-    ) {
+    if (state.activeFeature && state.activeFeature !== prevFeatureRef.current) {
       postMessage({
         type: 'requestFeatureDiffs',
         feature: state.activeFeature,

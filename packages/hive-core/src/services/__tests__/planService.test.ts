@@ -473,6 +473,107 @@ describe('PlanService', () => {
     });
   });
 
+  describe('event callbacks', () => {
+    it('calls onCommentAdded after addComment', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      const events: Array<{
+        feature: string;
+        commentId: string;
+        unresolvedCount: number;
+      }> = [];
+      service.onCommentAdded = (f, cId, count) => {
+        events.push({ feature: f, commentId: cId, unresolvedCount: count });
+      };
+
+      service.addComment(feature, {
+        line: 1,
+        body: 'A comment',
+        author: 'human',
+      });
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].commentId).toMatch(/^comment-/);
+      expect(events[0].unresolvedCount).toBe(1);
+    });
+
+    it('calls onPlanRevised after write with previous comment count', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Old Plan');
+
+      writeComments(feature, {
+        threads: [
+          {
+            id: 'c1',
+            line: 1,
+            body: 'Comment 1',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'c2',
+            line: 3,
+            body: 'Comment 2',
+            author: 'human',
+            timestamp: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const events: Array<{
+        feature: string;
+        previousCommentCount: number;
+      }> = [];
+      service.onPlanRevised = (f, count) => {
+        events.push({ feature: f, previousCommentCount: count });
+      };
+
+      service.write(feature, '# New Plan');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].previousCommentCount).toBe(2);
+    });
+
+    it('calls onPlanApproved after approve', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      const events: Array<{ feature: string; approvedAt: string }> = [];
+      service.onPlanApproved = (f, at) => {
+        events.push({ feature: f, approvedAt: at });
+      };
+
+      service.approve(feature);
+
+      expect(events).toHaveLength(1);
+      expect(events[0].feature).toBe(feature);
+      expect(events[0].approvedAt).toBeTruthy();
+    });
+
+    it('does not fail when no event callbacks are set', () => {
+      const feature = 'test-feature';
+      setupFeature(feature);
+      writePlan(feature, '# Plan');
+
+      // No callbacks set — should not throw
+      expect(() => {
+        service.addComment(feature, {
+          line: 1,
+          body: 'Comment',
+          author: 'human',
+        });
+        service.write(feature, '# Revised');
+        service.approve(feature);
+      }).not.toThrow();
+    });
+  });
+
   describe('addReply', () => {
     it('adds a reply to an existing comment', () => {
       const feature = 'test-feature';

@@ -114,9 +114,8 @@ export function HiveThemeProvider({
   mode,
   children,
 }: HiveThemeProviderProps): React.ReactElement {
-  const [detectedMode, setDetectedMode] = useState<ThemeMode>(
-    detectVscodeTheme,
-  );
+  const [detectedMode, setDetectedMode] =
+    useState<ThemeMode>(detectVscodeTheme);
 
   useEffect(() => {
     // If explicit mode is provided, skip observation

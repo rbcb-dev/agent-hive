@@ -241,12 +241,15 @@ export function DiffViewer({
   }, [threadLineNumbers]);
 
   // Helper to extract line number from a change
-  const getLineNumber = useCallback((change: ChangeData): number | undefined => {
-    if (change.type === 'insert') return change.lineNumber;
-    if (change.type === 'delete') return change.lineNumber;
-    if (change.type === 'normal') return change.newLineNumber;
-    return undefined;
-  }, []);
+  const getLineNumber = useCallback(
+    (change: ChangeData): number | undefined => {
+      if (change.type === 'insert') return change.lineNumber;
+      if (change.type === 'delete') return change.lineNumber;
+      if (change.type === 'normal') return change.newLineNumber;
+      return undefined;
+    },
+    [],
+  );
 
   // Handle gutter click events for line selection and thread creation
   const gutterEvents: EventMap | undefined =

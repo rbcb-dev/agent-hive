@@ -148,10 +148,7 @@ const meta: Meta<typeof HivePanel> = {
     (Story, context) => {
       const state = (context.args as any).initialState ?? createState();
       return (
-        <HiveWorkspaceProvider
-          initialState={state}
-          onRefreshFeatures={fn()}
-        >
+        <HiveWorkspaceProvider initialState={state} onRefreshFeatures={fn()}>
           <div style={{ height: '100vh' }}>
             <Story />
           </div>
@@ -227,9 +224,7 @@ export const WithDiffView: Story = {
     await expect(canvas.getByTestId('hive-panel-content')).toBeInTheDocument();
 
     // File path visible in content
-    await expect(
-      canvas.getByText('src/auth/jwt.ts'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText('src/auth/jwt.ts')).toBeInTheDocument();
   },
 };
 
@@ -258,9 +253,7 @@ export const FullNavigationFlow: Story = {
     await userEvent.click(fileEntry);
 
     // File path should appear in content area
-    await expect(
-      canvas.getByText('src/auth/jwt.ts'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText('src/auth/jwt.ts')).toBeInTheDocument();
   },
 };
 
@@ -284,7 +277,9 @@ export const SidebarCollapse: Story = {
     await expect(content).toBeInTheDocument();
 
     // Both exist simultaneously (master-detail layout)
-    await expect(sidebar.parentElement).toBe(content.parentElement?.parentElement);
+    await expect(sidebar.parentElement).toBe(
+      content.parentElement?.parentElement,
+    );
   },
 };
 
@@ -304,9 +299,7 @@ export const PlanView: Story = {
     await expect(canvas.getByText('auth-system')).toBeInTheDocument();
 
     // Content area visible with plan view
-    await expect(
-      canvas.getByTestId('hive-panel-content'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByTestId('hive-panel-content')).toBeInTheDocument();
   },
 };
 

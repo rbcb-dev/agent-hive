@@ -272,10 +272,7 @@ export class ReviewPanel {
         break;
 
       case 'requestContextContent':
-        await this._handleRequestContextContent(
-          message.feature,
-          message.name,
-        );
+        await this._handleRequestContextContent(message.feature, message.name);
         break;
 
       case 'addPlanComment':
@@ -858,10 +855,7 @@ export class ReviewPanel {
 
       for (const wt of worktrees) {
         try {
-          const diffResult = await worktreeService.getDiff(
-            feature,
-            wt.step,
-          );
+          const diffResult = await worktreeService.getDiff(feature, wt.step);
 
           if (diffResult.hasDiff) {
             const payload: DiffPayload = {
@@ -898,9 +892,7 @@ export class ReviewPanel {
       this._postMessage({ type: 'featureDiffs', feature, diffs });
     } catch (error) {
       const errorMsg =
-        error instanceof Error
-          ? error.message
-          : 'Failed to get feature diffs';
+        error instanceof Error ? error.message : 'Failed to get feature diffs';
       console.error('[HIVE WEBVIEW] Error getting feature diffs:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
@@ -981,9 +973,7 @@ export class ReviewPanel {
       }
     } catch (error) {
       const errorMsg =
-        error instanceof Error
-          ? error.message
-          : 'Failed to read plan content';
+        error instanceof Error ? error.message : 'Failed to read plan content';
       console.error('[HIVE WEBVIEW] Error reading plan:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
@@ -1042,9 +1032,7 @@ export class ReviewPanel {
       await this._handleRequestPlanContent(feature);
     } catch (error) {
       const errorMsg =
-        error instanceof Error
-          ? error.message
-          : 'Failed to add plan comment';
+        error instanceof Error ? error.message : 'Failed to add plan comment';
       console.error('[HIVE WEBVIEW] Error adding plan comment:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
@@ -1105,10 +1093,7 @@ export class ReviewPanel {
         error instanceof Error
           ? error.message
           : 'Failed to reply to plan comment';
-      console.error(
-        '[HIVE WEBVIEW] Error replying to plan comment:',
-        errorMsg,
-      );
+      console.error('[HIVE WEBVIEW] Error replying to plan comment:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
   }

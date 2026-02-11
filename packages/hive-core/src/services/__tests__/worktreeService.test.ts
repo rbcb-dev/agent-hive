@@ -34,9 +34,12 @@ async function setupGitRepo(name: string): Promise<string> {
   // Create .hive directory structure
   const hiveDir = path.join(repoPath, '.hive');
   fs.mkdirSync(path.join(hiveDir, '.worktrees'), { recursive: true });
-  fs.mkdirSync(path.join(hiveDir, 'features', 'test-feature', 'tasks', '01-test-step'), {
-    recursive: true,
-  });
+  fs.mkdirSync(
+    path.join(hiveDir, 'features', 'test-feature', 'tasks', '01-test-step'),
+    {
+      recursive: true,
+    },
+  );
 
   return repoPath;
 }
@@ -93,7 +96,13 @@ describe('WorktreeService', () => {
       const result = await service.create('test-feature', '01-test-step');
 
       expect(result.path).toBe(
-        path.join(repoPath, '.hive', '.worktrees', 'test-feature', '01-test-step'),
+        path.join(
+          repoPath,
+          '.hive',
+          '.worktrees',
+          'test-feature',
+          '01-test-step',
+        ),
       );
       expect(result.branch).toBe('hive/test-feature/01-test-step');
       expect(result.commit).toBeTruthy();
@@ -148,7 +157,10 @@ describe('WorktreeService', () => {
       const worktree = await service.create('test-feature', '01-test-step');
 
       // Create a file in the worktree
-      fs.writeFileSync(path.join(worktree.path, 'new-file.ts'), 'export const x = 1;\n');
+      fs.writeFileSync(
+        path.join(worktree.path, 'new-file.ts'),
+        'export const x = 1;\n',
+      );
 
       const result = await service.commitChanges(
         'test-feature',
@@ -185,7 +197,10 @@ describe('WorktreeService', () => {
       const worktree = await service.create('test-feature', '01-test-step');
       fs.writeFileSync(path.join(worktree.path, 'file.txt'), 'hello\n');
 
-      const result = await service.commitChanges('test-feature', '01-test-step');
+      const result = await service.commitChanges(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result.committed).toBe(true);
       expect(result.message).toContain('01-test-step');
@@ -287,7 +302,10 @@ describe('WorktreeService', () => {
       await worktreeGit.add('.');
       await worktreeGit.commit('add and modify files');
 
-      const result = await service.getDetailedDiff('test-feature', '01-test-step');
+      const result = await service.getDetailedDiff(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result.length).toBeGreaterThan(0);
 
@@ -313,7 +331,10 @@ describe('WorktreeService', () => {
         baseCommit: worktree.commit,
       });
 
-      const result = await service.getDetailedDiff('test-feature', '01-test-step');
+      const result = await service.getDetailedDiff(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result).toEqual([]);
     });
@@ -337,7 +358,10 @@ describe('WorktreeService', () => {
       await worktreeGit.add('.');
       await worktreeGit.commit('delete README');
 
-      const result = await service.getDetailedDiff('test-feature', '01-test-step');
+      const result = await service.getDetailedDiff(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result.length).toBe(1);
       expect(result[0].path).toBe('README.md');
@@ -383,7 +407,11 @@ describe('WorktreeService', () => {
       await worktreeGit.add('.');
       await worktreeGit.commit('add squash file');
 
-      const result = await service.merge('test-feature', '01-test-step', 'squash');
+      const result = await service.merge(
+        'test-feature',
+        '01-test-step',
+        'squash',
+      );
 
       expect(result.success).toBe(true);
       expect(result.merged).toBe(true);
@@ -471,7 +499,10 @@ describe('WorktreeService', () => {
       const worktree = await service.create('test-feature', '01-test-step');
       fs.writeFileSync(path.join(worktree.path, 'dirty.txt'), 'dirty\n');
 
-      const result = await service.hasUncommittedChanges('test-feature', '01-test-step');
+      const result = await service.hasUncommittedChanges(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result).toBe(true);
     });
@@ -482,7 +513,10 @@ describe('WorktreeService', () => {
 
       await service.create('test-feature', '01-test-step');
 
-      const result = await service.hasUncommittedChanges('test-feature', '01-test-step');
+      const result = await service.hasUncommittedChanges(
+        'test-feature',
+        '01-test-step',
+      );
 
       expect(result).toBe(false);
     });

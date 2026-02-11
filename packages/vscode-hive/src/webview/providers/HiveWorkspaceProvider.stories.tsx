@@ -31,9 +31,7 @@ function WorkspaceConsumer() {
       <h3>Workspace State</h3>
       <dl>
         <dt>Active Feature</dt>
-        <dd data-testid="active-feature">
-          {state.activeFeature ?? '(none)'}
-        </dd>
+        <dd data-testid="active-feature">{state.activeFeature ?? '(none)'}</dd>
         <dt>Active Task</dt>
         <dd data-testid="active-task">{state.activeTask ?? '(none)'}</dd>
         <dt>Active File</dt>
@@ -190,9 +188,7 @@ export const Default: Story = {
 
     // Select a task
     await userEvent.click(canvas.getByTestId('select-task-btn'));
-    await expect(canvas.getByTestId('active-task')).toHaveTextContent(
-      'task-a',
-    );
+    await expect(canvas.getByTestId('active-task')).toHaveTextContent('task-a');
     await expect(canvas.getByTestId('active-view')).toHaveTextContent('task');
 
     // Select a file

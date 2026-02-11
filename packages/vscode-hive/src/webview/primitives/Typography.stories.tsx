@@ -29,8 +29,8 @@ export const Default: Story = {
     <Typography>
       <Typography.Title level={2}>Introduction</Typography.Title>
       <Typography.Paragraph>
-        This is a paragraph demonstrating the Typography primitive component.
-        It wraps Ant Design Typography with a controlled API surface.
+        This is a paragraph demonstrating the Typography primitive component. It
+        wraps Ant Design Typography with a controlled API surface.
       </Typography.Paragraph>
       <Typography.Text>Standard text content.</Typography.Text>
     </Typography>
@@ -124,10 +124,10 @@ export const EllipsisParagraph: Story = {
       <Typography>
         <Typography.Paragraph ellipsis={{ rows: 2, expandable: true }}>
           This is a very long paragraph that should be truncated after two rows.
-          It demonstrates the ellipsis feature of the Typography.Paragraph component.
-          When the text exceeds the specified number of rows, it will show an expand button
-          that allows the user to see the full content. This is useful for displaying
-          previews of long text content.
+          It demonstrates the ellipsis feature of the Typography.Paragraph
+          component. When the text exceeds the specified number of rows, it will
+          show an expand button that allows the user to see the full content.
+          This is useful for displaying previews of long text content.
         </Typography.Paragraph>
       </Typography>
     </div>
@@ -151,7 +151,9 @@ export const CompositionTest: Story = {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByText('Test Title')).toBeInTheDocument();
-    await expect(canvas.getByText('Test paragraph content.')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Test paragraph content.'),
+    ).toBeInTheDocument();
     await expect(canvas.getByText('Test bold text')).toBeInTheDocument();
     await expect(canvas.getByText('Test link')).toBeInTheDocument();
   },

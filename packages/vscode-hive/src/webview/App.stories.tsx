@@ -528,24 +528,16 @@ active, so HivePanel is the primary layout.
     });
 
     // Sidebar should be present
-    await expect(
-      canvas.getByTestId('hive-panel-sidebar'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByTestId('hive-panel-sidebar')).toBeInTheDocument();
 
     // Content area should be present
-    await expect(
-      canvas.getByTestId('hive-panel-content'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByTestId('hive-panel-content')).toBeInTheDocument();
 
     // In empty state, content area shows the welcome prompt
-    await expect(
-      canvas.getByText(/select a feature/i),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText(/select a feature/i)).toBeInTheDocument();
 
     // Sidebar should show "No features found" in empty state
-    await expect(
-      canvas.getByText('No features found'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByText('No features found')).toBeInTheDocument();
   },
 };
 
@@ -585,12 +577,8 @@ layout modes work within the same App instance.
     ).toBeInTheDocument();
 
     // Sidebar and content area present
-    await expect(
-      canvas.getByTestId('hive-panel-sidebar'),
-    ).toBeInTheDocument();
-    await expect(
-      canvas.getByTestId('hive-panel-content'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByTestId('hive-panel-sidebar')).toBeInTheDocument();
+    await expect(canvas.getByTestId('hive-panel-content')).toBeInTheDocument();
 
     // Step 2: Transition to review mode by sending session data
     await new Promise((resolve) => setTimeout(resolve, 50));

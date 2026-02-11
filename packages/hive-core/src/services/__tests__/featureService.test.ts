@@ -253,9 +253,9 @@ describe('FeatureService', () => {
     });
 
     it('throws for non-existent feature', () => {
-      expect(() =>
-        service.updateStatus('nonexistent', 'approved'),
-      ).toThrow(/not found/);
+      expect(() => service.updateStatus('nonexistent', 'approved')).toThrow(
+        /not found/,
+      );
     });
 
     it('persists status change to disk', () => {
@@ -422,9 +422,9 @@ describe('FeatureService', () => {
     });
 
     it('throws for non-existent feature', () => {
-      expect(() =>
-        service.setSession('nonexistent', 'sess-123'),
-      ).toThrow(/not found/);
+      expect(() => service.setSession('nonexistent', 'sess-123')).toThrow(
+        /not found/,
+      );
     });
   });
 });

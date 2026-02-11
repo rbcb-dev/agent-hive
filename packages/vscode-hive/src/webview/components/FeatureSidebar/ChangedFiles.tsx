@@ -13,11 +13,7 @@ import { Typography } from '../../primitives';
 import { FileIcon } from '../FileIcon';
 import { useHiveWorkspace } from '../../providers/HiveWorkspaceProvider';
 import { useFeatureSidebar } from './FeatureSidebarContext';
-import {
-  aggregateChangedFiles,
-  STATUS_COLORS,
-  STATUS_LABELS,
-} from './types';
+import { aggregateChangedFiles, STATUS_COLORS, STATUS_LABELS } from './types';
 import type { ChangedFileEntry, DiffStatus } from './types';
 
 const { Text } = Typography;
@@ -90,20 +86,22 @@ function ChangedFileItem({
       <FileIcon filename={filename} isDirectory={false} />
 
       {entry.status === 'R' && entry.oldPath ? (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-          <Text
-            style={{ fontSize: 12 }}
-            ellipsis
-            title={entry.oldPath}
-          >
+        <span
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <Text style={{ fontSize: 12 }} ellipsis title={entry.oldPath}>
             {entry.oldPath}
           </Text>
-          <Text type="secondary" style={{ flexShrink: 0 }}>→</Text>
-          <Text
-            style={{ fontSize: 12 }}
-            ellipsis
-            title={entry.path}
-          >
+          <Text type="secondary" style={{ flexShrink: 0 }}>
+            →
+          </Text>
+          <Text style={{ fontSize: 12 }} ellipsis title={entry.path}>
             {entry.path}
           </Text>
         </span>

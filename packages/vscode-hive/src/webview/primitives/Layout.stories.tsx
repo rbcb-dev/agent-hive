@@ -75,7 +75,9 @@ export const WithSider: Story = {
     <Layout>
       <Layout.Header style={headerStyle}>Header</Layout.Header>
       <Layout hasSider>
-        <Layout.Sider style={siderStyle} width={200}>Sider</Layout.Sider>
+        <Layout.Sider style={siderStyle} width={200}>
+          Sider
+        </Layout.Sider>
         <Layout.Content style={contentStyle}>Content</Layout.Content>
       </Layout>
       <Layout.Footer style={footerStyle}>Footer</Layout.Footer>
@@ -92,7 +94,9 @@ export const SiderRight: Story = {
       <Layout.Header style={headerStyle}>Header</Layout.Header>
       <Layout hasSider>
         <Layout.Content style={contentStyle}>Content</Layout.Content>
-        <Layout.Sider style={siderStyle} width={200}>Right Sider</Layout.Sider>
+        <Layout.Sider style={siderStyle} width={200}>
+          Right Sider
+        </Layout.Sider>
       </Layout>
       <Layout.Footer style={footerStyle}>Footer</Layout.Footer>
     </Layout>
@@ -118,7 +122,9 @@ export const CompositionTest: Story = {
     <Layout>
       <Layout.Header style={headerStyle}>Test Header</Layout.Header>
       <Layout hasSider>
-        <Layout.Sider style={siderStyle} width={200}>Test Sider</Layout.Sider>
+        <Layout.Sider style={siderStyle} width={200}>
+          Test Sider
+        </Layout.Sider>
         <Layout.Content style={contentStyle}>Test Content</Layout.Content>
       </Layout>
       <Layout.Footer style={footerStyle}>Test Footer</Layout.Footer>

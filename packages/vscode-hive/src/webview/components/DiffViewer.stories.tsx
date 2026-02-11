@@ -397,9 +397,7 @@ export const LineClickInteraction: Story = {
   play: async ({ canvasElement, args }) => {
     // react-diff-view renders line numbers in gutter <td> elements
     // Find a gutter cell with a line number and click it
-    const gutterCells = canvasElement.querySelectorAll(
-      'td.diff-gutter',
-    );
+    const gutterCells = canvasElement.querySelectorAll('td.diff-gutter');
 
     // Ensure we have gutter cells rendered
     await expect(gutterCells.length).toBeGreaterThan(0);
@@ -410,8 +408,7 @@ export const LineClickInteraction: Story = {
 
     // Verify onLineClick was called with the file path as first arg
     await expect(args.onLineClick).toHaveBeenCalled();
-    const callArgs = (args.onLineClick as ReturnType<typeof fn>).mock
-      .calls[0];
+    const callArgs = (args.onLineClick as ReturnType<typeof fn>).mock.calls[0];
     await expect(callArgs[0]).toBe('src/components/Button.tsx');
     // Second arg should be a number (line number)
     await expect(typeof callArgs[1]).toBe('number');
@@ -513,9 +510,7 @@ export const WithThreads: Story = {
 
     // Verify thread annotation body is visible
     await expect(
-      canvas.getByText(
-        'Consider using named imports for better tree-shaking.',
-      ),
+      canvas.getByText('Consider using named imports for better tree-shaking.'),
     ).toBeInTheDocument();
 
     // Verify thread indicator is present

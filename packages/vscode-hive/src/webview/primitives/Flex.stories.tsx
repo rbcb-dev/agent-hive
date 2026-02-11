@@ -28,7 +28,14 @@ const meta = {
     },
     justify: {
       control: 'select',
-      options: ['start', 'center', 'end', 'space-between', 'space-around', 'space-evenly'],
+      options: [
+        'start',
+        'center',
+        'end',
+        'space-between',
+        'space-around',
+        'space-evenly',
+      ],
       description: 'Alignment along the main axis',
     },
     wrap: {
@@ -118,7 +125,9 @@ export const Wrapping: Story = {
     children: (
       <>
         {Array.from({ length: 10 }, (_, i) => (
-          <Button key={i} type="default">Item {i + 1}</Button>
+          <Button key={i} type="default">
+            Item {i + 1}
+          </Button>
         ))}
       </>
     ),

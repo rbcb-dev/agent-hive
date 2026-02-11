@@ -192,7 +192,9 @@ describe('useWorkspaceMessages', () => {
       });
     });
 
-    expect(result.current.state.fileChanges).toEqual(new Map([['task-a', [mockDiffPayload]]]));
+    expect(result.current.state.fileChanges).toEqual(
+      new Map([['task-a', [mockDiffPayload]]]),
+    );
   });
 
   it('sends requestTaskDiff when task selected', () => {

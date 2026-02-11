@@ -117,7 +117,12 @@ export const WithDisabledTab: Story = {
   args: {
     items: [
       { key: 'active', label: 'Active', children: 'Active content.' },
-      { key: 'disabled', label: 'Disabled', disabled: true, children: 'Disabled content.' },
+      {
+        key: 'disabled',
+        label: 'Disabled',
+        disabled: true,
+        children: 'Disabled content.',
+      },
       { key: 'other', label: 'Other', children: 'Other content.' },
     ],
     defaultActiveKey: 'active',
