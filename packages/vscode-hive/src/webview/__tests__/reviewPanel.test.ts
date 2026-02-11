@@ -12,6 +12,7 @@ import {
   isPathWithinWorkspace,
   LARGE_FILE_THRESHOLD,
 } from '../fileUtils';
+import { getContextPath } from 'hive-core';
 import type {
   WebviewToExtensionMessage,
   ExtensionToWebviewMessage,
@@ -456,6 +457,21 @@ describe('File Content Request Protocol - isPathWithinWorkspace', () => {
 
   it('should handle workspace root exactly', () => {
     expect(isPathWithinWorkspace('/project', '/project')).toBe(true);
+  });
+});
+
+// Test context path consistency with hive-core canonical path
+describe('Context Path Consistency', () => {
+  it('should use the same context directory name as hive-core canonical path', () => {
+    // hive-core defines the canonical context directory as 'context' (singular)
+    // via getContextPath() which uses CONTEXT_DIR = 'context'.
+    // All consumers (sidebarProvider, reviewPanel) must use the same name.
+    const canonicalPath = getContextPath('/root', 'test-feature');
+
+    // The canonical directory segment should be 'context' (singular, not 'contexts')
+    const segments = canonicalPath.split(path.sep);
+    const contextDirName = segments[segments.length - 1];
+    expect(contextDirName).toBe('context');
   });
 });
 
