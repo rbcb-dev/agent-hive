@@ -332,6 +332,43 @@ const plugin: Plugin = async (ctx) => {
       threadId,
     });
   };
+
+  // Wire new PlanService callbacks (from task 02) to emitter
+  planService.onCommentUnresolved = (feature, commentId) => {
+    reviewEmitter.emit('plan.comment.unresolved', { feature, commentId });
+  };
+  planService.onCommentDeleted = (feature, commentId) => {
+    reviewEmitter.emit('plan.comment.deleted', { feature, commentId });
+  };
+
+  // Wire new ReviewService callbacks (from task 03) to emitter
+  reviewService.onReviewThreadUnresolved = (feature, sessionId, threadId) => {
+    reviewEmitter.emit('review.thread.unresolved', {
+      feature,
+      sessionId,
+      threadId,
+    });
+  };
+  reviewService.onReviewThreadDeleted = (feature, sessionId, threadId) => {
+    reviewEmitter.emit('review.thread.deleted', {
+      feature,
+      sessionId,
+      threadId,
+    });
+  };
+  reviewService.onReviewAnnotationEdited = (
+    feature,
+    sessionId,
+    threadId,
+    annotationId,
+  ) => {
+    reviewEmitter.emit('review.annotation.edited', {
+      feature,
+      sessionId,
+      threadId,
+      annotationId,
+    });
+  };
   const effectiveAutoLoadSkills =
     configService.getAgentConfig('hive-master').autoLoadSkills ?? [];
   const worktreeService = new WorktreeService({
