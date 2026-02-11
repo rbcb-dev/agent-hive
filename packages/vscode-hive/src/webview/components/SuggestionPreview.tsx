@@ -19,15 +19,19 @@ import { getLanguageId } from '../fileUtils';
 
 export type DiffViewMode = 'split' | 'unified';
 
+export type SuggestionStatus =
+  | { status: 'pending' }
+  | { status: 'applying' }
+  | { status: 'applied' }
+  | { status: 'conflict'; conflictDetails?: string };
+
 export interface SuggestionPreviewProps {
   annotation: ReviewAnnotation;
   oldCode: string;
   uri: string;
   range: Range;
   onApply: (annotationId: string) => void;
-  isApplied: boolean;
-  isApplying?: boolean;
-  hasConflict?: boolean;
+  suggestionStatus: SuggestionStatus;
 }
 
 /**
@@ -76,9 +80,7 @@ export function SuggestionPreview({
   uri,
   range,
   onApply,
-  isApplied,
-  isApplying = false,
-  hasConflict = false,
+  suggestionStatus,
 }: SuggestionPreviewProps): React.ReactElement | null {
   // Default to split view mode
   const [diffMode, setDiffMode] = useState<DiffViewMode>('split');
@@ -95,6 +97,10 @@ export function SuggestionPreview({
     onApply(annotation.id);
   };
 
+  // Derive display state from discriminated union
+  const isApplied = suggestionStatus.status === 'applied';
+  const isApplying = suggestionStatus.status === 'applying';
+  const hasConflict = suggestionStatus.status === 'conflict';
   const isDisabled = isApplying || hasConflict;
   const alertType = hasConflict ? 'warning' : 'info';
 

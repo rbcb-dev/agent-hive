@@ -13,17 +13,10 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    isApplied: {
-      control: 'boolean',
-      description: 'Whether the suggestion has been applied',
-    },
-    isApplying: {
-      control: 'boolean',
-      description: 'Whether the suggestion is currently being applied',
-    },
-    hasConflict: {
-      control: 'boolean',
-      description: 'Whether there is a conflict with the current file state',
+    suggestionStatus: {
+      control: 'object',
+      description:
+        'Discriminated union status: pending | applying | applied | conflict',
     },
   },
 } satisfies Meta<typeof SuggestionPreview>;
@@ -58,9 +51,7 @@ export const Default: Story = {
     uri: defaultUri,
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: false,
-    hasConflict: false,
+    suggestionStatus: { status: 'pending' },
   },
 };
 
@@ -83,7 +74,7 @@ export const WithReplacement: Story = {
       end: { line: 5, character: 35 },
     },
     onApply: fn(),
-    isApplied: false,
+    suggestionStatus: { status: 'pending' },
   },
 };
 
@@ -105,7 +96,7 @@ export const Applied: Story = {
       end: { line: 42, character: 28 },
     },
     onApply: fn(),
-    isApplied: true,
+    suggestionStatus: { status: 'applied' },
   },
 };
 
@@ -119,9 +110,7 @@ export const Applying: Story = {
     uri: defaultUri,
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: true,
-    hasConflict: false,
+    suggestionStatus: { status: 'applying' },
   },
 };
 
@@ -145,9 +134,7 @@ export const WithConflict: Story = {
       end: { line: 1, character: 40 },
     },
     onApply: fn(),
-    isApplied: false,
-    isApplying: false,
-    hasConflict: true,
+    suggestionStatus: { status: 'conflict' },
   },
 };
 
@@ -175,7 +162,7 @@ export const MultiLineReplacement: Story = {
       end: { line: 15, character: 60 },
     },
     onApply: fn(),
-    isApplied: false,
+    suggestionStatus: { status: 'pending' },
   },
 };
 
@@ -189,9 +176,7 @@ export const ClickApply: Story = {
     uri: defaultUri,
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: false,
-    hasConflict: false,
+    suggestionStatus: { status: 'pending' },
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -215,9 +200,7 @@ export const ApplyButtonDisabledWhileApplying: Story = {
     uri: defaultUri,
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: true,
-    hasConflict: false,
+    suggestionStatus: { status: 'applying' },
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -251,9 +234,7 @@ export const ApplyButtonDisabledWithConflict: Story = {
     uri: 'src/test.ts',
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
-    isApplying: false,
-    hasConflict: true,
+    suggestionStatus: { status: 'conflict' },
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -291,7 +272,7 @@ export const DiffDisplayVerification: Story = {
     uri: 'src/values.ts',
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
+    suggestionStatus: { status: 'pending' },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -323,7 +304,7 @@ export const ToggleDiffView: Story = {
     uri: 'src/toggle.ts',
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
+    suggestionStatus: { status: 'pending' },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -365,6 +346,6 @@ export const WithMarkdownBody: Story = {
     uri: 'src/api/fetch.ts',
     range: defaultRange,
     onApply: fn(),
-    isApplied: false,
+    suggestionStatus: { status: 'pending' },
   },
 };
