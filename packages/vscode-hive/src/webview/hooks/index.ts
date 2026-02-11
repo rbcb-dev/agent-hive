@@ -31,3 +31,5 @@ export {
   type ScopeContent,
   type UseReviewSessionResult,
 } from './useReviewSession';
+
+export { useWorkspaceMessages } from './useWorkspaceMessages';

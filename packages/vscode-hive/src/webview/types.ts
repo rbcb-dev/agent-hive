@@ -21,6 +21,8 @@ export type {
   DiffPayload,
   ReviewSession,
   ReviewIndex,
+  FeatureInfo,
+  PlanComment,
 } from 'hive-core';
 
 /**
@@ -54,7 +56,12 @@ export type WebviewToExtensionMessage =
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
   | { type: 'changeScope'; scope: string }
-  | { type: 'requestFile'; uri: string };
+  | { type: 'requestFile'; uri: string }
+  | { type: 'requestFeatures' }
+  | { type: 'requestFeatureDiffs'; feature: string }
+  | { type: 'requestTaskDiff'; feature: string; task: string }
+  | { type: 'requestPlanContent'; feature: string }
+  | { type: 'requestContextContent'; feature: string; name: string };
 
 /**
  * Messages sent from extension to webview
@@ -83,7 +90,12 @@ export type ExtensionToWebviewMessage =
       annotationId: string;
       success: boolean;
       error?: string;
-    };
+    }
+  | { type: 'featuresData'; features: import('hive-core').FeatureInfo[] }
+  | { type: 'featureDiffs'; feature: string; diffs: Record<string, import('hive-core').DiffPayload[]> }
+  | { type: 'taskDiff'; feature: string; task: string; diffs: import('hive-core').DiffPayload[] }
+  | { type: 'planContent'; feature: string; content: string; comments: import('hive-core').PlanComment[] }
+  | { type: 'contextContent'; feature: string; name: string; content: string };
 
 /**
  * Thread summary for navigation
