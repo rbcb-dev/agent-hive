@@ -105,6 +105,8 @@ function createState(
     planComments: [],
     contextContent: null,
     isLoading: false,
+    reviewThreads: [],
+    activeReviewSession: null,
     ...overrides,
   };
 }
@@ -331,6 +333,96 @@ describe('HivePanel - Real content rendering', () => {
     expect(heading).toHaveTextContent('task-a');
     // CommitHistory renders with empty commits → shows "No commits yet"
     expect(within(content).getByText('No commits yet')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: Context view line click → visual highlight
+// ---------------------------------------------------------------------------
+
+describe('HivePanel - Context line click highlight', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('passes onLineClick to MarkdownViewer in context view', async () => {
+    const contextMarkdown = '# Title\nLine two\nLine three';
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'context',
+      contextContent: contextMarkdown,
+    });
+
+    // Switch to raw mode to access per-line click targets
+    const rawButton = screen.getByRole('button', { name: /raw/i });
+    await userEvent.click(rawButton);
+
+    // Line elements should be present (MarkdownViewer raw mode)
+    const line2 = screen.getByTestId('line-2');
+    expect(line2).toBeInTheDocument();
+  });
+
+  it('clicking a line in raw mode highlights that line with CSS class', async () => {
+    const contextMarkdown = '# Title\nLine two\nLine three';
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'context',
+      contextContent: contextMarkdown,
+    });
+
+    // Switch to raw mode
+    const rawButton = screen.getByRole('button', { name: /raw/i });
+    await userEvent.click(rawButton);
+
+    // Click line 2
+    const line2 = screen.getByTestId('line-2');
+    await userEvent.click(line2);
+
+    // Line 2 should have the highlight class
+    expect(line2).toHaveClass('context-line-highlight');
+  });
+
+  it('clicking a different line moves highlight to new line', async () => {
+    const contextMarkdown = '# Title\nLine two\nLine three';
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'context',
+      contextContent: contextMarkdown,
+    });
+
+    // Switch to raw mode
+    await userEvent.click(screen.getByRole('button', { name: /raw/i }));
+
+    // Click line 2
+    const line2 = screen.getByTestId('line-2');
+    await userEvent.click(line2);
+    expect(line2).toHaveClass('context-line-highlight');
+
+    // Click line 3 — highlight moves
+    const line3 = screen.getByTestId('line-3');
+    await userEvent.click(line3);
+    expect(line3).toHaveClass('context-line-highlight');
+    expect(line2).not.toHaveClass('context-line-highlight');
+  });
+
+  it('shows gutter indicator on highlighted line', async () => {
+    const contextMarkdown = '# Title\nLine two\nLine three';
+    renderHivePanel({
+      activeFeature: 'feature-one',
+      activeView: 'context',
+      contextContent: contextMarkdown,
+    });
+
+    // Switch to raw mode
+    await userEvent.click(screen.getByRole('button', { name: /raw/i }));
+
+    // Click line 2
+    await userEvent.click(screen.getByTestId('line-2'));
+
+    // Gutter indicator should be present on the highlighted line
+    const line2 = screen.getByTestId('line-2');
+    const gutterIndicator = line2.querySelector('.context-line-gutter');
+    expect(gutterIndicator).toBeInTheDocument();
   });
 });
 
