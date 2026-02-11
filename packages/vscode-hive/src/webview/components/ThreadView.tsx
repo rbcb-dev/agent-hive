@@ -6,6 +6,10 @@
 import React, { useState } from 'react';
 import type { ReviewThread, ReviewAnnotation } from 'hive-core';
 import { Button } from '../primitives';
+import {
+  SuggestionPreview,
+  type SuggestionStatus,
+} from './SuggestionPreview';
 
 export interface ThreadViewProps {
   /** The thread to display */
@@ -16,12 +20,22 @@ export interface ThreadViewProps {
   onResolve: () => void;
   /** Compact mode for inline display (fewer rows, smaller spacing) */
   compact?: boolean;
+  /** Called when user applies a suggestion (annotation id) */
+  onApplySuggestion?: (annotationId: string) => void;
+  /** Current status of the suggestion apply action */
+  suggestionStatus?: SuggestionStatus;
 }
 
 function AnnotationItem({
   annotation,
+  thread,
+  onApplySuggestion,
+  suggestionStatus,
 }: {
   annotation: ReviewAnnotation;
+  thread: ReviewThread;
+  onApplySuggestion?: (annotationId: string) => void;
+  suggestionStatus?: SuggestionStatus;
 }): React.ReactElement {
   const isLLM = annotation.author.type === 'llm';
 
@@ -37,14 +51,16 @@ function AnnotationItem({
         </span>
       </div>
       <div className="annotation-body">{annotation.body}</div>
-      {annotation.suggestion ? (
-        <div className="annotation-suggestion">
-          <span className="suggestion-label">Suggestion:</span>
-          <pre className="suggestion-code">
-            {annotation.suggestion.replacement}
-          </pre>
-        </div>
-      ) : null}
+      {annotation.suggestion && (
+        <SuggestionPreview
+          annotation={annotation}
+          oldCode=""
+          uri={thread.uri ?? ''}
+          range={thread.range}
+          onApply={onApplySuggestion ?? (() => {})}
+          suggestionStatus={suggestionStatus ?? { status: 'pending' }}
+        />
+      )}
     </div>
   );
 }
@@ -54,6 +70,8 @@ export function ThreadView({
   onReply,
   onResolve,
   compact = false,
+  onApplySuggestion,
+  suggestionStatus,
 }: ThreadViewProps): React.ReactElement {
   const [replyText, setReplyText] = useState('');
 
@@ -101,7 +119,13 @@ export function ThreadView({
 
       <div className="thread-view-annotations">
         {thread.annotations.map((annotation) => (
-          <AnnotationItem key={annotation.id} annotation={annotation} />
+          <AnnotationItem
+            key={annotation.id}
+            annotation={annotation}
+            thread={thread}
+            onApplySuggestion={onApplySuggestion}
+            suggestionStatus={suggestionStatus}
+          />
         ))}
       </div>
 
