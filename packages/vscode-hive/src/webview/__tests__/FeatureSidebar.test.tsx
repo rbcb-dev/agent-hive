@@ -18,9 +18,24 @@ import type { FeatureInfo, DiffPayload } from 'hive-core';
 
 import {
   HiveWorkspaceProvider,
+  useHiveWorkspace,
   type HiveWorkspaceState,
 } from '../providers/HiveWorkspaceProvider';
 import { FeatureSidebar } from '../components/FeatureSidebar';
+
+/**
+ * Helper component that displays current workspace state for test assertions.
+ * Renders activeFile and activeView as data-testid attributes for easy querying.
+ */
+function StateInspector(): React.ReactElement {
+  const { state } = useHiveWorkspace();
+  return (
+    <div data-testid="state-inspector">
+      <span data-testid="active-file">{state.activeFile ?? 'null'}</span>
+      <span data-testid="active-view">{state.activeView}</span>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Test data
@@ -217,19 +232,28 @@ describe('FeatureSidebar.ChangedFiles', () => {
       [makeDiffPayload([{ path: 'src/app.ts', status: 'M', additions: 5, deletions: 2 }])],
     );
 
-    renderWithProvider(
-      <FeatureSidebar>
-        <FeatureSidebar.ChangedFiles />
-      </FeatureSidebar>,
-      { activeFeature: 'feature-alpha', fileChanges },
+    render(
+      <HiveWorkspaceProvider
+        initialState={createState({ activeFeature: 'feature-alpha', fileChanges })}
+        onRefreshFeatures={vi.fn()}
+      >
+        <FeatureSidebar>
+          <FeatureSidebar.ChangedFiles />
+        </FeatureSidebar>
+        <StateInspector />
+      </HiveWorkspaceProvider>,
     );
+
+    // Verify initial state — no file selected
+    expect(screen.getByTestId('active-file')).toHaveTextContent('null');
+    expect(screen.getByTestId('active-view')).toHaveTextContent('plan');
 
     const fileItem = screen.getByTestId('changed-file-src/app.ts');
     await user.click(fileItem);
 
-    // The click should trigger selectFile — we can't directly test the
-    // dispatch but we can verify the element is interactive
-    expect(fileItem).toBeInTheDocument();
+    // After click, state should mutate: activeFile = 'src/app.ts', activeView = 'diff'
+    expect(screen.getByTestId('active-file')).toHaveTextContent('src/app.ts');
+    expect(screen.getByTestId('active-view')).toHaveTextContent('diff');
   });
 
   it('shows status indicators with correct colors', () => {
