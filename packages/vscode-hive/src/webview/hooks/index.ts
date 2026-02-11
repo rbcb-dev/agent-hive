@@ -33,3 +33,8 @@ export {
 } from './useReviewSession';
 
 export { useWorkspaceMessages } from './useWorkspaceMessages';
+
+export {
+  useWorkspaceContent,
+  type UseWorkspaceContentResult,
+} from './useWorkspaceContent';

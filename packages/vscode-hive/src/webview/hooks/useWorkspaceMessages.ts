@@ -47,6 +47,19 @@ export function useWorkspaceMessages(): void {
               fileChanges: new Map([[message.task, message.diffs]]),
             });
             break;
+          case 'planContent':
+            dispatch({
+              type: 'SET_PLAN_CONTENT',
+              content: message.content,
+              comments: message.comments,
+            });
+            break;
+          case 'contextContent':
+            dispatch({
+              type: 'SET_CONTEXT_CONTENT',
+              content: message.content,
+            });
+            break;
         }
       },
     );
