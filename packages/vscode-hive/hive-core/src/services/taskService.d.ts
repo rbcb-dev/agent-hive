@@ -82,7 +82,7 @@ export declare class TaskService {
      * @param lockOptions - Optional lock configuration
      * @returns Updated TaskStatus
      */
-    update(featureName: string, taskFolder: string, updates: Partial<Pick<TaskStatus, 'status' | 'summary' | 'baseCommit'>>, lockOptions?: LockOptions): TaskStatus;
+    update(featureName: string, taskFolder: string, updates: Partial<Pick<TaskStatus, 'status' | 'summary' | 'baseCommit' | 'commits' | 'changedFiles'>>, lockOptions?: LockOptions): TaskStatus;
     /**
      * Patch only background-owned fields without clobbering completion-owned fields.
      * Safe for concurrent use by background workers.

@@ -481,7 +481,12 @@ export class TaskService {
   update(
     featureName: string,
     taskFolder: string,
-    updates: Partial<Pick<TaskStatus, 'status' | 'summary' | 'baseCommit'>>,
+    updates: Partial<
+      Pick<
+        TaskStatus,
+        'status' | 'summary' | 'baseCommit' | 'commits' | 'changedFiles'
+      >
+    >,
     lockOptions?: LockOptions,
   ): TaskStatus {
     const statusPath = getTaskStatusPath(

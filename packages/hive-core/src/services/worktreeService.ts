@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
+import type { TaskChangedFile } from '../types.js';
 
 export interface WorktreeInfo {
   path: string;
@@ -213,6 +214,121 @@ export class WorktreeService {
         insertions: 0,
         deletions: 0,
       };
+    }
+  }
+
+  /**
+   * Get detailed per-file diff stats (insertions, deletions, status) for a worktree.
+   * Uses git diff --numstat and --name-status to produce structured TaskChangedFile[].
+   * Does NOT modify the existing getDiff() signature.
+   */
+  async getDetailedDiff(
+    feature: string,
+    step: string,
+    baseCommit?: string,
+  ): Promise<TaskChangedFile[]> {
+    const worktreePath = this.getWorktreePath(feature, step);
+    const statusPath = await this.getStepStatusPath(feature, step);
+
+    let base = baseCommit;
+    if (!base) {
+      try {
+        const status = JSON.parse(await fs.readFile(statusPath, 'utf-8'));
+        base = status.baseCommit;
+      } catch {}
+    }
+
+    if (!base) {
+      base = 'HEAD~1';
+    }
+
+    const worktreeGit = this.getGit(worktreePath);
+
+    try {
+      // Get name-status for add/modify/delete/rename status
+      const nameStatus = await worktreeGit
+        .raw(['diff', '--name-status', `${base}..HEAD`])
+        .catch(() => '');
+
+      if (!nameStatus.trim()) {
+        return [];
+      }
+
+      // Get numstat for per-file insertions/deletions
+      const numstat = await worktreeGit
+        .raw(['diff', '--numstat', `${base}..HEAD`])
+        .catch(() => '');
+
+      // Parse name-status lines: "M\tfile.ts" or "R100\told.ts\tnew.ts"
+      const statusMap = new Map<
+        string,
+        { status: TaskChangedFile['status']; oldPath?: string }
+      >();
+      for (const line of nameStatus.split('\n').filter((l) => l.trim())) {
+        const parts = line.split('\t');
+        const statusCode = parts[0];
+
+        if (statusCode.startsWith('R')) {
+          // Renamed: R100\told.ts\tnew.ts
+          const oldPath = parts[1];
+          const newPath = parts[2];
+          statusMap.set(newPath, { status: 'renamed', oldPath });
+        } else if (statusCode === 'A') {
+          statusMap.set(parts[1], { status: 'added' });
+        } else if (statusCode === 'D') {
+          statusMap.set(parts[1], { status: 'deleted' });
+        } else {
+          // M, T, U, etc. — treat as modified
+          statusMap.set(parts[1], { status: 'modified' });
+        }
+      }
+
+      // Parse numstat lines: "10\t2\tfile.ts" or "-\t-\tbinary-file"
+      const numstatMap = new Map<
+        string,
+        { insertions: number; deletions: number }
+      >();
+      for (const line of numstat.split('\n').filter((l) => l.trim())) {
+        const parts = line.split('\t');
+        const ins = parts[0] === '-' ? 0 : parseInt(parts[0], 10);
+        const del = parts[1] === '-' ? 0 : parseInt(parts[1], 10);
+        // For renames, numstat shows the new path
+        // Handle rename with arrow: "old.ts => new.ts" or "{old => new}/file.ts"
+        let filePath = parts.slice(2).join('\t');
+        // Resolve rename path notation like "{old => new}/file.ts"
+        if (filePath.includes('=>') && filePath.includes('{')) {
+          const match = filePath.match(/(.*)?\{.* => (.*)\}(.*)/);
+          if (match) {
+            filePath = (match[1] || '') + match[2] + (match[3] || '');
+          }
+        } else if (filePath.includes('=>')) {
+          filePath = filePath.split('=>').pop()!.trim();
+        }
+        numstatMap.set(filePath, { insertions: ins, deletions: del });
+      }
+
+      // Merge results
+      const result: TaskChangedFile[] = [];
+      for (const [filePath, info] of statusMap) {
+        const stats = numstatMap.get(filePath) || {
+          insertions: 0,
+          deletions: 0,
+        };
+        const entry: TaskChangedFile = {
+          path: filePath,
+          status: info.status,
+          insertions: stats.insertions,
+          deletions: stats.deletions,
+        };
+        if (info.oldPath) {
+          entry.oldPath = info.oldPath;
+        }
+        result.push(entry);
+      }
+
+      return result;
+    } catch {
+      return [];
     }
   }
 
