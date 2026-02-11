@@ -61,8 +61,8 @@ function resolveFileFromChanges(
 }
 
 function HivePanelContent(): React.ReactElement {
-  const { state } = useHiveWorkspace();
-  const { activeView, activeFeature, activeTask, activeFile, fileChanges } =
+  const { state, actions } = useHiveWorkspace();
+  const { activeView, activeFeature, activeTask, activeFile, fileChanges, reviewThreads } =
     state;
   const { planContent, planComments, contextContent } = useWorkspaceContent();
 
@@ -157,7 +157,12 @@ function HivePanelContent(): React.ReactElement {
     case 'code':
       return (
         <div className="hive-panel-diff">
-          <DiffViewer file={selectedDiffFile} />
+          <DiffViewer
+            file={selectedDiffFile}
+            threads={reviewThreads}
+            onReply={(threadId, body) => actions.replyToThread(threadId, body)}
+            onResolve={(threadId) => actions.resolveThread(threadId)}
+          />
         </div>
       );
 
