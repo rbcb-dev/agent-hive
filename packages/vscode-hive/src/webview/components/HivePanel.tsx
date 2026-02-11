@@ -28,6 +28,7 @@
 import React, { useMemo } from 'react';
 import { Layout } from '../primitives';
 import { FeatureSidebar } from './FeatureSidebar';
+import { CommitHistory } from './CommitHistory';
 import { DiffViewer } from './DiffViewer';
 import { MarkdownViewer } from './MarkdownViewer';
 import { useHiveWorkspace } from '../providers/HiveWorkspaceProvider';
@@ -98,9 +99,7 @@ function HivePanelContent(): React.ReactElement {
         <div className="hive-panel-task">
           <h3>{activeTask}</h3>
           <p>Task details for {activeTask ?? 'no task selected'}</p>
-          <p className="hive-panel-task-placeholder">
-            Commit history will be wired in a future task
-          </p>
+          <CommitHistory commits={[]} />
         </div>
       );
 
@@ -148,7 +147,10 @@ export function HivePanel({
       <Layout hasSider style={{ height: '100%' }}>
         <Sider
           width={sidebarWidth}
-          style={{ background: 'var(--ant-color-bg-container)', overflow: 'auto' }}
+          style={{
+            background: 'var(--ant-color-bg-container)',
+            overflow: 'auto',
+          }}
           data-testid="hive-panel-sidebar"
         >
           <FeatureSidebar>

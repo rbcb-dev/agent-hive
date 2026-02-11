@@ -42,7 +42,12 @@ const mockFeatures: FeatureInfo[] = [
     name: 'feature-one',
     status: 'executing',
     tasks: [
-      { folder: 'task-a', name: 'task-a', status: 'in_progress', origin: 'plan' },
+      {
+        folder: 'task-a',
+        name: 'task-a',
+        status: 'in_progress',
+        origin: 'plan',
+      },
       { folder: 'task-b', name: 'task-b', status: 'pending', origin: 'plan' },
     ],
     hasPlan: true,
@@ -314,7 +319,7 @@ describe('HivePanel - Real content rendering', () => {
     ).toBeInTheDocument();
   });
 
-  it('task view renders task summary with heading and commit history placeholder', () => {
+  it('task view renders task summary with heading and CommitHistory component', () => {
     renderHivePanel({
       activeFeature: 'feature-one',
       activeTask: 'task-a',
@@ -324,8 +329,8 @@ describe('HivePanel - Real content rendering', () => {
     const content = screen.getByTestId('hive-panel-content');
     const heading = within(content).getByRole('heading', { level: 3 });
     expect(heading).toHaveTextContent('task-a');
-    // Should have placeholder for commit history (wired in task 11)
-    expect(within(content).getByText(/commit history/i)).toBeInTheDocument();
+    // CommitHistory renders with empty commits → shows "No commits yet"
+    expect(within(content).getByText('No commits yet')).toBeInTheDocument();
   });
 });
 
