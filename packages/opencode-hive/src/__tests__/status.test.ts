@@ -14,10 +14,7 @@ import { buildReviewStatus } from '../utils/status.js';
  * the active review session and thread counts for the feature.
  */
 
-function makeThread(
-  id: string,
-  status: ThreadStatus = 'open',
-): ReviewThread {
+function makeThread(id: string, status: ThreadStatus = 'open'): ReviewThread {
   return {
     id,
     entityId: 'test-entity',

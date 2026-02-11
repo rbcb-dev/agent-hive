@@ -139,6 +139,10 @@ const defaultState: HiveWorkspaceState = {
   planComments: [],
   contextContent: null,
   isLoading: false,
+  reviewThreads: [],
+  activeReviewSession: null,
+  commits: [],
+  commitDiff: null,
 };
 
 // ---------------------------------------------------------------------------

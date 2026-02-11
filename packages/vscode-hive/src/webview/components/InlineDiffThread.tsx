@@ -19,7 +19,11 @@ export interface InlineDiffThreadProps {
   /** Called when user deletes the thread */
   onDelete?: (threadId: string) => void;
   /** Called when user edits an annotation body */
-  onEditAnnotation?: (threadId: string, annotationId: string, body: string) => void;
+  onEditAnnotation?: (
+    threadId: string,
+    annotationId: string,
+    body: string,
+  ) => void;
   /** Called when user deletes an annotation */
   onDeleteAnnotation?: (threadId: string, annotationId: string) => void;
 }
@@ -47,7 +51,8 @@ export function InlineDiffThread({
         onDelete={onDelete ? () => onDelete(thread.id) : undefined}
         onEditAnnotation={
           onEditAnnotation
-            ? (annotationId, body) => onEditAnnotation(thread.id, annotationId, body)
+            ? (annotationId, body) =>
+                onEditAnnotation(thread.id, annotationId, body)
             : undefined
         }
         onDeleteAnnotation={

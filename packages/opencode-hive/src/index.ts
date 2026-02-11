@@ -1579,18 +1579,14 @@ Re-run with updated summary showing verification results.`;
                   : 'none';
 
           // Build review session summary
-          const reviewSessions =
-            await reviewService.listSessions(feature);
+          const reviewSessions = await reviewService.listSessions(feature);
           const activeInProgress = reviewSessions.find(
             (s) => s.status === 'in_progress',
           );
           const activeSession = activeInProgress
             ? await reviewService.getSession(activeInProgress.id)
             : null;
-          const review = buildReviewStatus(
-            reviewSessions,
-            activeSession,
-          );
+          const review = buildReviewStatus(reviewSessions, activeSession);
 
           return JSON.stringify({
             feature: {

@@ -543,9 +543,7 @@ export function createReviewTools(
         threadId: tool.schema
           .string()
           .describe('Thread ID containing the annotation'),
-        annotationId: tool.schema
-          .string()
-          .describe('Annotation ID to edit'),
+        annotationId: tool.schema.string().describe('Annotation ID to edit'),
         body: tool.schema.string().describe('New annotation body'),
       },
       async execute({ threadId, annotationId, body }): Promise<string> {
@@ -598,9 +596,7 @@ export function createReviewTools(
           .string()
           .optional()
           .describe('Feature name (defaults to active feature)'),
-        commentId: tool.schema
-          .string()
-          .describe('Comment ID to resolve'),
+        commentId: tool.schema.string().describe('Comment ID to resolve'),
       },
       async execute({ feature: explicitFeature, commentId }): Promise<string> {
         if (!planService) {
@@ -633,9 +629,7 @@ export function createReviewTools(
           .string()
           .optional()
           .describe('Feature name (defaults to active feature)'),
-        commentId: tool.schema
-          .string()
-          .describe('Comment ID to reply to'),
+        commentId: tool.schema.string().describe('Comment ID to reply to'),
         body: tool.schema.string().describe('Reply body'),
       },
       async execute({

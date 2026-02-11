@@ -25,7 +25,12 @@ import type {
   WebviewToExtensionMessage,
   ExtensionToWebviewMessage,
 } from '../types';
-import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread } from 'hive-core';
+import type {
+  FeatureInfo,
+  DiffPayload,
+  PlanComment,
+  ReviewThread,
+} from 'hive-core';
 
 // Mock vscodeApi
 const mockPostMessage = vi.fn();
@@ -382,7 +387,10 @@ describe('useWorkspaceMessages — mounted integration', () => {
     const mockComments: PlanComment[] = [
       {
         id: 'c1',
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 0 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 0 },
+        },
         body: 'Looks good',
         author: 'human',
         timestamp: '2026-01-01T00:00:00Z',
@@ -463,7 +471,10 @@ function makeThread(overrides: Partial<ReviewThread> = {}): ReviewThread {
     id: 'thread-1',
     entityId: 'entity-1',
     uri: 'file:///src/index.ts',
-    range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+    range: {
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 10 },
+    },
     status: 'open',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
@@ -489,7 +500,10 @@ describe('useWorkspaceMessages — review thread messages', () => {
 
     expect(capturedHandler).toBeDefined();
 
-    const threads = [makeThread({ id: 't-1' }), makeThread({ id: 't-2', status: 'resolved' })];
+    const threads = [
+      makeThread({ id: 't-1' }),
+      makeThread({ id: 't-2', status: 'resolved' }),
+    ];
 
     act(() => {
       capturedHandler!({
@@ -564,9 +578,18 @@ describe('useWorkspaceMessages — review action messages', () => {
 
     mockPostMessage.mockClear();
 
-    const range = { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } };
+    const range = {
+      start: { line: 1, character: 0 },
+      end: { line: 1, character: 10 },
+    };
     act(() => {
-      result.current.actions.addThread('entity-1', 'file:///src/a.ts', range, 'Nice code', 'comment');
+      result.current.actions.addThread(
+        'entity-1',
+        'file:///src/a.ts',
+        range,
+        'Nice code',
+        'comment',
+      );
     });
 
     expect(mockPostMessage).toHaveBeenCalledWith({
@@ -676,7 +699,11 @@ describe('useWorkspaceMessages — review action messages', () => {
     mockPostMessage.mockClear();
 
     act(() => {
-      result.current.actions.editAnnotation('thread-1', 'ann-1', 'Updated text');
+      result.current.actions.editAnnotation(
+        'thread-1',
+        'ann-1',
+        'Updated text',
+      );
     });
 
     expect(mockPostMessage).toHaveBeenCalledWith({
@@ -764,8 +791,16 @@ describe('useWorkspaceMessages — commit history messages', () => {
     expect(capturedHandler).toBeDefined();
 
     const commits = [
-      { sha: 'abc1234567890', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
-      { sha: 'def5678901234', message: 'fix: bug fix', timestamp: '2026-01-02T00:00:00Z' },
+      {
+        sha: 'abc1234567890',
+        message: 'feat: add feature',
+        timestamp: '2026-01-01T00:00:00Z',
+      },
+      {
+        sha: 'def5678901234',
+        message: 'fix: bug fix',
+        timestamp: '2026-01-02T00:00:00Z',
+      },
     ];
 
     act(() => {
@@ -808,7 +843,9 @@ describe('useWorkspaceMessages — commit history messages', () => {
     });
 
     expect(result.current.state.commitDiff).toHaveLength(1);
-    expect(result.current.state.commitDiff![0].files[0].path).toBe('src/index.ts');
+    expect(result.current.state.commitDiff![0].files[0].path).toBe(
+      'src/index.ts',
+    );
   });
 
   it('commitDiff response switches view to diff', () => {

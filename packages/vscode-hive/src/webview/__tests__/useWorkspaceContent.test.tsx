@@ -41,6 +41,10 @@ const DEFAULT_STATE: HiveWorkspaceState = {
   planComments: [],
   contextContent: null,
   isLoading: false,
+  reviewThreads: [],
+  activeReviewSession: null,
+  commits: [],
+  commitDiff: null,
 };
 
 function createWrapper(initialState?: Partial<HiveWorkspaceState>) {
