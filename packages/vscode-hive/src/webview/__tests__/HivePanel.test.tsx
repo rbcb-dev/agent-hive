@@ -251,7 +251,7 @@ describe('HivePanel - Real content rendering', () => {
     vi.clearAllMocks();
   });
 
-  it('plan view renders MarkdownViewer (not static placeholder)', () => {
+  it('plan view renders PlanReview (not static placeholder)', () => {
     renderHivePanel({
       activeFeature: 'feature-one',
       activeView: 'plan',
@@ -262,10 +262,10 @@ describe('HivePanel - Real content rendering', () => {
     expect(
       within(content).queryByText('Plan view for feature-one'),
     ).not.toBeInTheDocument();
-    // Should render MarkdownViewer component (has markdown-viewer class)
+    // Should render PlanReview component (has plan-review class)
     const planArea = content.querySelector('.hive-panel-plan');
     expect(planArea).toBeInTheDocument();
-    expect(planArea!.querySelector('.markdown-viewer')).toBeInTheDocument();
+    expect(planArea!.querySelector('.plan-review')).toBeInTheDocument();
   });
 
   it('context view renders MarkdownViewer (not static placeholder)', () => {

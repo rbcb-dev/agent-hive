@@ -25,14 +25,16 @@
  * ```
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Layout } from '../primitives';
 import { FeatureSidebar } from './FeatureSidebar';
 import { CommitHistory } from './CommitHistory';
 import { DiffViewer } from './DiffViewer';
 import { MarkdownViewer } from './MarkdownViewer';
+import { PlanReview } from './PlanReview';
 import { useHiveWorkspace } from '../providers/HiveWorkspaceProvider';
 import { useWorkspaceContent } from '../hooks/useWorkspaceContent';
+import { postMessage } from '../vscodeApi';
 import type { DiffFile } from 'hive-core';
 
 const { Sider, Content } = Layout;
@@ -62,13 +64,46 @@ function HivePanelContent(): React.ReactElement {
   const { state } = useHiveWorkspace();
   const { activeView, activeFeature, activeTask, activeFile, fileChanges } =
     state;
-  const { planContent, contextContent } = useWorkspaceContent();
+  const { planContent, planComments, contextContent } = useWorkspaceContent();
 
   // Resolve the selected diff file from workspace state
   const selectedDiffFile = useMemo(() => {
     if (!activeFile || fileChanges.size === 0) return null;
     return resolveFileFromChanges(fileChanges, activeFile);
   }, [activeFile, fileChanges]);
+
+  // Plan comment callbacks — send messages to extension
+  const handleAddPlanComment = useCallback(
+    (line: number, body: string) => {
+      if (activeFeature) {
+        postMessage({ type: 'addPlanComment', feature: activeFeature, line, body });
+      }
+    },
+    [activeFeature],
+  );
+
+  const handleResolvePlanComment = useCallback(
+    (commentId: string) => {
+      if (activeFeature) {
+        postMessage({ type: 'resolvePlanComment', feature: activeFeature, commentId });
+      }
+    },
+    [activeFeature],
+  );
+
+  const handleReplyToPlanComment = useCallback(
+    (commentId: string, body: string) => {
+      if (activeFeature) {
+        postMessage({
+          type: 'replyToPlanComment',
+          feature: activeFeature,
+          commentId,
+          body,
+        });
+      }
+    },
+    [activeFeature],
+  );
 
   // No feature selected — show welcome prompt
   if (!activeFeature) {
@@ -83,7 +118,13 @@ function HivePanelContent(): React.ReactElement {
     case 'plan':
       return (
         <div className="hive-panel-plan">
-          <MarkdownViewer content={planContent} filePath="plan.md" />
+          <PlanReview
+            content={planContent ?? ''}
+            comments={planComments}
+            onAddComment={handleAddPlanComment}
+            onResolveComment={handleResolvePlanComment}
+            onReplyToComment={handleReplyToPlanComment}
+          />
         </div>
       );
 
