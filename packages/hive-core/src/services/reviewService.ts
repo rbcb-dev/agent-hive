@@ -39,6 +39,43 @@ export class ReviewService {
     threadId: string,
   ) => void;
 
+  /** Optional callback fired after a review thread is unresolved (reopened) */
+  onReviewThreadUnresolved?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+  ) => void;
+
+  /** Optional callback fired after a review thread is deleted */
+  onReviewThreadDeleted?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+  ) => void;
+
+  /** Optional callback fired after a review thread is marked outdated */
+  onReviewThreadOutdated?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+  ) => void;
+
+  /** Optional callback fired after a review annotation is edited */
+  onReviewAnnotationEdited?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+    annotationId: string,
+  ) => void;
+
+  /** Optional callback fired after a review annotation is deleted */
+  onReviewAnnotationDeleted?: (
+    feature: string,
+    sessionId: string,
+    threadId: string,
+    annotationId: string,
+  ) => void;
+
   constructor(private projectRoot: string) {}
 
   /**
@@ -160,13 +197,14 @@ export class ReviewService {
 
     await this.saveSession(session);
 
-    // Update index
+    // Update index and clear activeSessionId
     const index = await this.loadIndex(session.featureName);
     const indexEntry = index.sessions.find((s) => s.id === sessionId);
     if (indexEntry) {
       indexEntry.status = status;
       indexEntry.updatedAt = now;
     }
+    index.activeSessionId = null;
     await this.saveIndex(session.featureName, index);
 
     // Fire callback after submission completes (fire-and-forget)
@@ -275,6 +313,170 @@ export class ReviewService {
     // Fire callback after resolution completes (fire-and-forget)
     try {
       this.onReviewThreadResolved?.(session.featureName, session.id, threadId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+
+    return thread;
+  }
+
+  /**
+   * Unresolve a thread — sets status back to 'open'
+   */
+  async unresolveThread(threadId: string): Promise<ReviewThread> {
+    const { session, thread } = await this.findThread(threadId);
+
+    const now = new Date().toISOString();
+    thread.status = 'open';
+    thread.updatedAt = now;
+    session.updatedAt = now;
+
+    await this.saveSession(session);
+
+    // Fire callback after unresolve completes (fire-and-forget)
+    try {
+      this.onReviewThreadUnresolved?.(session.featureName, session.id, threadId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+
+    return thread;
+  }
+
+  /**
+   * Delete a thread from a session
+   */
+  async deleteThread(sessionId: string, threadId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    const threadIndex = session.threads.findIndex((t) => t.id === threadId);
+    if (threadIndex === -1) {
+      throw new Error(`Thread not found: ${threadId}`);
+    }
+
+    session.threads.splice(threadIndex, 1);
+    session.updatedAt = new Date().toISOString();
+
+    await this.saveSession(session);
+
+    // Fire callback after deletion completes (fire-and-forget)
+    try {
+      this.onReviewThreadDeleted?.(session.featureName, sessionId, threadId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+  }
+
+  /**
+   * Edit an annotation's body
+   */
+  async editAnnotation(
+    threadId: string,
+    annotationId: string,
+    newBody: string,
+  ): Promise<ReviewAnnotation> {
+    const { session, thread } = await this.findThread(threadId);
+
+    const annotation = thread.annotations.find((a) => a.id === annotationId);
+    if (!annotation) {
+      throw new Error(`Annotation not found: ${annotationId}`);
+    }
+
+    const now = new Date().toISOString();
+    annotation.body = newBody;
+    annotation.updatedAt = now;
+    thread.updatedAt = now;
+    session.updatedAt = now;
+
+    await this.saveSession(session);
+
+    // Fire callback after edit completes (fire-and-forget)
+    try {
+      this.onReviewAnnotationEdited?.(
+        session.featureName,
+        session.id,
+        threadId,
+        annotationId,
+      );
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+
+    return annotation;
+  }
+
+  /**
+   * Delete an annotation from a thread.
+   * If the last annotation is removed, the thread is also deleted.
+   */
+  async deleteAnnotation(
+    threadId: string,
+    annotationId: string,
+  ): Promise<{ thread: ReviewThread | null; threadDeleted: boolean }> {
+    const { session, thread } = await this.findThread(threadId);
+
+    const annotationIndex = thread.annotations.findIndex(
+      (a) => a.id === annotationId,
+    );
+    if (annotationIndex === -1) {
+      throw new Error(`Annotation not found: ${annotationId}`);
+    }
+
+    thread.annotations.splice(annotationIndex, 1);
+    const now = new Date().toISOString();
+    session.updatedAt = now;
+
+    let threadDeleted = false;
+    let resultThread: ReviewThread | null = thread;
+
+    if (thread.annotations.length === 0) {
+      // Remove the thread entirely
+      const threadIndex = session.threads.findIndex((t) => t.id === threadId);
+      if (threadIndex !== -1) {
+        session.threads.splice(threadIndex, 1);
+      }
+      threadDeleted = true;
+      resultThread = null;
+    } else {
+      thread.updatedAt = now;
+    }
+
+    await this.saveSession(session);
+
+    // Fire callback after deletion completes (fire-and-forget)
+    try {
+      this.onReviewAnnotationDeleted?.(
+        session.featureName,
+        session.id,
+        threadId,
+        annotationId,
+      );
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+
+    return { thread: resultThread, threadDeleted };
+  }
+
+  /**
+   * Mark a thread as outdated
+   */
+  async markThreadOutdated(threadId: string): Promise<ReviewThread> {
+    const { session, thread } = await this.findThread(threadId);
+
+    const now = new Date().toISOString();
+    thread.status = 'outdated';
+    thread.updatedAt = now;
+    session.updatedAt = now;
+
+    await this.saveSession(session);
+
+    // Fire callback after marking outdated (fire-and-forget)
+    try {
+      this.onReviewThreadOutdated?.(session.featureName, session.id, threadId);
     } catch {
       // fire-and-forget: swallow errors
     }
