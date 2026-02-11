@@ -124,11 +124,10 @@ const JSDOM_INCOMPATIBLE_PLAY: Set<string> = new Set([
   'MarkdownViewer/ComplexDocument',
   'MarkdownViewer/CopyToClipboard',
   'MarkdownViewer/WithMaxHeight',
-  // SuggestionPreview: diff/apply button assertions
+  // REASON: requires browser mode for antd Alert role="alert" + custom conflict div role="alert" duplicate
   'SuggestionPreview/ApplyButtonDisabledWithConflict',
+  // REASON: requires browser mode for shiki async syntax highlighting in CodeViewer split-view
   'SuggestionPreview/DiffDisplayVerification',
-  // SuggestionPreview: a11y check asserts diff view labels (Before:/After:)
-  'SuggestionPreview/AccessibilityCheck',
   // App: full app rendering with tabs/navigation
   'App/Default',
   'App/NavigationFlow',
@@ -137,13 +136,15 @@ const JSDOM_INCOMPATIBLE_PLAY: Set<string> = new Set([
   // App: workspace mode stories rely on HivePanel/HiveWorkspaceProvider + antd Layout in jsdom
   'App/WithSidebar',
   'App/EndToEndFlow',
-  // FeatureSidebar: antd Tree interaction + navigation in jsdom
+  // REASON: requires browser mode for antd Tree node click (data-testid task-node-*)
   'FeatureSidebar/NavigateFeatureToTask',
+  // REASON: requires browser mode for antd Tree node click (data-testid task-node-*)
   'FeatureSidebar/DuplicateFileAcrossTasks',
-  'FeatureSidebar/AccessibilityCheck',
   // HivePanel: antd Layout + sidebar/content navigation in jsdom
   'HivePanel/FullNavigationFlow',
   'HivePanel/SidebarCollapse',
+  // REASON: requires browser mode for PlanReview rendering in antd Layout content area
+  'HivePanel/WithPlanView',
   // HivePanel: WithDiffView play uses getByText('src/auth/jwt.ts') which finds
   // duplicates in jsdom (sidebar tree + content area both render the path)
   'HivePanel/WithDiffView',

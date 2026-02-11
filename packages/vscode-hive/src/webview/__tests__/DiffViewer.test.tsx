@@ -104,17 +104,31 @@ describe('DiffViewer', () => {
   });
 
   describe('line click callback', () => {
-    it('calls onLineClick when gutter is clicked', () => {
+    it('calls onLineClick with file path and line number when gutter is clicked', () => {
       const handleLineClick = vi.fn();
       render(<DiffViewer file={mockFile} onLineClick={handleLineClick} />);
 
       // Find a gutter element and click it
       const gutters = document.querySelectorAll('.diff-gutter');
-      if (gutters.length > 0) {
-        fireEvent.click(gutters[0]);
-        // Line click should be triggered (if line has number)
-        // Note: actual behavior depends on react-diff-view's gutter events
-      }
+      expect(gutters.length).toBeGreaterThan(0);
+
+      fireEvent.click(gutters[0]);
+
+      // Must be called with the file path and corresponding line number
+      expect(handleLineClick).toHaveBeenCalledTimes(1);
+      expect(handleLineClick).toHaveBeenCalledWith('src/app.ts', expect.any(Number));
+    });
+
+    it('passes correct line number matching the clicked gutter row', () => {
+      const handleLineClick = vi.fn();
+      render(<DiffViewer file={mockFile} onLineClick={handleLineClick} />);
+
+      const gutters = document.querySelectorAll('.diff-gutter');
+      expect(gutters.length).toBeGreaterThan(0);
+
+      // Click the first gutter — should correspond to the first hunk line (line 1)
+      fireEvent.click(gutters[0]);
+      expect(handleLineClick).toHaveBeenCalledWith('src/app.ts', 1);
     });
   });
 
