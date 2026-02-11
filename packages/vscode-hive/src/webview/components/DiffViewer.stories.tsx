@@ -3,7 +3,11 @@ import { fn, expect, within, userEvent } from 'storybook/test';
 import type { DiffHunk } from 'hive-core';
 
 import { DiffViewer } from './DiffViewer';
-import { createMockDiffFile } from '../__stories__/mocks';
+import {
+  createMockDiffFile,
+  createMockReviewThread,
+  createMockAnnotation,
+} from '../__stories__/mocks';
 
 const meta = {
   title: 'Components/DiffViewer',
@@ -25,6 +29,22 @@ const meta = {
     onLineClick: {
       action: 'lineClicked',
       description: 'Callback when a diff line gutter is clicked',
+    },
+    threads: {
+      control: 'object',
+      description: 'ReviewThreads to display inline at anchored lines',
+    },
+    onAddThread: {
+      action: 'addThread',
+      description: 'Callback when a new thread is started on a line',
+    },
+    onReply: {
+      action: 'reply',
+      description: 'Callback when a reply is submitted to a thread',
+    },
+    onResolve: {
+      action: 'resolve',
+      description: 'Callback when a thread is resolved',
     },
   },
 } satisfies Meta<typeof DiffViewer>;
@@ -441,5 +461,210 @@ export const AccessibilityCheck: Story = {
     // Verify that gutter cells are present and clickable
     const gutterCells = canvasElement.querySelectorAll('td.diff-gutter');
     await expect(gutterCells.length).toBeGreaterThan(0);
+  },
+};
+
+// =============================================================================
+// Inline Thread Stories
+// =============================================================================
+
+/**
+ * DiffViewer with inline comment threads anchored to specific lines.
+ * Demonstrates how ReviewThreads are rendered as widgets within the diff.
+ */
+export const WithThreads: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/components/Counter.tsx',
+      status: 'M',
+      hunks: [createMixedHunk()],
+    }),
+    threads: [
+      createMockReviewThread({
+        id: 'thread-inline-1',
+        uri: 'src/components/Counter.tsx',
+        range: {
+          start: { line: 3, character: 0 },
+          end: { line: 3, character: 50 },
+        },
+        annotations: [
+          createMockAnnotation({
+            id: 'ann-inline-1',
+            body: 'Consider using named imports for better tree-shaking.',
+            author: {
+              type: 'llm',
+              name: 'Claude',
+              agentId: 'hygienic-reviewer',
+            },
+          }),
+          createMockAnnotation({
+            id: 'ann-inline-2',
+            body: 'Good point, will update.',
+            author: { type: 'human', name: 'Developer' },
+          }),
+        ],
+      }),
+    ],
+    onReply: fn(),
+    onResolve: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify thread annotation body is visible
+    await expect(
+      canvas.getByText(
+        'Consider using named imports for better tree-shaking.',
+      ),
+    ).toBeInTheDocument();
+
+    // Verify thread indicator is present
+    const indicator = canvasElement.querySelector('.thread-indicator');
+    await expect(indicator).toBeInTheDocument();
+
+    // Verify inline-diff-thread container renders
+    const threadWidget = canvasElement.querySelector('.inline-diff-thread');
+    await expect(threadWidget).toBeInTheDocument();
+  },
+};
+
+/**
+ * Interactive: Add a reply to an inline thread.
+ * Type text in the reply input and click Reply.
+ */
+export const AddThread: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/utils/helpers.ts',
+      status: 'M',
+      hunks: [createMixedHunk()],
+    }),
+    threads: [
+      createMockReviewThread({
+        id: 'thread-add-1',
+        uri: 'src/utils/helpers.ts',
+        range: {
+          start: { line: 3, character: 0 },
+          end: { line: 3, character: 0 },
+        },
+        annotations: [
+          createMockAnnotation({
+            id: 'ann-add-1',
+            body: 'This import can be simplified.',
+            author: { type: 'human', name: 'Alice' },
+          }),
+        ],
+      }),
+    ],
+    onReply: fn(),
+    onResolve: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Find the reply input
+    const replyInput = canvas.getByPlaceholderText(/reply/i);
+    await expect(replyInput).toBeInTheDocument();
+
+    // Type a reply
+    await userEvent.type(replyInput, 'I agree, let me fix this.');
+
+    // Click the reply button
+    const replyButton = canvas.getByRole('button', { name: /^reply$/i });
+    await userEvent.click(replyButton);
+
+    // Verify onReply was called with thread ID and body
+    await expect(args.onReply).toHaveBeenCalledWith(
+      'thread-add-1',
+      'I agree, let me fix this.',
+    );
+  },
+};
+
+/**
+ * Interactive: Resolve an inline thread.
+ * Clicks the resolve button and verifies the callback.
+ */
+export const ResolveThread: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/config.ts',
+      status: 'M',
+      hunks: [createMixedHunk()],
+    }),
+    threads: [
+      createMockReviewThread({
+        id: 'thread-resolve-1',
+        uri: 'src/config.ts',
+        range: {
+          start: { line: 3, character: 0 },
+          end: { line: 3, character: 0 },
+        },
+        annotations: [
+          createMockAnnotation({
+            id: 'ann-resolve-1',
+            body: 'Fixed the import issue.',
+            author: { type: 'human', name: 'Developer' },
+          }),
+        ],
+      }),
+    ],
+    onReply: fn(),
+    onResolve: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Find and click the resolve button
+    const resolveButton = canvas.getByRole('button', { name: /resolve/i });
+    await userEvent.click(resolveButton);
+
+    // Verify onResolve was called with thread ID
+    await expect(args.onResolve).toHaveBeenCalledWith('thread-resolve-1');
+  },
+};
+
+/**
+ * Interactive: Click a gutter line to open the inline thread composer.
+ * Demonstrates the "add thread" flow: click gutter → type comment → submit.
+ */
+export const GutterClickComposer: Story = {
+  args: {
+    file: createMockDiffFile({
+      path: 'src/components/Button.tsx',
+      status: 'M',
+      hunks: [createMixedHunk()],
+    }),
+    onAddThread: fn(),
+    onReply: fn(),
+    onResolve: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    // Click a gutter cell to open the composer
+    const gutterCells = canvasElement.querySelectorAll('td.diff-gutter');
+    await expect(gutterCells.length).toBeGreaterThan(0);
+
+    const firstGutter = gutterCells[0] as HTMLElement;
+    await userEvent.click(firstGutter);
+
+    // The inline composer should now be visible
+    const composer = canvasElement.querySelector('.inline-thread-composer');
+    await expect(composer).toBeInTheDocument();
+
+    // Type a comment
+    const canvas = within(canvasElement);
+    const commentInput = canvas.getByPlaceholderText(/add a comment/i);
+    await userEvent.type(commentInput, 'This needs attention');
+
+    // Submit the comment
+    const commentButton = canvas.getByRole('button', { name: /comment$/i });
+    await userEvent.click(commentButton);
+
+    // Verify onAddThread was called
+    await expect(args.onAddThread).toHaveBeenCalledWith(
+      'src/components/Button.tsx',
+      expect.any(Number),
+      'This needs attention',
+    );
   },
 };
