@@ -142,6 +142,15 @@ describe('App - Workspace Mode (no session)', () => {
     const siderTrigger = document.querySelector('.ant-layout-sider-trigger');
     expect(siderTrigger).not.toBeInTheDocument();
   });
+
+  it('calls useWorkspaceMessages in workspace mode (sends requestFeatures on mount)', async () => {
+    const { postMessage } = await import('../vscodeApi');
+
+    render(<App />);
+
+    // useWorkspaceMessages sends requestFeatures on mount
+    expect(postMessage).toHaveBeenCalledWith({ type: 'requestFeatures' });
+  });
 });
 
 describe('App - Review Mode (with session)', () => {
@@ -152,45 +161,51 @@ describe('App - Review Mode (with session)', () => {
   /**
    * Helper to render App and simulate receiving a sessionData message
    * to put it into review mode.
+   *
+   * Broadcasts the message to ALL registered addMessageListener handlers
+   * (mimicking real window.addEventListener behavior where every listener
+   * receives every message).
    */
   async function renderInReviewMode() {
     const { addMessageListener } = await import('../vscodeApi');
     render(<App />);
 
-    // Get the handler that was passed to addMessageListener
-    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
+    const message = {
+      type: 'sessionData',
+      session: {
+        schemaVersion: 1 as const,
+        id: 'test-session',
+        featureName: 'test-feature',
+        scope: 'feature' as const,
+        status: 'in_progress' as const,
+        verdict: null,
+        summary: null,
+        threads: [],
+        diffs: {},
+        gitMeta: {
+          repoRoot: '/repo',
+          baseRef: 'main',
+          headRef: 'feature-branch',
+          mergeBase: 'abc123',
+          capturedAt: new Date().toISOString(),
+          diffStats: { files: 0, insertions: 0, deletions: 0 },
+          diffSummary: [],
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      config: {
+        autoOpen: false,
+        defaultScope: 'feature',
+      },
+    } as any;
 
-    // Simulate receiving sessionData to enter review mode
+    // Broadcast to all registered handlers (real behavior: all listeners see all messages)
     act(() => {
-      handler({
-        type: 'sessionData',
-        session: {
-          schemaVersion: 1 as const,
-          id: 'test-session',
-          featureName: 'test-feature',
-          scope: 'feature' as const,
-          status: 'in_progress' as const,
-          verdict: null,
-          summary: null,
-          threads: [],
-          diffs: {},
-          gitMeta: {
-            repoRoot: '/repo',
-            baseRef: 'main',
-            headRef: 'feature-branch',
-            mergeBase: 'abc123',
-            capturedAt: new Date().toISOString(),
-            diffStats: { files: 0, insertions: 0, deletions: 0 },
-            diffSummary: [],
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        config: {
-          autoOpen: false,
-          defaultScope: 'feature',
-        },
-      } as any);
+      const calls = vi.mocked(addMessageListener).mock.calls;
+      for (const call of calls) {
+        call[0](message);
+      }
     });
   }
 
@@ -244,6 +259,18 @@ describe('App - File Content Request Protocol', () => {
     vi.clearAllMocks();
   });
 
+  /**
+   * Helper to broadcast a message to all registered addMessageListener handlers
+   * (mimics real behavior where all listeners receive all messages).
+   */
+  async function broadcastMessage(message: Record<string, unknown>) {
+    const { addMessageListener } = await import('../vscodeApi');
+    const calls = vi.mocked(addMessageListener).mock.calls;
+    for (const call of calls) {
+      call[0](message as any);
+    }
+  }
+
   it('handles fileContent message by storing content', async () => {
     const { addMessageListener } = await import('../vscodeApi');
 
@@ -252,12 +279,9 @@ describe('App - File Content Request Protocol', () => {
     // Verify addMessageListener was called
     expect(addMessageListener).toHaveBeenCalled();
 
-    // Get the handler that was passed to addMessageListener
-    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-
     // Simulate receiving fileContent message
-    act(() => {
-      handler({
+    await act(async () => {
+      await broadcastMessage({
         type: 'fileContent',
         uri: 'src/test.ts',
         content: 'const x = 1;',
@@ -270,15 +294,11 @@ describe('App - File Content Request Protocol', () => {
   });
 
   it('handles fileError message by storing error', async () => {
-    const { addMessageListener } = await import('../vscodeApi');
-
     render(<App />);
 
-    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-
     // Simulate receiving fileError message
-    act(() => {
-      handler({
+    await act(async () => {
+      await broadcastMessage({
         type: 'fileError',
         uri: 'nonexistent.ts',
         error: 'File not found: nonexistent.ts',
@@ -289,15 +309,11 @@ describe('App - File Content Request Protocol', () => {
   });
 
   it('handles fileContent with warning for large files', async () => {
-    const { addMessageListener } = await import('../vscodeApi');
-
     render(<App />);
 
-    const handler = vi.mocked(addMessageListener).mock.calls[0][0];
-
     // Simulate receiving fileContent with warning
-    act(() => {
-      handler({
+    await act(async () => {
+      await broadcastMessage({
         type: 'fileContent',
         uri: 'large-file.json',
         content: '{}',

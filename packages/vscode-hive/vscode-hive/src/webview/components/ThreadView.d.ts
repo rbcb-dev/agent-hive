@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import type { ReviewThread } from 'hive-core';
+import { type SuggestionStatus } from './SuggestionPreview';
 export interface ThreadViewProps {
     /** The thread to display */
     thread: ReviewThread;
@@ -13,5 +14,9 @@ export interface ThreadViewProps {
     onResolve: () => void;
     /** Compact mode for inline display (fewer rows, smaller spacing) */
     compact?: boolean;
+    /** Called when user applies a suggestion (annotation id) */
+    onApplySuggestion?: (annotationId: string) => void;
+    /** Current status of the suggestion apply action */
+    suggestionStatus?: SuggestionStatus;
 }
-export declare function ThreadView({ thread, onReply, onResolve, compact, }: ThreadViewProps): React.ReactElement;
+export declare function ThreadView({ thread, onReply, onResolve, compact, onApplySuggestion, suggestionStatus, }: ThreadViewProps): React.ReactElement;
