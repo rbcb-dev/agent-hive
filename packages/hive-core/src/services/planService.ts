@@ -33,6 +33,29 @@ export class PlanService {
   /** Optional callback fired after a plan is approved */
   onPlanApproved?: (featureName: string, approvedAt: string) => void;
 
+  /** Optional callback fired after a comment is unresolved */
+  onCommentUnresolved?: (featureName: string, commentId: string) => void;
+
+  /** Optional callback fired after a comment is deleted */
+  onCommentDeleted?: (featureName: string, commentId: string) => void;
+
+  /** Optional callback fired after a comment is edited */
+  onCommentEdited?: (featureName: string, commentId: string) => void;
+
+  /** Optional callback fired after a reply is edited */
+  onReplyEdited?: (
+    featureName: string,
+    commentId: string,
+    replyId: string,
+  ) => void;
+
+  /** Optional callback fired after a reply is deleted */
+  onReplyDeleted?: (
+    featureName: string,
+    commentId: string,
+    replyId: string,
+  ) => void;
+
   constructor(private projectRoot: string) {}
 
   write(featureName: string, content: string): string {
@@ -281,5 +304,130 @@ export class PlanService {
   clearComments(featureName: string): void {
     const commentsPath = getCommentsPath(this.projectRoot, featureName);
     writeJson(commentsPath, { threads: [] });
+  }
+
+  unresolveComment(featureName: string, commentId: string): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    comment.resolved = false;
+    writeJson(commentsPath, data);
+
+    // Fire callback after unresolve (fire-and-forget)
+    try {
+      this.onCommentUnresolved?.(featureName, commentId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+  }
+
+  deleteComment(featureName: string, commentId: string): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const index = data.threads.findIndex((c) => c.id === commentId);
+    if (index === -1) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    data.threads.splice(index, 1);
+    writeJson(commentsPath, data);
+
+    // Fire callback after delete (fire-and-forget)
+    try {
+      this.onCommentDeleted?.(featureName, commentId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+  }
+
+  editComment(
+    featureName: string,
+    commentId: string,
+    newBody: string,
+  ): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    comment.body = newBody;
+    comment.timestamp = new Date().toISOString();
+    writeJson(commentsPath, data);
+
+    // Fire callback after edit (fire-and-forget)
+    try {
+      this.onCommentEdited?.(featureName, commentId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+  }
+
+  editReply(
+    featureName: string,
+    commentId: string,
+    replyId: string,
+    newBody: string,
+  ): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    const reply = comment.replies?.find((r) => r.id === replyId);
+    if (!reply) {
+      throw new Error(`Reply '${replyId}' not found`);
+    }
+
+    reply.body = newBody;
+    reply.timestamp = new Date().toISOString();
+    writeJson(commentsPath, data);
+
+    // Fire callback after reply edit (fire-and-forget)
+    try {
+      this.onReplyEdited?.(featureName, commentId, replyId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
+  }
+
+  deleteReply(
+    featureName: string,
+    commentId: string,
+    replyId: string,
+  ): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    const replyIndex = comment.replies?.findIndex((r) => r.id === replyId);
+    if (replyIndex === undefined || replyIndex === -1) {
+      throw new Error(`Reply '${replyId}' not found`);
+    }
+
+    comment.replies!.splice(replyIndex, 1);
+    writeJson(commentsPath, data);
+
+    // Fire callback after reply delete (fire-and-forget)
+    try {
+      this.onReplyDeleted?.(featureName, commentId, replyId);
+    } catch {
+      // fire-and-forget: swallow errors
+    }
   }
 }
