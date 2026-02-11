@@ -5,11 +5,6 @@
 export { ScopeTabs } from './ScopeTabs';
 export type { ScopeTabsProps, ScopeTabItem } from './ScopeTabs';
 
-/** @deprecated Use FileNavigator instead. Will be removed in v2.0. */
-export { FileTree } from './FileTree';
-/** @deprecated Use FileNavigator instead. Will be removed in v2.0. */
-export type { FileTreeProps } from './FileTree';
-
 export { ThreadList } from './ThreadList';
 export type { ThreadListProps } from './ThreadList';
 

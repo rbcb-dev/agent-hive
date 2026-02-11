@@ -133,7 +133,7 @@ export function App(): React.ReactElement {
       : null;
 
   return (
-    <HiveThemeProvider mode="light">
+    <HiveThemeProvider>
       <Layout style={{ minHeight: '100vh' }}>
         <Header
           style={{

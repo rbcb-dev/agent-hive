@@ -42,6 +42,14 @@ export type WebviewToExtensionMessage =
     }
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
+  | {
+      type: 'applySuggestion';
+      threadId: string;
+      annotationId: string;
+      uri: string;
+      range: import('hive-core').Range;
+      replacement: string;
+    }
   | { type: 'submit'; verdict: string; summary: string }
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
@@ -52,8 +60,9 @@ export type WebviewToExtensionMessage =
  * Messages sent from extension to webview
  */
 export type ExtensionToWebviewMessage =
-  | { type: 'sessionData'; session: import('hive-core').ReviewSession }
+  | { type: 'sessionData'; session: import('hive-core').ReviewSession; config: import('hive-core').ReviewConfig }
   | { type: 'sessionUpdate'; session: import('hive-core').ReviewSession }
+  | { type: 'configUpdate'; config: import('hive-core').ReviewConfig }
   | { type: 'error'; message: string }
   | {
       type: 'scopeChanged';
@@ -67,19 +76,14 @@ export type ExtensionToWebviewMessage =
       language?: string;
       warning?: string;
     }
-  | { type: 'fileError'; uri: string; error: string };
-
-/**
- * File tree item for navigation
- */
-export interface FileTreeItem {
-  path: string;
-  name: string;
-  status: 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | 'B';
-  commentCount: number;
-  additions: number;
-  deletions: number;
-}
+  | { type: 'fileError'; uri: string; error: string }
+  | {
+      type: 'suggestionApplied';
+      threadId: string;
+      annotationId: string;
+      success: boolean;
+      error?: string;
+    };
 
 /**
  * Thread summary for navigation

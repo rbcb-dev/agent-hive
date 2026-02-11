@@ -14,7 +14,6 @@ import type {
   AnnotationType,
   Range,
 } from 'hive-core';
-import type { FileTreeItem } from '../../types';
 
 // Counter for generating unique IDs
 let idCounter = 0;
@@ -187,42 +186,5 @@ export function createMockDiffFile(
     deletions,
     isBinary: options.isBinary,
     hunks: options.isBinary ? [] : hunks,
-  };
-}
-
-// =============================================================================
-// FileTreeItem Factory
-// =============================================================================
-
-export interface CreateMockFileTreeItemOptions {
-  path?: string;
-  name?: string;
-  status?: FileTreeItem['status'];
-  commentCount?: number;
-  additions?: number;
-  deletions?: number;
-}
-
-/**
- * Create a mock FileTreeItem with sensible defaults
- *
- * @example
- * const item = createMockFileTreeItem();
- * const added = createMockFileTreeItem({ path: 'src/new.ts', status: 'A' });
- * const withComments = createMockFileTreeItem({ commentCount: 5 });
- */
-export function createMockFileTreeItem(
-  options: CreateMockFileTreeItemOptions = {},
-): FileTreeItem {
-  const path = options.path ?? 'src/components/Example.tsx';
-  const name = options.name ?? path.split('/').pop() ?? path;
-
-  return {
-    path,
-    name,
-    status: options.status ?? 'M',
-    commentCount: options.commentCount ?? 0,
-    additions: options.additions ?? 10,
-    deletions: options.deletions ?? 5,
   };
 }
