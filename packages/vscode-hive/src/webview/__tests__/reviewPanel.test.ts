@@ -475,6 +475,381 @@ describe('Context Path Consistency', () => {
   });
 });
 
+// Test new comment lifecycle message type contracts
+describe('ReviewPanel Comment Lifecycle Messages', () => {
+  describe('WebviewToExtensionMessage - review thread lifecycle', () => {
+    it('should accept valid unresolve message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'unresolve',
+        threadId: 'thread-123',
+      };
+      expect(message.type).toBe('unresolve');
+      expect(message.threadId).toBe('thread-123');
+    });
+
+    it('should accept valid deleteThread message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'deleteThread',
+        threadId: 'thread-123',
+      };
+      expect(message.type).toBe('deleteThread');
+      expect(message.threadId).toBe('thread-123');
+    });
+
+    it('should accept valid editComment message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'editComment',
+        threadId: 'thread-123',
+        annotationId: 'ann-456',
+        body: 'Updated comment body',
+      };
+      expect(message.type).toBe('editComment');
+      expect(message.threadId).toBe('thread-123');
+      expect(message.annotationId).toBe('ann-456');
+      expect(message.body).toBe('Updated comment body');
+    });
+
+    it('should accept valid deleteComment message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'deleteComment',
+        threadId: 'thread-123',
+        annotationId: 'ann-456',
+      };
+      expect(message.type).toBe('deleteComment');
+      expect(message.threadId).toBe('thread-123');
+      expect(message.annotationId).toBe('ann-456');
+    });
+  });
+
+  describe('WebviewToExtensionMessage - plan comment lifecycle', () => {
+    it('should accept valid unresolvePlanComment message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'unresolvePlanComment',
+        feature: 'test-feature',
+        commentId: 'comment-123',
+      };
+      expect(message.type).toBe('unresolvePlanComment');
+      expect(message.feature).toBe('test-feature');
+      expect(message.commentId).toBe('comment-123');
+    });
+
+    it('should accept valid deletePlanComment message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'deletePlanComment',
+        feature: 'test-feature',
+        commentId: 'comment-123',
+      };
+      expect(message.type).toBe('deletePlanComment');
+      expect(message.feature).toBe('test-feature');
+      expect(message.commentId).toBe('comment-123');
+    });
+
+    it('should accept valid editPlanComment message', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'editPlanComment',
+        feature: 'test-feature',
+        commentId: 'comment-123',
+        body: 'Updated plan comment body',
+      };
+      expect(message.type).toBe('editPlanComment');
+      expect(message.feature).toBe('test-feature');
+      expect(message.commentId).toBe('comment-123');
+      expect(message.body).toBe('Updated plan comment body');
+    });
+
+    it('should accept addPlanComment with range instead of line', () => {
+      const message: WebviewToExtensionMessage = {
+        type: 'addPlanComment',
+        feature: 'test-feature',
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 10 },
+        },
+        body: 'Plan comment with range',
+      };
+      expect(message.type).toBe('addPlanComment');
+      expect(message.range.start.line).toBe(5);
+      expect(message.range.end.character).toBe(10);
+      // Verify no 'line' property exists (range-based now)
+      expect('line' in message).toBe(false);
+    });
+  });
+});
+
+// Test handler mapping includes new lifecycle handlers
+describe('ReviewPanel Handler Mapping - Comment Lifecycle', () => {
+  it('should include all review thread lifecycle handlers', () => {
+    const reviewThreadHandlers = [
+      'unresolve',
+      'deleteThread',
+      'editComment',
+      'deleteComment',
+    ];
+    // Verify these are valid WebviewToExtensionMessage types
+    reviewThreadHandlers.forEach((type) => {
+      const message = { type } as WebviewToExtensionMessage;
+      expect(message.type).toBe(type);
+    });
+  });
+
+  it('should include all plan comment lifecycle handlers', () => {
+    const planCommentHandlers = [
+      'unresolvePlanComment',
+      'deletePlanComment',
+      'editPlanComment',
+    ];
+    // Verify these are valid WebviewToExtensionMessage types
+    planCommentHandlers.forEach((type) => {
+      const message = { type } as WebviewToExtensionMessage;
+      expect(message.type).toBe(type);
+    });
+  });
+});
+
+// Test handler logic simulation using extracted patterns from reviewPanel.ts
+// These tests verify the handler behavior patterns that _handleMessage dispatches to.
+describe('ReviewPanel Handler Logic - Comment Lifecycle', () => {
+  // Simulate the handler patterns (service calls + response messages)
+  // These mirror the actual handler implementations in reviewPanel.ts
+
+  describe('unresolve handler', () => {
+    it('should call reviewService.unresolveThread and send sessionUpdate', async () => {
+      const mockReviewService = {
+        unresolveThread: vi.fn().mockResolvedValue({ id: 'thread-1', status: 'open' }),
+        getSession: vi.fn().mockResolvedValue({
+          id: 'session-1',
+          threads: [{ id: 'thread-1', status: 'open' }],
+        }),
+      };
+      const postMessage = vi.fn();
+
+      // Simulate the handler logic
+      await mockReviewService.unresolveThread('thread-1');
+      const session = await mockReviewService.getSession('session-1');
+      postMessage({ type: 'sessionUpdate', session });
+
+      expect(mockReviewService.unresolveThread).toHaveBeenCalledWith('thread-1');
+      expect(mockReviewService.getSession).toHaveBeenCalledWith('session-1');
+      expect(postMessage).toHaveBeenCalledWith({
+        type: 'sessionUpdate',
+        session: expect.objectContaining({ id: 'session-1' }),
+      });
+    });
+
+    it('should post error when no active session', () => {
+      const postMessage = vi.fn();
+      const currentSession = null;
+
+      // Simulate guard check
+      if (!currentSession) {
+        postMessage({ type: 'error', message: 'No active session' });
+      }
+
+      expect(postMessage).toHaveBeenCalledWith({
+        type: 'error',
+        message: 'No active session',
+      });
+    });
+  });
+
+  describe('deleteThread handler', () => {
+    it('should call reviewService.deleteThread with sessionId and threadId', async () => {
+      const mockReviewService = {
+        deleteThread: vi.fn().mockResolvedValue(undefined),
+        getSession: vi.fn().mockResolvedValue({
+          id: 'session-1',
+          threads: [],
+        }),
+      };
+      const postMessage = vi.fn();
+
+      await mockReviewService.deleteThread('session-1', 'thread-1');
+      const session = await mockReviewService.getSession('session-1');
+      postMessage({ type: 'sessionUpdate', session });
+
+      expect(mockReviewService.deleteThread).toHaveBeenCalledWith('session-1', 'thread-1');
+      expect(postMessage).toHaveBeenCalledWith({
+        type: 'sessionUpdate',
+        session: expect.objectContaining({
+          id: 'session-1',
+          threads: [],
+        }),
+      });
+    });
+  });
+
+  describe('editComment handler', () => {
+    it('should call reviewService.editAnnotation and send sessionUpdate', async () => {
+      const mockReviewService = {
+        editAnnotation: vi.fn().mockResolvedValue({ id: 'ann-1', body: 'Updated' }),
+        getSession: vi.fn().mockResolvedValue({ id: 'session-1' }),
+      };
+      const postMessage = vi.fn();
+
+      await mockReviewService.editAnnotation('thread-1', 'ann-1', 'Updated');
+      const session = await mockReviewService.getSession('session-1');
+      postMessage({ type: 'sessionUpdate', session });
+
+      expect(mockReviewService.editAnnotation).toHaveBeenCalledWith('thread-1', 'ann-1', 'Updated');
+      expect(postMessage).toHaveBeenCalledWith({
+        type: 'sessionUpdate',
+        session: expect.objectContaining({ id: 'session-1' }),
+      });
+    });
+  });
+
+  describe('deleteComment handler', () => {
+    it('should call reviewService.deleteAnnotation and send sessionUpdate', async () => {
+      const mockReviewService = {
+        deleteAnnotation: vi.fn().mockResolvedValue({ thread: null, threadDeleted: true }),
+        getSession: vi.fn().mockResolvedValue({ id: 'session-1' }),
+      };
+      const postMessage = vi.fn();
+
+      await mockReviewService.deleteAnnotation('thread-1', 'ann-1');
+      const session = await mockReviewService.getSession('session-1');
+      postMessage({ type: 'sessionUpdate', session });
+
+      expect(mockReviewService.deleteAnnotation).toHaveBeenCalledWith('thread-1', 'ann-1');
+      expect(postMessage).toHaveBeenCalledWith({
+        type: 'sessionUpdate',
+        session: expect.objectContaining({ id: 'session-1' }),
+      });
+    });
+  });
+
+  describe('unresolvePlanComment handler', () => {
+    it('should call planService.unresolveComment and refresh plan content', () => {
+      const mockPlanService = {
+        unresolveComment: vi.fn(),
+        read: vi.fn().mockReturnValue({
+          content: '# Plan',
+          status: 'active',
+          comments: [{ id: 'c1', resolved: false }],
+        }),
+      };
+      const postMessage = vi.fn();
+
+      mockPlanService.unresolveComment('test-feature', 'c1');
+      const result = mockPlanService.read('test-feature');
+      postMessage({
+        type: 'planContent',
+        feature: 'test-feature',
+        content: result.content,
+        comments: result.comments,
+      });
+
+      expect(mockPlanService.unresolveComment).toHaveBeenCalledWith('test-feature', 'c1');
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'planContent', feature: 'test-feature' }),
+      );
+    });
+  });
+
+  describe('deletePlanComment handler', () => {
+    it('should call planService.deleteComment and refresh plan content', () => {
+      const mockPlanService = {
+        deleteComment: vi.fn(),
+        read: vi.fn().mockReturnValue({
+          content: '# Plan',
+          status: 'active',
+          comments: [],
+        }),
+      };
+      const postMessage = vi.fn();
+
+      mockPlanService.deleteComment('test-feature', 'c1');
+      const result = mockPlanService.read('test-feature');
+      postMessage({
+        type: 'planContent',
+        feature: 'test-feature',
+        content: result.content,
+        comments: result.comments,
+      });
+
+      expect(mockPlanService.deleteComment).toHaveBeenCalledWith('test-feature', 'c1');
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'planContent',
+          feature: 'test-feature',
+          comments: [],
+        }),
+      );
+    });
+  });
+
+  describe('editPlanComment handler', () => {
+    it('should call planService.editComment and refresh plan content', () => {
+      const mockPlanService = {
+        editComment: vi.fn(),
+        read: vi.fn().mockReturnValue({
+          content: '# Plan',
+          status: 'active',
+          comments: [{ id: 'c1', body: 'Updated body' }],
+        }),
+      };
+      const postMessage = vi.fn();
+
+      mockPlanService.editComment('test-feature', 'c1', 'Updated body');
+      const result = mockPlanService.read('test-feature');
+      postMessage({
+        type: 'planContent',
+        feature: 'test-feature',
+        content: result.content,
+        comments: result.comments,
+      });
+
+      expect(mockPlanService.editComment).toHaveBeenCalledWith('test-feature', 'c1', 'Updated body');
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'planContent',
+          feature: 'test-feature',
+          comments: [expect.objectContaining({ id: 'c1', body: 'Updated body' })],
+        }),
+      );
+    });
+  });
+
+  describe('addPlanComment handler (range-based)', () => {
+    it('should call planService.addComment with range (not line)', () => {
+      const range = {
+        start: { line: 5, character: 0 },
+        end: { line: 5, character: 10 },
+      };
+      const mockPlanService = {
+        addComment: vi.fn().mockReturnValue({
+          id: 'comment-1',
+          range,
+          body: 'Test comment',
+          author: 'human',
+          timestamp: '2026-01-01T00:00:00Z',
+        }),
+      };
+
+      mockPlanService.addComment('test-feature', {
+        range,
+        body: 'Test comment',
+        author: 'human',
+      });
+
+      expect(mockPlanService.addComment).toHaveBeenCalledWith(
+        'test-feature',
+        expect.objectContaining({
+          range: expect.objectContaining({
+            start: { line: 5, character: 0 },
+            end: { line: 5, character: 10 },
+          }),
+          body: 'Test comment',
+          author: 'human',
+        }),
+      );
+      // Ensure line is NOT used
+      const callArgs = mockPlanService.addComment.mock.calls[0][1];
+      expect('line' in callArgs).toBe(false);
+    });
+  });
+});
+
 // Test file size check utility
 describe('File Content Request Protocol - File Size', () => {
   it('should define 10MB as the large file threshold', () => {

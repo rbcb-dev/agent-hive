@@ -229,6 +229,22 @@ export class ReviewPanel {
         await this._handleResolve(message);
         break;
 
+      case 'unresolve':
+        await this._handleUnresolve(message);
+        break;
+
+      case 'deleteThread':
+        await this._handleDeleteThread(message);
+        break;
+
+      case 'editComment':
+        await this._handleEditComment(message);
+        break;
+
+      case 'deleteComment':
+        await this._handleDeleteComment(message);
+        break;
+
       case 'applySuggestion':
         await this._handleApplySuggestion(message);
         break;
@@ -278,7 +294,7 @@ export class ReviewPanel {
       case 'addPlanComment':
         await this._handleAddPlanComment(
           message.feature,
-          message.line,
+          message.range,
           message.body,
         );
         break;
@@ -296,6 +312,33 @@ export class ReviewPanel {
           message.commentId,
           message.body,
         );
+        break;
+
+      case 'unresolvePlanComment':
+        await this._handleUnresolvePlanComment(
+          message.feature,
+          message.commentId,
+        );
+        break;
+
+      case 'deletePlanComment':
+        await this._handleDeletePlanComment(
+          message.feature,
+          message.commentId,
+        );
+        break;
+
+      case 'editPlanComment':
+        await this._handleEditPlanComment(
+          message.feature,
+          message.commentId,
+          message.body,
+        );
+        break;
+
+      case 'requestCommitHistory':
+      case 'requestCommitDiff':
+        // Commit history/diff handlers are implemented in Task 7
         break;
     }
   }
@@ -1023,14 +1066,14 @@ export class ReviewPanel {
    */
   private async _handleAddPlanComment(
     feature: string,
-    line: number,
+    range: Range,
     body: string,
   ): Promise<void> {
-    console.log('[HIVE WEBVIEW] Handling addPlanComment:', feature, line);
+    console.log('[HIVE WEBVIEW] Handling addPlanComment:', feature, range);
 
     try {
       this._planService.addComment(feature, {
-        line,
+        range,
         body,
         author: 'human',
       });
@@ -1101,6 +1144,231 @@ export class ReviewPanel {
           ? error.message
           : 'Failed to reply to plan comment';
       console.error('[HIVE WEBVIEW] Error replying to plan comment:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle unresolving a review thread
+   */
+  private async _handleUnresolve(message: {
+    threadId: string;
+  }): Promise<void> {
+    if (!this._currentSession) {
+      this._postMessage({ type: 'error', message: 'No active session' });
+      return;
+    }
+
+    try {
+      await this._reviewService.unresolveThread(message.threadId);
+
+      // Refresh the session
+      this._currentSession = await this._reviewService.getSession(
+        this._currentSession.id,
+      );
+      if (this._currentSession) {
+        this._postMessage({
+          type: 'sessionUpdate',
+          session: this._currentSession,
+        });
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to unresolve thread';
+      this._postMessage({ type: 'error', message: errorMessage });
+    }
+  }
+
+  /**
+   * Handle deleting a review thread
+   */
+  private async _handleDeleteThread(message: {
+    threadId: string;
+  }): Promise<void> {
+    if (!this._currentSession) {
+      this._postMessage({ type: 'error', message: 'No active session' });
+      return;
+    }
+
+    try {
+      await this._reviewService.deleteThread(
+        this._currentSession.id,
+        message.threadId,
+      );
+
+      // Refresh the session
+      this._currentSession = await this._reviewService.getSession(
+        this._currentSession.id,
+      );
+      if (this._currentSession) {
+        this._postMessage({
+          type: 'sessionUpdate',
+          session: this._currentSession,
+        });
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete thread';
+      this._postMessage({ type: 'error', message: errorMessage });
+    }
+  }
+
+  /**
+   * Handle editing a review comment (annotation)
+   */
+  private async _handleEditComment(message: {
+    threadId: string;
+    annotationId: string;
+    body: string;
+  }): Promise<void> {
+    if (!this._currentSession) {
+      this._postMessage({ type: 'error', message: 'No active session' });
+      return;
+    }
+
+    try {
+      await this._reviewService.editAnnotation(
+        message.threadId,
+        message.annotationId,
+        message.body,
+      );
+
+      // Refresh the session
+      this._currentSession = await this._reviewService.getSession(
+        this._currentSession.id,
+      );
+      if (this._currentSession) {
+        this._postMessage({
+          type: 'sessionUpdate',
+          session: this._currentSession,
+        });
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to edit comment';
+      this._postMessage({ type: 'error', message: errorMessage });
+    }
+  }
+
+  /**
+   * Handle deleting a review comment (annotation)
+   */
+  private async _handleDeleteComment(message: {
+    threadId: string;
+    annotationId: string;
+  }): Promise<void> {
+    if (!this._currentSession) {
+      this._postMessage({ type: 'error', message: 'No active session' });
+      return;
+    }
+
+    try {
+      await this._reviewService.deleteAnnotation(
+        message.threadId,
+        message.annotationId,
+      );
+
+      // Refresh the session
+      this._currentSession = await this._reviewService.getSession(
+        this._currentSession.id,
+      );
+      if (this._currentSession) {
+        this._postMessage({
+          type: 'sessionUpdate',
+          session: this._currentSession,
+        });
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete comment';
+      this._postMessage({ type: 'error', message: errorMessage });
+    }
+  }
+
+  /**
+   * Handle unresolving a plan comment from webview
+   */
+  private async _handleUnresolvePlanComment(
+    feature: string,
+    commentId: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling unresolvePlanComment:',
+      feature,
+      commentId,
+    );
+
+    try {
+      this._planService.unresolveComment(feature, commentId);
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to unresolve plan comment';
+      console.error(
+        '[HIVE WEBVIEW] Error unresolving plan comment:',
+        errorMsg,
+      );
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle deleting a plan comment from webview
+   */
+  private async _handleDeletePlanComment(
+    feature: string,
+    commentId: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling deletePlanComment:',
+      feature,
+      commentId,
+    );
+
+    try {
+      this._planService.deleteComment(feature, commentId);
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete plan comment';
+      console.error('[HIVE WEBVIEW] Error deleting plan comment:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle editing a plan comment from webview
+   */
+  private async _handleEditPlanComment(
+    feature: string,
+    commentId: string,
+    body: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling editPlanComment:',
+      feature,
+      commentId,
+    );
+
+    try {
+      this._planService.editComment(feature, commentId, body);
+
+      // Send refreshed plan content back to webview
+      await this._handleRequestPlanContent(feature);
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to edit plan comment';
+      console.error('[HIVE WEBVIEW] Error editing plan comment:', errorMsg);
       this._postMessage({ type: 'error', message: errorMsg });
     }
   }
