@@ -314,8 +314,7 @@ export class PlanCommentController {
     if (raw.range && typeof raw.range === 'object') {
       range = raw.range;
     } else {
-      const line =
-        'line' in raw && typeof raw.line === 'number' ? raw.line : 0;
+      const line = 'line' in raw && typeof raw.line === 'number' ? raw.line : 0;
       range = {
         start: { line, character: 0 },
         end: { line, character: 0 },

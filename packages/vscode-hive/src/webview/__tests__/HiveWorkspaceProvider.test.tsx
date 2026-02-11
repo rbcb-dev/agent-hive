@@ -79,7 +79,10 @@ function makeThread(overrides: Partial<ReviewThread> = {}): ReviewThread {
     id: 'thread-1',
     entityId: 'entity-1',
     uri: 'file:///src/index.ts',
-    range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+    range: {
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 10 },
+    },
     status: 'open',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
@@ -279,7 +282,10 @@ describe('useHiveWorkspace', () => {
 
 describe('workspaceReducer — review thread state', () => {
   it('SET_REVIEW_THREADS replaces reviewThreads array', () => {
-    const threads = [makeThread({ id: 't-1' }), makeThread({ id: 't-2', status: 'resolved' })];
+    const threads = [
+      makeThread({ id: 't-1' }),
+      makeThread({ id: 't-2', status: 'resolved' }),
+    ];
     const state = workspaceReducer(mockInitialState, {
       type: 'SET_REVIEW_THREADS',
       threads,
@@ -362,8 +368,16 @@ describe('HiveWorkspaceActions — review thread actions', () => {
 describe('workspaceReducer — commit state', () => {
   it('SET_COMMITS replaces commits array', () => {
     const commits = [
-      { sha: 'abc1234', message: 'feat: add feature', timestamp: '2026-01-01T00:00:00Z' },
-      { sha: 'def5678', message: 'fix: bug fix', timestamp: '2026-01-02T00:00:00Z' },
+      {
+        sha: 'abc1234',
+        message: 'feat: add feature',
+        timestamp: '2026-01-01T00:00:00Z',
+      },
+      {
+        sha: 'def5678',
+        message: 'fix: bug fix',
+        timestamp: '2026-01-02T00:00:00Z',
+      },
     ];
     const state = workspaceReducer(mockInitialState, {
       type: 'SET_COMMITS',
@@ -376,15 +390,25 @@ describe('workspaceReducer — commit state', () => {
   });
 
   it('SET_COMMIT_DIFF sets commitDiff payload', () => {
-    const diffs = [{
-      baseRef: 'abc~1',
-      headRef: 'abc',
-      mergeBase: 'abc~1',
-      repoRoot: '/repo',
-      fileRoot: '/repo',
-      diffStats: { files: 1, insertions: 5, deletions: 2 },
-      files: [{ path: 'src/index.ts', status: 'M' as const, additions: 5, deletions: 2, hunks: [] }],
-    }];
+    const diffs = [
+      {
+        baseRef: 'abc~1',
+        headRef: 'abc',
+        mergeBase: 'abc~1',
+        repoRoot: '/repo',
+        fileRoot: '/repo',
+        diffStats: { files: 1, insertions: 5, deletions: 2 },
+        files: [
+          {
+            path: 'src/index.ts',
+            status: 'M' as const,
+            additions: 5,
+            deletions: 2,
+            hunks: [],
+          },
+        ],
+      },
+    ];
     const state = workspaceReducer(mockInitialState, {
       type: 'SET_COMMIT_DIFF',
       diffs,
@@ -397,15 +421,17 @@ describe('workspaceReducer — commit state', () => {
   it('SET_COMMIT_DIFF with null clears commitDiff', () => {
     const withDiff: HiveWorkspaceState = {
       ...mockInitialState,
-      commitDiff: [{
-        baseRef: 'a',
-        headRef: 'b',
-        mergeBase: 'a',
-        repoRoot: '/repo',
-        fileRoot: '/repo',
-        diffStats: { files: 0, insertions: 0, deletions: 0 },
-        files: [],
-      }],
+      commitDiff: [
+        {
+          baseRef: 'a',
+          headRef: 'b',
+          mergeBase: 'a',
+          repoRoot: '/repo',
+          fileRoot: '/repo',
+          diffStats: { files: 0, insertions: 0, deletions: 0 },
+          files: [],
+        },
+      ],
     };
     const state = workspaceReducer(withDiff, {
       type: 'SET_COMMIT_DIFF',
@@ -418,16 +444,20 @@ describe('workspaceReducer — commit state', () => {
   it('SELECT_FEATURE resets commits and commitDiff', () => {
     const withCommitState: HiveWorkspaceState = {
       ...mockInitialState,
-      commits: [{ sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' }],
-      commitDiff: [{
-        baseRef: 'a',
-        headRef: 'b',
-        mergeBase: 'a',
-        repoRoot: '/repo',
-        fileRoot: '/repo',
-        diffStats: { files: 0, insertions: 0, deletions: 0 },
-        files: [],
-      }],
+      commits: [
+        { sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' },
+      ],
+      commitDiff: [
+        {
+          baseRef: 'a',
+          headRef: 'b',
+          mergeBase: 'a',
+          repoRoot: '/repo',
+          fileRoot: '/repo',
+          diffStats: { files: 0, insertions: 0, deletions: 0 },
+          files: [],
+        },
+      ],
     };
     const state = workspaceReducer(withCommitState, {
       type: 'SELECT_FEATURE',
@@ -442,16 +472,20 @@ describe('workspaceReducer — commit state', () => {
     const withCommitState: HiveWorkspaceState = {
       ...mockInitialState,
       activeFeature: 'feature-one',
-      commits: [{ sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' }],
-      commitDiff: [{
-        baseRef: 'a',
-        headRef: 'b',
-        mergeBase: 'a',
-        repoRoot: '/repo',
-        fileRoot: '/repo',
-        diffStats: { files: 0, insertions: 0, deletions: 0 },
-        files: [],
-      }],
+      commits: [
+        { sha: 'abc', message: 'test', timestamp: '2026-01-01T00:00:00Z' },
+      ],
+      commitDiff: [
+        {
+          baseRef: 'a',
+          headRef: 'b',
+          mergeBase: 'a',
+          repoRoot: '/repo',
+          fileRoot: '/repo',
+          diffStats: { files: 0, insertions: 0, deletions: 0 },
+          files: [],
+        },
+      ],
     };
     const state = workspaceReducer(withCommitState, {
       type: 'SELECT_TASK',

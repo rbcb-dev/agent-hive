@@ -308,14 +308,20 @@ describe('FeatureService', () => {
         threads: [
           {
             id: 'c1',
-            range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+            range: {
+              start: { line: 1, character: 0 },
+              end: { line: 1, character: 0 },
+            },
             body: 'Comment 1',
             author: 'human',
             timestamp: '2025-01-01T00:00:00.000Z',
           },
           {
             id: 'c2',
-            range: { start: { line: 3, character: 0 }, end: { line: 3, character: 0 } },
+            range: {
+              start: { line: 3, character: 0 },
+              end: { line: 3, character: 0 },
+            },
             body: 'Comment 2',
             author: 'agent',
             timestamp: '2025-01-01T00:00:00.000Z',

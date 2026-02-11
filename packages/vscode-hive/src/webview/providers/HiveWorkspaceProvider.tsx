@@ -17,7 +17,15 @@ import React, {
   useReducer,
   useCallback,
 } from 'react';
-import type { FeatureInfo, DiffPayload, PlanComment, ReviewThread, ReviewSession, Range, TaskCommit } from 'hive-core';
+import type {
+  FeatureInfo,
+  DiffPayload,
+  PlanComment,
+  ReviewThread,
+  ReviewSession,
+  Range,
+  TaskCommit,
+} from 'hive-core';
 import { postMessage } from '../vscodeApi';
 
 // ---------------------------------------------------------------------------
@@ -71,12 +79,22 @@ export interface HiveWorkspaceActions {
   selectView: (view: HiveWorkspaceState['activeView']) => void;
   refreshFeatures: () => void;
   // Review thread actions
-  addThread: (entityId: string, uri: string, range: Range, body: string, type: string) => void;
+  addThread: (
+    entityId: string,
+    uri: string,
+    range: Range,
+    body: string,
+    type: string,
+  ) => void;
   replyToThread: (threadId: string, body: string) => void;
   resolveThread: (threadId: string) => void;
   unresolveThread: (threadId: string) => void;
   deleteThread: (threadId: string) => void;
-  editAnnotation: (threadId: string, annotationId: string, body: string) => void;
+  editAnnotation: (
+    threadId: string,
+    annotationId: string,
+    body: string,
+  ) => void;
   deleteAnnotation: (threadId: string, annotationId: string) => void;
 }
 
@@ -250,39 +268,40 @@ export function HiveWorkspaceProvider({
   }, [onRefreshFeatures]);
 
   const addThread = useCallback(
-    (entityId: string, uri: string, range: Range, body: string, annotationType: string) => {
-      postMessage({ type: 'addComment', entityId, uri, range, body, annotationType });
+    (
+      entityId: string,
+      uri: string,
+      range: Range,
+      body: string,
+      annotationType: string,
+    ) => {
+      postMessage({
+        type: 'addComment',
+        entityId,
+        uri,
+        range,
+        body,
+        annotationType,
+      });
     },
     [],
   );
 
-  const replyToThread = useCallback(
-    (threadId: string, body: string) => {
-      postMessage({ type: 'reply', threadId, body });
-    },
-    [],
-  );
+  const replyToThread = useCallback((threadId: string, body: string) => {
+    postMessage({ type: 'reply', threadId, body });
+  }, []);
 
-  const resolveThread = useCallback(
-    (threadId: string) => {
-      postMessage({ type: 'resolve', threadId });
-    },
-    [],
-  );
+  const resolveThread = useCallback((threadId: string) => {
+    postMessage({ type: 'resolve', threadId });
+  }, []);
 
-  const unresolveThread = useCallback(
-    (threadId: string) => {
-      postMessage({ type: 'unresolve', threadId });
-    },
-    [],
-  );
+  const unresolveThread = useCallback((threadId: string) => {
+    postMessage({ type: 'unresolve', threadId });
+  }, []);
 
-  const deleteThread = useCallback(
-    (threadId: string) => {
-      postMessage({ type: 'deleteThread', threadId });
-    },
-    [],
-  );
+  const deleteThread = useCallback((threadId: string) => {
+    postMessage({ type: 'deleteThread', threadId });
+  }, []);
 
   const editAnnotation = useCallback(
     (threadId: string, annotationId: string, body: string) => {

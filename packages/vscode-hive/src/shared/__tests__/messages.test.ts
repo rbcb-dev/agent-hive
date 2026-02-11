@@ -245,7 +245,10 @@ describe('shared message protocol types', () => {
     const msg: WebviewToExtensionMessage = {
       type: 'addPlanComment',
       feature: 'feat',
-      range: { start: { line: 5, character: 0 }, end: { line: 5, character: 10 } },
+      range: {
+        start: { line: 5, character: 0 },
+        end: { line: 5, character: 10 },
+      },
       body: 'comment text',
     };
     expect(msg.type).toBe('addPlanComment');
@@ -281,33 +284,60 @@ describe('shared message protocol types', () => {
     // If a new variant is added to the union but not here, TypeScript will error.
     function assertExhaustive(msg: WebviewToExtensionMessage): string {
       switch (msg.type) {
-        case 'ready': return 'ready';
-        case 'addComment': return 'addComment';
-        case 'reply': return 'reply';
-        case 'resolve': return 'resolve';
-        case 'unresolve': return 'unresolve';
-        case 'deleteThread': return 'deleteThread';
-        case 'editComment': return 'editComment';
-        case 'deleteComment': return 'deleteComment';
-        case 'applySuggestion': return 'applySuggestion';
-        case 'submit': return 'submit';
-        case 'selectFile': return 'selectFile';
-        case 'selectThread': return 'selectThread';
-        case 'changeScope': return 'changeScope';
-        case 'requestFile': return 'requestFile';
-        case 'requestFeatures': return 'requestFeatures';
-        case 'requestFeatureDiffs': return 'requestFeatureDiffs';
-        case 'requestTaskDiff': return 'requestTaskDiff';
-        case 'requestPlanContent': return 'requestPlanContent';
-        case 'requestContextContent': return 'requestContextContent';
-        case 'addPlanComment': return 'addPlanComment';
-        case 'resolvePlanComment': return 'resolvePlanComment';
-        case 'replyToPlanComment': return 'replyToPlanComment';
-        case 'unresolvePlanComment': return 'unresolvePlanComment';
-        case 'deletePlanComment': return 'deletePlanComment';
-        case 'editPlanComment': return 'editPlanComment';
-        case 'requestCommitHistory': return 'requestCommitHistory';
-        case 'requestCommitDiff': return 'requestCommitDiff';
+        case 'ready':
+          return 'ready';
+        case 'addComment':
+          return 'addComment';
+        case 'reply':
+          return 'reply';
+        case 'resolve':
+          return 'resolve';
+        case 'unresolve':
+          return 'unresolve';
+        case 'deleteThread':
+          return 'deleteThread';
+        case 'editComment':
+          return 'editComment';
+        case 'deleteComment':
+          return 'deleteComment';
+        case 'applySuggestion':
+          return 'applySuggestion';
+        case 'submit':
+          return 'submit';
+        case 'selectFile':
+          return 'selectFile';
+        case 'selectThread':
+          return 'selectThread';
+        case 'changeScope':
+          return 'changeScope';
+        case 'requestFile':
+          return 'requestFile';
+        case 'requestFeatures':
+          return 'requestFeatures';
+        case 'requestFeatureDiffs':
+          return 'requestFeatureDiffs';
+        case 'requestTaskDiff':
+          return 'requestTaskDiff';
+        case 'requestPlanContent':
+          return 'requestPlanContent';
+        case 'requestContextContent':
+          return 'requestContextContent';
+        case 'addPlanComment':
+          return 'addPlanComment';
+        case 'resolvePlanComment':
+          return 'resolvePlanComment';
+        case 'replyToPlanComment':
+          return 'replyToPlanComment';
+        case 'unresolvePlanComment':
+          return 'unresolvePlanComment';
+        case 'deletePlanComment':
+          return 'deletePlanComment';
+        case 'editPlanComment':
+          return 'editPlanComment';
+        case 'requestCommitHistory':
+          return 'requestCommitHistory';
+        case 'requestCommitDiff':
+          return 'requestCommitDiff';
         default: {
           const _exhaustiveCheck: never = msg;
           return _exhaustiveCheck;
@@ -321,21 +351,36 @@ describe('shared message protocol types', () => {
   it('type exhaustiveness: every ExtensionToWebviewMessage type has a handler case', () => {
     function assertExhaustive(msg: ExtensionToWebviewMessage): string {
       switch (msg.type) {
-        case 'sessionData': return 'sessionData';
-        case 'sessionUpdate': return 'sessionUpdate';
-        case 'error': return 'error';
-        case 'scopeChanged': return 'scopeChanged';
-        case 'fileContent': return 'fileContent';
-        case 'fileError': return 'fileError';
-        case 'suggestionApplied': return 'suggestionApplied';
-        case 'featuresData': return 'featuresData';
-        case 'featureDiffs': return 'featureDiffs';
-        case 'taskDiff': return 'taskDiff';
-        case 'planContent': return 'planContent';
-        case 'contextContent': return 'contextContent';
-        case 'commitHistory': return 'commitHistory';
-        case 'commitDiff': return 'commitDiff';
-        case 'reviewThreadsUpdate': return 'reviewThreadsUpdate';
+        case 'sessionData':
+          return 'sessionData';
+        case 'sessionUpdate':
+          return 'sessionUpdate';
+        case 'error':
+          return 'error';
+        case 'scopeChanged':
+          return 'scopeChanged';
+        case 'fileContent':
+          return 'fileContent';
+        case 'fileError':
+          return 'fileError';
+        case 'suggestionApplied':
+          return 'suggestionApplied';
+        case 'featuresData':
+          return 'featuresData';
+        case 'featureDiffs':
+          return 'featureDiffs';
+        case 'taskDiff':
+          return 'taskDiff';
+        case 'planContent':
+          return 'planContent';
+        case 'contextContent':
+          return 'contextContent';
+        case 'commitHistory':
+          return 'commitHistory';
+        case 'commitDiff':
+          return 'commitDiff';
+        case 'reviewThreadsUpdate':
+          return 'reviewThreadsUpdate';
         default: {
           const _exhaustiveCheck: never = msg;
           return _exhaustiveCheck;

@@ -335,7 +335,11 @@ export class ReviewService {
 
     // Fire callback after unresolve completes (fire-and-forget)
     try {
-      this.onReviewThreadUnresolved?.(session.featureName, session.id, threadId);
+      this.onReviewThreadUnresolved?.(
+        session.featureName,
+        session.id,
+        threadId,
+      );
     } catch {
       // fire-and-forget: swallow errors
     }

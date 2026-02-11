@@ -132,7 +132,10 @@ describe('PlanService', () => {
       writePlan(feature, '# Plan');
 
       const comment = service.addComment(feature, {
-        range: { start: { line: 3, character: 0 }, end: { line: 3, character: 0 } },
+        range: {
+          start: { line: 3, character: 0 },
+          end: { line: 3, character: 0 },
+        },
         body: 'Needs more detail',
         author: 'human',
       });
@@ -155,12 +158,18 @@ describe('PlanService', () => {
       writePlan(feature, '# Plan');
 
       service.addComment(feature, {
-        range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+        range: {
+          start: { line: 1, character: 0 },
+          end: { line: 1, character: 0 },
+        },
         body: 'First comment',
         author: 'human',
       });
       service.addComment(feature, {
-        range: { start: { line: 5, character: 0 }, end: { line: 5, character: 0 } },
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 0 },
+        },
         body: 'Second comment',
         author: 'agent',
       });
@@ -489,7 +498,10 @@ describe('PlanService', () => {
       };
 
       service.addComment(feature, {
-        range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+        range: {
+          start: { line: 1, character: 0 },
+          end: { line: 1, character: 0 },
+        },
         body: 'A comment',
         author: 'human',
       });
@@ -564,7 +576,10 @@ describe('PlanService', () => {
       // No callbacks set — should not throw
       expect(() => {
         service.addComment(feature, {
-          range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+          range: {
+            start: { line: 1, character: 0 },
+            end: { line: 1, character: 0 },
+          },
           body: 'Comment',
           author: 'human',
         });
@@ -1062,9 +1077,9 @@ describe('PlanService', () => {
 
       writeComments(feature, { threads: [] });
 
-      expect(() =>
-        service.deleteReply(feature, 'nonexistent', 'r1'),
-      ).toThrow(/comment.*not found/i);
+      expect(() => service.deleteReply(feature, 'nonexistent', 'r1')).toThrow(
+        /comment.*not found/i,
+      );
     });
 
     it('throws when reply id does not exist', () => {
@@ -1088,9 +1103,9 @@ describe('PlanService', () => {
         ],
       });
 
-      expect(() =>
-        service.deleteReply(feature, 'c1', 'nonexistent'),
-      ).toThrow(/reply.*not found/i);
+      expect(() => service.deleteReply(feature, 'c1', 'nonexistent')).toThrow(
+        /reply.*not found/i,
+      );
     });
 
     it('fires onReplyDeleted callback', () => {
@@ -1168,7 +1183,9 @@ describe('PlanService', () => {
       expect(comment.range.end.line).toBe(2);
       expect(comment.range.end.character).toBe(12);
       // 'line' property should no longer exist
-      expect((comment as unknown as Record<string, unknown>).line).toBeUndefined();
+      expect(
+        (comment as unknown as Record<string, unknown>).line,
+      ).toBeUndefined();
     });
 
     it('getComments returns comments with range anchors', () => {
@@ -1192,7 +1209,9 @@ describe('PlanService', () => {
       const comments = service.getComments(feature);
       expect(comments).toHaveLength(1);
       expect(comments[0].range).toEqual(range);
-      expect((comments[0] as unknown as Record<string, unknown>).line).toBeUndefined();
+      expect(
+        (comments[0] as unknown as Record<string, unknown>).line,
+      ).toBeUndefined();
     });
 
     it('resolveComment works with range-based comments', () => {
@@ -1263,7 +1282,9 @@ describe('PlanService', () => {
         start: { line: 5, character: 0 },
         end: { line: 5, character: 0 },
       });
-      expect((comments[0] as unknown as Record<string, unknown>).line).toBeUndefined();
+      expect(
+        (comments[0] as unknown as Record<string, unknown>).line,
+      ).toBeUndefined();
     });
 
     it('approval blocks on unresolved range-based comments', () => {

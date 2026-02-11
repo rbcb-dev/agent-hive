@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseDiffContent, mapFileStatus, mergeDetailedWithParsed } from '../../shared/diffUtils';
+import {
+  parseDiffContent,
+  mapFileStatus,
+  mergeDetailedWithParsed,
+} from '../../shared/diffUtils';
 import type { TaskChangedFile, DiffFile } from 'hive-core';
 
 describe('diffUtils', () => {
@@ -200,11 +204,19 @@ index abc..def 100644
           status: 'A',
           additions: 3,
           deletions: 0,
-          hunks: [{ oldStart: 0, oldLines: 0, newStart: 1, newLines: 3, lines: [
-            { type: 'add', content: 'line1' },
-            { type: 'add', content: 'line2' },
-            { type: 'add', content: 'line3' },
-          ]}],
+          hunks: [
+            {
+              oldStart: 0,
+              oldLines: 0,
+              newStart: 1,
+              newLines: 3,
+              lines: [
+                { type: 'add', content: 'line1' },
+                { type: 'add', content: 'line2' },
+                { type: 'add', content: 'line3' },
+              ],
+            },
+          ],
         },
       ];
 
@@ -216,7 +228,12 @@ index abc..def 100644
 
     it('uses detailed stats (insertions/deletions) over parsed counts', () => {
       const detailed: TaskChangedFile[] = [
-        { path: 'src/file.ts', status: 'modified', insertions: 10, deletions: 5 },
+        {
+          path: 'src/file.ts',
+          status: 'modified',
+          insertions: 10,
+          deletions: 5,
+        },
       ];
       const parsed: DiffFile[] = [
         {
@@ -224,27 +241,46 @@ index abc..def 100644
           status: 'M',
           additions: 8, // different from detailed
           deletions: 4, // different from detailed
-          hunks: [{ oldStart: 1, oldLines: 5, newStart: 1, newLines: 10, lines: [] }],
+          hunks: [
+            { oldStart: 1, oldLines: 5, newStart: 1, newLines: 10, lines: [] },
+          ],
         },
       ];
 
       const result = mergeDetailedWithParsed(detailed, parsed);
       expect(result[0].additions).toBe(10); // from detailed
-      expect(result[0].deletions).toBe(5);  // from detailed
+      expect(result[0].deletions).toBe(5); // from detailed
     });
 
     it('attaches hunks from parsed to matching detailed file', () => {
       const hunks = [
-        { oldStart: 1, oldLines: 3, newStart: 1, newLines: 4, lines: [
-          { type: 'context' as const, content: 'unchanged' },
-          { type: 'add' as const, content: 'new' },
-        ]},
+        {
+          oldStart: 1,
+          oldLines: 3,
+          newStart: 1,
+          newLines: 4,
+          lines: [
+            { type: 'context' as const, content: 'unchanged' },
+            { type: 'add' as const, content: 'new' },
+          ],
+        },
       ];
       const detailed: TaskChangedFile[] = [
-        { path: 'src/index.ts', status: 'modified', insertions: 1, deletions: 0 },
+        {
+          path: 'src/index.ts',
+          status: 'modified',
+          insertions: 1,
+          deletions: 0,
+        },
       ];
       const parsed: DiffFile[] = [
-        { path: 'src/index.ts', status: 'M', additions: 1, deletions: 0, hunks },
+        {
+          path: 'src/index.ts',
+          status: 'M',
+          additions: 1,
+          deletions: 0,
+          hunks,
+        },
       ];
 
       const result = mergeDetailedWithParsed(detailed, parsed);
@@ -253,7 +289,12 @@ index abc..def 100644
 
     it('produces file with empty hunks when no parsed match exists', () => {
       const detailed: TaskChangedFile[] = [
-        { path: 'src/orphan.ts', status: 'modified', insertions: 1, deletions: 0 },
+        {
+          path: 'src/orphan.ts',
+          status: 'modified',
+          insertions: 1,
+          deletions: 0,
+        },
       ];
       const parsed: DiffFile[] = []; // no match
 
@@ -271,17 +312,43 @@ index abc..def 100644
         { path: 'c.ts', status: 'modified', insertions: 1, deletions: 1 },
       ];
       const parsed: DiffFile[] = [
-        { path: 'a.ts', status: 'A', additions: 2, deletions: 0, hunks: [
-          { oldStart: 0, oldLines: 0, newStart: 1, newLines: 2, lines: [
-            { type: 'add', content: 'x' }, { type: 'add', content: 'y' },
-          ]},
-        ]},
+        {
+          path: 'a.ts',
+          status: 'A',
+          additions: 2,
+          deletions: 0,
+          hunks: [
+            {
+              oldStart: 0,
+              oldLines: 0,
+              newStart: 1,
+              newLines: 2,
+              lines: [
+                { type: 'add', content: 'x' },
+                { type: 'add', content: 'y' },
+              ],
+            },
+          ],
+        },
         // b.ts not in parsed (maybe binary or no content)
-        { path: 'c.ts', status: 'M', additions: 1, deletions: 1, hunks: [
-          { oldStart: 1, oldLines: 2, newStart: 1, newLines: 2, lines: [
-            { type: 'remove', content: 'old' }, { type: 'add', content: 'new' },
-          ]},
-        ]},
+        {
+          path: 'c.ts',
+          status: 'M',
+          additions: 1,
+          deletions: 1,
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 2,
+              newStart: 1,
+              newLines: 2,
+              lines: [
+                { type: 'remove', content: 'old' },
+                { type: 'add', content: 'new' },
+              ],
+            },
+          ],
+        },
       ];
 
       const result = mergeDetailedWithParsed(detailed, parsed);
@@ -296,10 +363,22 @@ index abc..def 100644
 
     it('handles renamed files with oldPath', () => {
       const detailed: TaskChangedFile[] = [
-        { path: 'src/newName.ts', status: 'renamed', insertions: 0, deletions: 0, oldPath: 'src/oldName.ts' },
+        {
+          path: 'src/newName.ts',
+          status: 'renamed',
+          insertions: 0,
+          deletions: 0,
+          oldPath: 'src/oldName.ts',
+        },
       ];
       const parsed: DiffFile[] = [
-        { path: 'src/newName.ts', status: 'R', additions: 0, deletions: 0, hunks: [] },
+        {
+          path: 'src/newName.ts',
+          status: 'R',
+          additions: 0,
+          deletions: 0,
+          hunks: [],
+        },
       ];
 
       const result = mergeDetailedWithParsed(detailed, parsed);

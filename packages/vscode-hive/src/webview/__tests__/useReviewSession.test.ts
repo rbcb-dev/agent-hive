@@ -9,9 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-import type {
-  ExtensionToWebviewMessage,
-} from '../types';
+import type { ExtensionToWebviewMessage } from '../types';
 import type { ReviewSession } from 'hive-core';
 
 // Mock vscodeApi

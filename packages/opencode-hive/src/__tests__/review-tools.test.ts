@@ -74,7 +74,11 @@ describe('review tools: hive_review_unresolve', () => {
       'test-entity',
       null,
       { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      { type: 'comment', body: 'Test comment', author: { type: 'human', name: 'Tester' } },
+      {
+        type: 'comment',
+        body: 'Test comment',
+        author: { type: 'human', name: 'Tester' },
+      },
     );
     await reviewService.resolveThread(thread.id);
 
@@ -124,7 +128,11 @@ describe('review tools: hive_review_delete_thread', () => {
       'test-entity',
       null,
       { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      { type: 'comment', body: 'To delete', author: { type: 'human', name: 'Tester' } },
+      {
+        type: 'comment',
+        body: 'To delete',
+        author: { type: 'human', name: 'Tester' },
+      },
     );
 
     const result = await tools.hive_review_delete_thread.execute(
@@ -173,7 +181,11 @@ describe('review tools: hive_review_edit', () => {
       'test-entity',
       null,
       { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      { type: 'comment', body: 'Original body', author: { type: 'human', name: 'Tester' } },
+      {
+        type: 'comment',
+        body: 'Original body',
+        author: { type: 'human', name: 'Tester' },
+      },
     );
     const annotationId = thread.annotations[0].id;
 
@@ -194,7 +206,11 @@ describe('review tools: hive_review_edit', () => {
       'test-entity',
       null,
       { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      { type: 'comment', body: 'body', author: { type: 'human', name: 'Tester' } },
+      {
+        type: 'comment',
+        body: 'body',
+        author: { type: 'human', name: 'Tester' },
+      },
     );
 
     const result = await tools.hive_review_edit.execute(
@@ -256,7 +272,11 @@ describe('review tools: hive_review_mark_applied', () => {
       'test-entity',
       null,
       { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      { type: 'comment', body: 'Not a suggestion', author: { type: 'human', name: 'Tester' } },
+      {
+        type: 'comment',
+        body: 'Not a suggestion',
+        author: { type: 'human', name: 'Tester' },
+      },
     );
     const annotationId = thread.annotations[0].id;
 
@@ -280,7 +300,12 @@ describe('review tools: hive_plan_comment_resolve', () => {
     reviewService = new ReviewService(TEST_DIR);
     planService = new PlanService(TEST_DIR);
     const resolveFeature = (explicit?: string) => explicit || 'test-feature';
-    tools = createReviewTools(reviewService, resolveFeature, DEFAULT_REVIEW_CONFIG, planService);
+    tools = createReviewTools(
+      reviewService,
+      resolveFeature,
+      DEFAULT_REVIEW_CONFIG,
+      planService,
+    );
     setupFeature('test-feature');
     writePlan('test-feature', '# Test Plan\n\nSome content');
   });
@@ -292,7 +317,10 @@ describe('review tools: hive_plan_comment_resolve', () => {
   test('resolves an unresolved plan comment', async () => {
     // Add a comment
     const comment = planService.addComment('test-feature', {
-      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+      range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+      },
       body: 'Please fix this',
       author: 'human',
     });
@@ -330,7 +358,12 @@ describe('review tools: hive_plan_comment_reply', () => {
     reviewService = new ReviewService(TEST_DIR);
     planService = new PlanService(TEST_DIR);
     const resolveFeature = (explicit?: string) => explicit || 'test-feature';
-    tools = createReviewTools(reviewService, resolveFeature, DEFAULT_REVIEW_CONFIG, planService);
+    tools = createReviewTools(
+      reviewService,
+      resolveFeature,
+      DEFAULT_REVIEW_CONFIG,
+      planService,
+    );
     setupFeature('test-feature');
     writePlan('test-feature', '# Test Plan\n\nSome content');
   });
@@ -341,13 +374,20 @@ describe('review tools: hive_plan_comment_reply', () => {
 
   test('replies to a plan comment', async () => {
     const comment = planService.addComment('test-feature', {
-      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+      range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+      },
       body: 'What about X?',
       author: 'human',
     });
 
     const result = await tools.hive_plan_comment_reply.execute(
-      { feature: 'test-feature', commentId: comment.id, body: 'Good point, addressed.' },
+      {
+        feature: 'test-feature',
+        commentId: comment.id,
+        body: 'Good point, addressed.',
+      },
       {} as any,
     );
 
@@ -383,7 +423,11 @@ describe('review tools: config wiring', () => {
     };
 
     // This should not throw — confirms config parameter is accepted
-    const tools = createReviewTools(reviewService, resolveFeature, customConfig);
+    const tools = createReviewTools(
+      reviewService,
+      resolveFeature,
+      customConfig,
+    );
     expect(tools.hive_review_start).toBeDefined();
     expect(tools.hive_review_unresolve).toBeDefined();
     expect(tools.hive_review_delete_thread).toBeDefined();

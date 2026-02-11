@@ -5,12 +5,19 @@
  * to real hunks, file statuses, and per-file stats.
  */
 
-import type { DiffFile, DiffHunk, DiffHunkLine, TaskChangedFile } from 'hive-core';
+import type {
+  DiffFile,
+  DiffHunk,
+  DiffHunkLine,
+  TaskChangedFile,
+} from 'hive-core';
 
 /**
  * Map TaskChangedFile.status (word form) to DiffFile.status (git letter code).
  */
-export function mapFileStatus(status: TaskChangedFile['status']): DiffFile['status'] {
+export function mapFileStatus(
+  status: TaskChangedFile['status'],
+): DiffFile['status'] {
   switch (status) {
     case 'added':
       return 'A';
@@ -90,7 +97,10 @@ export function parseDiffContent(diffContent: string): DiffFile[] {
         status = 'A';
       } else if (line.startsWith('deleted file mode')) {
         status = 'D';
-      } else if (line.startsWith('rename from') || line.startsWith('similarity index')) {
+      } else if (
+        line.startsWith('rename from') ||
+        line.startsWith('similarity index')
+      ) {
         status = 'R';
       } else if (line.startsWith('Binary files')) {
         isBinary = true;

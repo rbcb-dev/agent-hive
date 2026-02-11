@@ -358,17 +358,14 @@ export function PlanReview({
   );
 
   // Mouse selection handlers
-  const handleMouseDown = useCallback(
-    (lineNumber: number) => {
-      setIsSelecting(true);
-      setSelectionStart(lineNumber);
-      setSelectionEnd(lineNumber);
-      setPendingRange(null);
-      setCommentingLine(null);
-      setExpandedLine(null);
-    },
-    [],
-  );
+  const handleMouseDown = useCallback((lineNumber: number) => {
+    setIsSelecting(true);
+    setSelectionStart(lineNumber);
+    setSelectionEnd(lineNumber);
+    setPendingRange(null);
+    setCommentingLine(null);
+    setExpandedLine(null);
+  }, []);
 
   const handleMouseEnter = useCallback(
     (lineNumber: number) => {
@@ -482,7 +479,9 @@ export function PlanReview({
                       aria-label={`${lineComments.length} comment${lineComments.length > 1 ? 's' : ''} on line ${lineNumber}`}
                       aria-expanded={isExpanded}
                     >
-                      {lineComments.length > 1 ? lineComments.length : '\uD83D\uDCAC'}
+                      {lineComments.length > 1
+                        ? lineComments.length
+                        : '\uD83D\uDCAC'}
                     </button>
                   ) : null}
                 </span>
@@ -501,8 +500,8 @@ export function PlanReview({
 
               {/* "Add Comment" button after selection ends on this line */}
               {pendingRange &&
-                lineNumber === pendingRange.endLine &&
-                !isCommenting ? (
+              lineNumber === pendingRange.endLine &&
+              !isCommenting ? (
                 <div className="plan-selection-actions">
                   <button
                     type="button"
@@ -537,7 +536,9 @@ export function PlanReview({
               ) : null}
 
               {/* New comment input (from range selection) */}
-              {isCommenting && pendingRange && lineNumber === pendingRange.startLine ? (
+              {isCommenting &&
+              pendingRange &&
+              lineNumber === pendingRange.startLine ? (
                 <div className="plan-comment-container">
                   <CommentInput
                     onSubmit={handleAddRangeComment}

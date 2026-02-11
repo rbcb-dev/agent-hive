@@ -74,7 +74,10 @@ export interface ReviewThreadCreatedPayload {
   sessionId: string;
   threadId: string;
   uri: string | null;
-  range: { start: { line: number; character: number }; end: { line: number; character: number } };
+  range: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
 }
 
 export interface ReviewThreadUnresolvedPayload {

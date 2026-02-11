@@ -685,9 +685,7 @@ describe('ThreadView', () => {
       });
       fireEvent.click(editButtons[0]);
 
-      fireEvent.click(
-        screen.getByRole('button', { name: /cancel edit/i }),
-      );
+      fireEvent.click(screen.getByRole('button', { name: /cancel edit/i }));
 
       // Original body should be visible again (not textarea)
       expect(

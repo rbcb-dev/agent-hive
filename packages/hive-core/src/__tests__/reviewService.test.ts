@@ -31,11 +31,12 @@ const testRange: Range = {
   end: { line: 15, character: 0 },
 };
 
-const testAnnotation: Omit<ReviewAnnotation, 'id' | 'createdAt' | 'updatedAt'> = {
-  type: 'comment',
-  body: 'Test comment body',
-  author: { type: 'human', name: 'tester' },
-};
+const testAnnotation: Omit<ReviewAnnotation, 'id' | 'createdAt' | 'updatedAt'> =
+  {
+    type: 'comment',
+    body: 'Test comment body',
+    author: { type: 'human', name: 'tester' },
+  };
 
 describe('ReviewService', () => {
   let service: ReviewService;

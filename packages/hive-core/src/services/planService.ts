@@ -346,11 +346,7 @@ export class PlanService {
     }
   }
 
-  editComment(
-    featureName: string,
-    commentId: string,
-    newBody: string,
-  ): void {
+  editComment(featureName: string, commentId: string, newBody: string): void {
     const commentsPath = getCommentsPath(this.projectRoot, featureName);
     const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
 
@@ -402,11 +398,7 @@ export class PlanService {
     }
   }
 
-  deleteReply(
-    featureName: string,
-    commentId: string,
-    replyId: string,
-  ): void {
+  deleteReply(featureName: string, commentId: string, replyId: string): void {
     const commentsPath = getCommentsPath(this.projectRoot, featureName);
     const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
 
