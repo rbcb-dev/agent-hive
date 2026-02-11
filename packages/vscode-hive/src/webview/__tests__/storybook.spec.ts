@@ -24,7 +24,7 @@ import { composeStories } from '@storybook/react';
 import { render } from '@testing-library/react';
 import { createElement } from 'react';
 
-// Import story modules
+// Import story modules — runtime components
 import * as ScopeTabsStories from '../components/ScopeTabs.stories';
 import * as ThreadListStories from '../components/ThreadList.stories';
 import * as ThreadPanelStories from '../components/ThreadPanel.stories';
@@ -36,9 +36,29 @@ import * as DiffViewerStories from '../components/DiffViewer.stories';
 import * as MarkdownViewerStories from '../components/MarkdownViewer.stories';
 import * as SuggestionPreviewStories from '../components/SuggestionPreview.stories';
 import * as AppStories from '../App.stories';
+// Import story modules — sidebar + integrated layout
+import * as FeatureSidebarStories from '../components/FeatureSidebar/FeatureSidebar.stories';
+import * as HivePanelStories from '../components/HivePanel.stories';
+import * as HiveWorkspaceProviderStories from '../providers/HiveWorkspaceProvider.stories';
+// Import story modules — primitives
+import * as AlertStories from '../primitives/Alert.stories';
+import * as ButtonStories from '../primitives/Button.stories';
+import * as CardStories from '../primitives/Card.stories';
+import * as CollapseStories from '../primitives/Collapse.stories';
+import * as FlexStories from '../primitives/Flex.stories';
+import * as LayoutStories from '../primitives/Layout.stories';
+import * as RadioGroupStories from '../primitives/RadioGroup.stories';
+import * as SegmentedStories from '../primitives/Segmented.stories';
+import * as SpaceStories from '../primitives/Space.stories';
+import * as TabsStories from '../primitives/Tabs.stories';
+import * as TextAreaStories from '../primitives/TextArea.stories';
+import * as TreeStories from '../primitives/Tree.stories';
+import * as TypographyStories from '../primitives/Typography.stories';
+import * as VirtualListStories from '../primitives/VirtualList.stories';
 
 // Compose stories from each module — applies all annotations (story, meta, project)
 const storyModules = {
+  // Runtime components
   ScopeTabs: composeStories(ScopeTabsStories),
   ThreadList: composeStories(ThreadListStories),
   ThreadPanel: composeStories(ThreadPanelStories),
@@ -50,6 +70,25 @@ const storyModules = {
   MarkdownViewer: composeStories(MarkdownViewerStories),
   SuggestionPreview: composeStories(SuggestionPreviewStories),
   App: composeStories(AppStories),
+  // Sidebar + integrated layout
+  FeatureSidebar: composeStories(FeatureSidebarStories),
+  HivePanel: composeStories(HivePanelStories),
+  HiveWorkspaceProvider: composeStories(HiveWorkspaceProviderStories),
+  // Primitives
+  Alert: composeStories(AlertStories),
+  Button: composeStories(ButtonStories),
+  Card: composeStories(CardStories),
+  Collapse: composeStories(CollapseStories),
+  Flex: composeStories(FlexStories),
+  Layout: composeStories(LayoutStories),
+  RadioGroup: composeStories(RadioGroupStories),
+  Segmented: composeStories(SegmentedStories),
+  Space: composeStories(SpaceStories),
+  Tabs: composeStories(TabsStories),
+  TextArea: composeStories(TextAreaStories),
+  Tree: composeStories(TreeStories),
+  Typography: composeStories(TypographyStories),
+  VirtualList: composeStories(VirtualListStories),
 };
 
 /**
@@ -98,6 +137,26 @@ const JSDOM_INCOMPATIBLE_PLAY: Set<string> = new Set([
   // App: workspace mode stories rely on HivePanel/HiveWorkspaceProvider + antd Layout in jsdom
   'App/WithSidebar',
   'App/EndToEndFlow',
+  // FeatureSidebar: antd Tree interaction + navigation in jsdom
+  'FeatureSidebar/NavigateFeatureToTask',
+  'FeatureSidebar/DuplicateFileAcrossTasks',
+  'FeatureSidebar/AccessibilityCheck',
+  // HivePanel: antd Layout + sidebar/content navigation in jsdom
+  'HivePanel/FullNavigationFlow',
+  'HivePanel/SidebarCollapse',
+  // HivePanel: WithDiffView play uses getByText('src/auth/jwt.ts') which finds
+  // duplicates in jsdom (sidebar tree + content area both render the path)
+  'HivePanel/WithDiffView',
+  // Primitive Tree: antd Tree selection interaction
+  'Tree/SelectionInteraction',
+  // Primitive Collapse: antd Collapse panel toggle
+  'Collapse/PanelToggle',
+  // Primitive Tabs: antd Tabs switch interaction
+  'Tabs/TabSwitchInteraction',
+  // Primitive RadioGroup: antd Radio group selection
+  'RadioGroup/SelectionInteraction',
+  // Primitive Segmented: antd Segmented selection
+  'Segmented/SelectionInteraction',
 ]);
 
 // Generate tests for each composed story
