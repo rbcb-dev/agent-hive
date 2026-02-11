@@ -11,11 +11,17 @@
  * - hive_review_suggest: Add a suggestion with replacement
  * - hive_review_reply: Reply to an existing thread
  * - hive_review_resolve: Resolve a thread
+ * - hive_review_unresolve: Unresolve a thread
+ * - hive_review_delete_thread: Delete a thread from a session
+ * - hive_review_edit: Edit an annotation's body
+ * - hive_review_mark_applied: Mark a suggestion as applied
  * - hive_review_submit: Submit review with verdict
+ * - hive_plan_comment_resolve: Resolve a plan comment
+ * - hive_plan_comment_reply: Reply to a plan comment
  */
 
 import { tool, type ToolDefinition } from '@opencode-ai/plugin';
-import type { ReviewService } from 'hive-core';
+import type { ReviewService, PlanService } from 'hive-core';
 import type {
   ReviewScope,
   ReviewVerdict,
@@ -43,11 +49,13 @@ export interface ReviewToolsOptions {
  * @param reviewService - The ReviewService instance for review lifecycle
  * @param resolveFeature - Function to resolve feature name
  * @param reviewConfig - Optional review configuration (defaults to DEFAULT_REVIEW_CONFIG)
+ * @param planService - Optional PlanService instance for plan comment tools
  */
 export function createReviewTools(
   reviewService: ReviewService,
   resolveFeature: (explicit?: string) => string | null,
   reviewConfig: ReviewConfig = DEFAULT_REVIEW_CONFIG,
+  planService?: PlanService,
 ): {
   hive_review_start: ToolDefinition;
   hive_review_list: ToolDefinition;
@@ -56,7 +64,13 @@ export function createReviewTools(
   hive_review_suggest: ToolDefinition;
   hive_review_reply: ToolDefinition;
   hive_review_resolve: ToolDefinition;
+  hive_review_unresolve: ToolDefinition;
+  hive_review_delete_thread: ToolDefinition;
+  hive_review_edit: ToolDefinition;
+  hive_review_mark_applied: ToolDefinition;
   hive_review_submit: ToolDefinition;
+  hive_plan_comment_resolve: ToolDefinition;
+  hive_plan_comment_reply: ToolDefinition;
 } {
   /**
    * Get active session ID for a feature.
@@ -475,6 +489,175 @@ export function createReviewTools(
           return JSON.stringify(session, null, 2);
         } catch (error) {
           return `Error: ${error instanceof Error ? error.message : 'Failed to submit review'}`;
+        }
+      },
+    }),
+
+    /**
+     * Unresolve a thread — sets status back to 'open'.
+     */
+    hive_review_unresolve: tool({
+      description: 'Reopen a resolved review thread (set status back to open)',
+      args: {
+        threadId: tool.schema.string().describe('Thread ID to unresolve'),
+      },
+      async execute({ threadId }): Promise<string> {
+        try {
+          const thread = await reviewService.unresolveThread(threadId);
+          return JSON.stringify(thread, null, 2);
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Thread not found'}`;
+        }
+      },
+    }),
+
+    /**
+     * Delete a thread from a session.
+     */
+    hive_review_delete_thread: tool({
+      description: 'Delete a review thread from a session',
+      args: {
+        sessionId: tool.schema.string().describe('Review session ID'),
+        threadId: tool.schema.string().describe('Thread ID to delete'),
+      },
+      async execute({ sessionId, threadId }): Promise<string> {
+        try {
+          await reviewService.deleteThread(sessionId, threadId);
+          return JSON.stringify(
+            { deleted: true, sessionId, threadId },
+            null,
+            2,
+          );
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Failed to delete thread'}`;
+        }
+      },
+    }),
+
+    /**
+     * Edit an annotation's body.
+     */
+    hive_review_edit: tool({
+      description: "Edit a review annotation's body text",
+      args: {
+        threadId: tool.schema
+          .string()
+          .describe('Thread ID containing the annotation'),
+        annotationId: tool.schema
+          .string()
+          .describe('Annotation ID to edit'),
+        body: tool.schema.string().describe('New annotation body'),
+      },
+      async execute({ threadId, annotationId, body }): Promise<string> {
+        try {
+          const annotation = await reviewService.editAnnotation(
+            threadId,
+            annotationId,
+            body,
+          );
+          return JSON.stringify(annotation, null, 2);
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Failed to edit annotation'}`;
+        }
+      },
+    }),
+
+    /**
+     * Mark a suggestion annotation as applied.
+     */
+    hive_review_mark_applied: tool({
+      description: 'Mark a suggestion annotation as applied',
+      args: {
+        threadId: tool.schema
+          .string()
+          .describe('Thread ID containing the suggestion'),
+        annotationId: tool.schema
+          .string()
+          .describe('Annotation ID of the suggestion to mark as applied'),
+      },
+      async execute({ threadId, annotationId }): Promise<string> {
+        try {
+          const annotation = await reviewService.markSuggestionApplied(
+            threadId,
+            annotationId,
+          );
+          return JSON.stringify(annotation, null, 2);
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Failed to mark suggestion as applied'}`;
+        }
+      },
+    }),
+
+    /**
+     * Resolve a plan comment.
+     */
+    hive_plan_comment_resolve: tool({
+      description: 'Resolve a plan comment by ID',
+      args: {
+        feature: tool.schema
+          .string()
+          .optional()
+          .describe('Feature name (defaults to active feature)'),
+        commentId: tool.schema
+          .string()
+          .describe('Comment ID to resolve'),
+      },
+      async execute({ feature: explicitFeature, commentId }): Promise<string> {
+        if (!planService) {
+          return 'Error: Plan comment tools not available (no PlanService configured)';
+        }
+        const feature = resolveFeature(explicitFeature);
+        if (!feature) {
+          return 'Error: No feature specified. Create a feature or provide feature param.';
+        }
+        try {
+          planService.resolveComment(feature, commentId);
+          return JSON.stringify(
+            { resolved: true, feature, commentId },
+            null,
+            2,
+          );
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Failed to resolve comment'}`;
+        }
+      },
+    }),
+
+    /**
+     * Reply to a plan comment.
+     */
+    hive_plan_comment_reply: tool({
+      description: 'Reply to a plan comment',
+      args: {
+        feature: tool.schema
+          .string()
+          .optional()
+          .describe('Feature name (defaults to active feature)'),
+        commentId: tool.schema
+          .string()
+          .describe('Comment ID to reply to'),
+        body: tool.schema.string().describe('Reply body'),
+      },
+      async execute({
+        feature: explicitFeature,
+        commentId,
+        body,
+      }): Promise<string> {
+        if (!planService) {
+          return 'Error: Plan comment tools not available (no PlanService configured)';
+        }
+        const feature = resolveFeature(explicitFeature);
+        if (!feature) {
+          return 'Error: No feature specified. Create a feature or provide feature param.';
+        }
+        try {
+          const reply = planService.addReply(feature, commentId, {
+            body,
+            author: 'agent',
+          });
+          return JSON.stringify(reply, null, 2);
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : 'Failed to reply to comment'}`;
         }
       },
     }),

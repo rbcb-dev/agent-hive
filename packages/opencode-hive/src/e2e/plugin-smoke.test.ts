@@ -34,6 +34,20 @@ const EXPECTED_TOOLS = [
   'hive_context_write',
   'hive_status',
   'hive_skill',
+  'hive_review_start',
+  'hive_review_list',
+  'hive_review_get',
+  'hive_review_add_comment',
+  'hive_review_suggest',
+  'hive_review_reply',
+  'hive_review_resolve',
+  'hive_review_unresolve',
+  'hive_review_delete_thread',
+  'hive_review_edit',
+  'hive_review_mark_applied',
+  'hive_review_submit',
+  'hive_plan_comment_resolve',
+  'hive_plan_comment_reply',
 ] as const;
 
 const TEST_ROOT_BASE = '/tmp/hive-e2e-plugin';
