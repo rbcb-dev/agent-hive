@@ -1,13 +1,24 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ReviewService, ConfigService } from 'hive-core';
+import {
+  ReviewService,
+  ConfigService,
+  FeatureService,
+  PlanService,
+  ContextService,
+  createWorktreeService,
+} from 'hive-core';
 import type {
   ReviewSession,
   Range,
   AnnotationType,
   ReviewConfig,
   ReviewNotificationsConfig,
+  DiffPayload,
+  DiffFile,
+  FeatureInfo,
+  PlanComment,
 } from 'hive-core';
 
 /**
@@ -41,7 +52,12 @@ type WebviewToExtensionMessage =
   | { type: 'selectFile'; path: string }
   | { type: 'selectThread'; threadId: string }
   | { type: 'changeScope'; scope: string }
-  | { type: 'requestFile'; uri: string };
+  | { type: 'requestFile'; uri: string }
+  | { type: 'requestFeatures' }
+  | { type: 'requestFeatureDiffs'; feature: string }
+  | { type: 'requestTaskDiff'; feature: string; task: string }
+  | { type: 'requestPlanContent'; feature: string }
+  | { type: 'requestContextContent'; feature: string; name: string };
 
 /**
  * Resolved review config with all defaults applied
@@ -81,7 +97,21 @@ type ExtensionToWebviewMessage =
       annotationId: string;
       success: boolean;
       error?: string;
-    };
+    }
+  | { type: 'featuresData'; features: FeatureInfo[] }
+  | {
+      type: 'featureDiffs';
+      feature: string;
+      diffs: Record<string, DiffPayload[]>;
+    }
+  | { type: 'taskDiff'; feature: string; task: string; diffs: DiffPayload[] }
+  | {
+      type: 'planContent';
+      feature: string;
+      content: string;
+      comments: PlanComment[];
+    }
+  | { type: 'contextContent'; feature: string; name: string; content: string };
 
 /**
  * Large file threshold in bytes (10MB)
@@ -102,6 +132,9 @@ export class ReviewPanel {
   private readonly _disposables: vscode.Disposable[] = [];
   private readonly _reviewService: ReviewService;
   private readonly _configService: ConfigService;
+  private readonly _featureService: FeatureService;
+  private readonly _planService: PlanService;
+  private readonly _contextService: ContextService;
   private _currentSession: ReviewSession | null = null;
 
   public static createOrShow(
@@ -151,6 +184,9 @@ export class ReviewPanel {
     this._featureName = featureName;
     this._reviewService = new ReviewService(workspaceRoot);
     this._configService = new ConfigService();
+    this._featureService = new FeatureService(workspaceRoot);
+    this._planService = new PlanService(workspaceRoot);
+    this._contextService = new ContextService(workspaceRoot);
 
     console.log(
       '[HIVE WEBVIEW] ReviewPanel constructor: Creating webview panel',
@@ -306,6 +342,29 @@ export class ReviewPanel {
 
       case 'requestFile':
         await this._handleRequestFile(message.uri);
+        break;
+
+      case 'requestFeatures':
+        await this._handleRequestFeatures();
+        break;
+
+      case 'requestFeatureDiffs':
+        await this._handleRequestFeatureDiffs(message.feature);
+        break;
+
+      case 'requestTaskDiff':
+        await this._handleRequestTaskDiff(message.feature, message.task);
+        break;
+
+      case 'requestPlanContent':
+        await this._handleRequestPlanContent(message.feature);
+        break;
+
+      case 'requestContextContent':
+        await this._handleRequestContextContent(
+          message.feature,
+          message.name,
+        );
         break;
     }
   }
@@ -823,6 +882,208 @@ export class ReviewPanel {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
+    }
+  }
+
+  /**
+   * Handle request for all features
+   */
+  private async _handleRequestFeatures(): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling requestFeatures');
+
+    try {
+      const featureNames = this._featureService.list();
+      const features: FeatureInfo[] = [];
+
+      for (const name of featureNames) {
+        const info = this._featureService.getInfo(name);
+        if (info) {
+          features.push(info);
+        }
+      }
+
+      this._postMessage({ type: 'featuresData', features });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to list features';
+      console.error('[HIVE WEBVIEW] Error listing features:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for all diffs across a feature's tasks
+   */
+  private async _handleRequestFeatureDiffs(feature: string): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling requestFeatureDiffs:', feature);
+
+    try {
+      const worktreeService = createWorktreeService(this._workspaceRoot);
+      const worktrees = await worktreeService.list(feature);
+      const diffs: Record<string, DiffPayload[]> = {};
+
+      for (const wt of worktrees) {
+        try {
+          const diffResult = await worktreeService.getDiff(
+            feature,
+            wt.step,
+          );
+
+          if (diffResult.hasDiff) {
+            const payload: DiffPayload = {
+              baseRef: wt.commit,
+              headRef: 'HEAD',
+              mergeBase: wt.commit,
+              repoRoot: this._workspaceRoot,
+              fileRoot: wt.path,
+              diffStats: {
+                files: diffResult.filesChanged.length,
+                insertions: diffResult.insertions,
+                deletions: diffResult.deletions,
+              },
+              files: diffResult.filesChanged.map(
+                (filePath): DiffFile => ({
+                  path: filePath,
+                  status: 'M',
+                  additions: 0,
+                  deletions: 0,
+                  hunks: [],
+                }),
+              ),
+            };
+            diffs[wt.step] = [payload];
+          }
+        } catch (err) {
+          console.error(
+            `[HIVE WEBVIEW] Error getting diff for ${wt.step}:`,
+            err,
+          );
+        }
+      }
+
+      this._postMessage({ type: 'featureDiffs', feature, diffs });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to get feature diffs';
+      console.error('[HIVE WEBVIEW] Error getting feature diffs:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for a single task's diff
+   */
+  private async _handleRequestTaskDiff(
+    feature: string,
+    task: string,
+  ): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling requestTaskDiff:', feature, task);
+
+    try {
+      const worktreeService = createWorktreeService(this._workspaceRoot);
+      const diffResult = await worktreeService.getDiff(feature, task);
+      const diffs: DiffPayload[] = [];
+
+      if (diffResult.hasDiff) {
+        const worktreeInfo = await worktreeService.get(feature, task);
+        const payload: DiffPayload = {
+          baseRef: worktreeInfo?.commit || 'unknown',
+          headRef: 'HEAD',
+          mergeBase: worktreeInfo?.commit || 'unknown',
+          repoRoot: this._workspaceRoot,
+          fileRoot: worktreeInfo?.path || this._workspaceRoot,
+          diffStats: {
+            files: diffResult.filesChanged.length,
+            insertions: diffResult.insertions,
+            deletions: diffResult.deletions,
+          },
+          files: diffResult.filesChanged.map(
+            (filePath): DiffFile => ({
+              path: filePath,
+              status: 'M',
+              additions: 0,
+              deletions: 0,
+              hunks: [],
+            }),
+          ),
+        };
+        diffs.push(payload);
+      }
+
+      this._postMessage({ type: 'taskDiff', feature, task, diffs });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to get task diff';
+      console.error('[HIVE WEBVIEW] Error getting task diff:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for plan content
+   */
+  private async _handleRequestPlanContent(feature: string): Promise<void> {
+    console.log('[HIVE WEBVIEW] Handling requestPlanContent:', feature);
+
+    try {
+      const planResult = this._planService.read(feature);
+
+      if (planResult) {
+        this._postMessage({
+          type: 'planContent',
+          feature,
+          content: planResult.content,
+          comments: planResult.comments,
+        });
+      } else {
+        this._postMessage({
+          type: 'planContent',
+          feature,
+          content: '',
+          comments: [],
+        });
+      }
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to read plan content';
+      console.error('[HIVE WEBVIEW] Error reading plan:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
+    }
+  }
+
+  /**
+   * Handle request for context file content
+   */
+  private async _handleRequestContextContent(
+    feature: string,
+    name: string,
+  ): Promise<void> {
+    console.log(
+      '[HIVE WEBVIEW] Handling requestContextContent:',
+      feature,
+      name,
+    );
+
+    try {
+      const content = this._contextService.read(feature, name);
+
+      this._postMessage({
+        type: 'contextContent',
+        feature,
+        name,
+        content: content || '',
+      });
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to read context content';
+      console.error('[HIVE WEBVIEW] Error reading context:', errorMsg);
+      this._postMessage({ type: 'error', message: errorMsg });
     }
   }
 
