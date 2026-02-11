@@ -107,7 +107,10 @@ describe('useWorkspaceContent', () => {
     const mockComments: PlanComment[] = [
       {
         id: 'c1',
-        line: 5,
+        range: {
+          start: { line: 4, character: 0 },
+          end: { line: 4, character: 0 },
+        },
         body: 'Looks good',
         author: 'human',
         timestamp: '2026-01-01T00:00:00Z',

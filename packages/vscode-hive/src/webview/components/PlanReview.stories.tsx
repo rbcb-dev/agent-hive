@@ -2,7 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn, expect, within, userEvent } from 'storybook/test';
 
 import { PlanReview } from './PlanReview';
-import type { PlanComment } from 'hive-core';
+import type { PlanComment, Range } from 'hive-core';
+
+/** Helper to create a 0-based single-line Range */
+function lineRange(zeroBasedLine: number): Range {
+  return {
+    start: { line: zeroBasedLine, character: 0 },
+    end: { line: zeroBasedLine, character: 0 },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -35,14 +43,14 @@ const emptyComments: PlanComment[] = [];
 const sampleComments: PlanComment[] = [
   {
     id: 'comment-1',
-    line: 5,
+    range: lineRange(4),
     body: 'Should we also support SAML for enterprise customers?',
     author: 'human',
     timestamp: '2026-01-15T10:00:00Z',
   },
   {
     id: 'comment-2',
-    line: 10,
+    range: lineRange(9),
     body: 'Consider using Redis for session storage instead of in-memory.',
     author: 'human',
     timestamp: '2026-01-15T10:30:00Z',
@@ -57,7 +65,7 @@ const sampleComments: PlanComment[] = [
   },
   {
     id: 'comment-3',
-    line: 17,
+    range: lineRange(16),
     body: 'This was addressed in the updated plan.',
     author: 'human',
     timestamp: '2026-01-15T11:00:00Z',
@@ -68,7 +76,7 @@ const sampleComments: PlanComment[] = [
 const resolvedComments: PlanComment[] = [
   {
     id: 'resolved-1',
-    line: 5,
+    range: lineRange(4),
     body: 'Already addressed in the overview.',
     author: 'human',
     timestamp: '2026-01-15T10:00:00Z',
@@ -76,7 +84,7 @@ const resolvedComments: PlanComment[] = [
   },
   {
     id: 'resolved-2',
-    line: 10,
+    range: lineRange(9),
     body: 'Fixed in latest revision.',
     author: 'agent',
     timestamp: '2026-01-15T11:00:00Z',
@@ -192,9 +200,9 @@ export const AddComment: Story = {
     const submitBtn = canvas.getByRole('button', { name: /submit/i });
     await userEvent.click(submitBtn);
 
-    // Verify callback
+    // Verify callback — range is 0-based (display line 5 → 0-based line 4)
     await expect(args.onAddComment).toHaveBeenCalledWith(
-      5,
+      lineRange(4),
       'This needs more detail',
     );
   },
