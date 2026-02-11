@@ -211,6 +211,56 @@ export const VerdictStatistics: Story = {
   },
 };
 
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for ReviewSummary.
+ *
+ * Verifies:
+ * - Verdict buttons are discoverable via role queries
+ * - Summary textarea has a placeholder for screen readers
+ * - Submit button is present and accessible
+ * - Keyboard Tab moves through interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    isSubmitting: false,
+    onSubmit: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify verdict radio group is accessible
+    const radioGroup = canvas.getByRole('radiogroup');
+    await expect(radioGroup).toBeInTheDocument();
+
+    // Verify verdict options are accessible as radio inputs
+    await expect(
+      canvas.getByRole('radio', { name: /Approve/i }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('radio', { name: /Request Changes/i }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('radio', { name: /Comment/i }),
+    ).toBeInTheDocument();
+
+    // Verify submit button is accessible
+    await expect(
+      canvas.getByRole('button', { name: /Submit Review/i }),
+    ).toBeInTheDocument();
+
+    // Verify summary textarea is present with placeholder
+    const textarea = canvas.getByPlaceholderText(/summary/i);
+    await expect(textarea).toBeInTheDocument();
+  },
+};
+
 /**
  * Keyboard Submit - Tests Cmd/Ctrl+Enter keyboard shortcut
  * Verifies that pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) triggers submit

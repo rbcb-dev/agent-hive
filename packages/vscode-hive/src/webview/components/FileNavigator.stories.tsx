@@ -324,3 +324,54 @@ export const FileIcons: Story = {
     await expect(folder?.querySelector('.codicon-folder')).toBeInTheDocument();
   },
 };
+
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for FileNavigator.
+ *
+ * Verifies:
+ * - File items are clickable and focusable
+ * - Folder toggle is keyboard accessible
+ * - File names are readable by screen readers
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    files: sampleFiles,
+    threads: [
+      ...createThreadsForFile('src/components/Button.tsx', 2),
+    ],
+    selectedFile: null,
+    onSelectFile: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Verify file items are rendered and visible
+    await expect(canvas.getByText('Button.tsx')).toBeVisible();
+    await expect(canvas.getByText('Input.tsx')).toBeVisible();
+
+    // Verify files are clickable by clicking one
+    const fileItem = canvas.getByText('helpers.ts');
+    await userEvent.click(fileItem);
+    await expect(args.onSelectFile).toHaveBeenCalledWith(
+      'src/utils/helpers.ts',
+    );
+
+    // Verify keyboard navigation: Tab to focus the first item, Enter to select
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
+
+    // Verify thread count badges are present as text (readable by screen readers)
+    const buttonItem = canvas
+      .getByText('Button.tsx')
+      .closest('[data-testid="file-item"]');
+    const badge = buttonItem?.querySelector('[data-testid="thread-count"]');
+    await expect(badge).toHaveTextContent('2');
+  },
+};

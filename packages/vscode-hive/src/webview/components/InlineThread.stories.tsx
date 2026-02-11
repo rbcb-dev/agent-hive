@@ -274,6 +274,55 @@ export const ReplyInteraction: Story = {
   },
 };
 
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for InlineThread.
+ *
+ * Verifies:
+ * - Annotation text is visible for screen readers
+ * - Close and Resolve buttons are accessible via role queries
+ * - Reply input is focusable and has a placeholder
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    thread: singleAnnotationThread,
+    onReply: fn(),
+    onResolve: fn(),
+    onClose: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify annotation text is visible
+    await expect(
+      canvas.getByText(/extracting this logic/i),
+    ).toBeInTheDocument();
+
+    // Verify close button is accessible by role
+    const closeButton = canvas.getByRole('button', { name: /close/i });
+    await expect(closeButton).toBeInTheDocument();
+
+    // Verify resolve button is accessible by role
+    const resolveButton = canvas.getByRole('button', { name: /resolve/i });
+    await expect(resolveButton).toBeInTheDocument();
+
+    // Verify reply input is present and focusable
+    const replyInput = canvas.getByPlaceholderText(/reply/i);
+    await expect(replyInput).toBeInTheDocument();
+
+    // Tab navigation should move through interactive elements
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
+  },
+};
+
 /**
  * Interactive test - reply button is disabled when input is empty
  */

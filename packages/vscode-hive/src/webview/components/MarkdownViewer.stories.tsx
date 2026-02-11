@@ -902,6 +902,53 @@ export const CopyToClipboard: Story = {
 };
 
 // =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for MarkdownViewer.
+ *
+ * Verifies:
+ * - Headings are accessible via role queries
+ * - Mode toggle buttons (Rendered/Raw) are accessible
+ * - Content text is visible for screen readers
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    content: sampleMarkdown,
+    filePath: 'docs/a11y-check.md',
+    onLineClick: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify heading is accessible via role
+    await expect(
+      canvas.getByRole('heading', { level: 1 }),
+    ).toHaveTextContent('Welcome to the Documentation');
+
+    // Verify mode toggle buttons are accessible
+    const renderedButton = canvas.getByRole('button', { name: /rendered/i });
+    const rawButton = canvas.getByRole('button', { name: /raw/i });
+    await expect(renderedButton).toBeInTheDocument();
+    await expect(rawButton).toBeInTheDocument();
+
+    // Verify content text is visible
+    await expect(
+      canvas.getByText(/comprehensive/i),
+    ).toBeInTheDocument();
+
+    // Tab navigation should move focus through interactive elements
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
+  },
+};
+
+// =============================================================================
 // Scrolling Stories
 // =============================================================================
 

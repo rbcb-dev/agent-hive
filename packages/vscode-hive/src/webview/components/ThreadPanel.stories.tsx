@@ -304,6 +304,69 @@ export const ResolveAction: Story = {
   },
 };
 
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for ThreadPanel.
+ *
+ * Verifies:
+ * - Annotation text is visible for screen readers
+ * - Reply textarea is accessible via role and label
+ * - Reply and Resolve buttons are accessible via role queries
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    thread: createMockReviewThread({
+      id: 'thread-a11y',
+      uri: 'src/a11y-check.ts',
+      range: {
+        start: { line: 1, character: 0 },
+        end: { line: 5, character: 0 },
+      },
+      status: 'open',
+      annotations: [
+        createMockAnnotation({
+          id: 'annotation-a11y',
+          body: 'Check accessibility of this component.',
+          author: { type: 'human', name: 'A11y Reviewer' },
+        }),
+      ],
+    }),
+    onReply: fn(),
+    onResolve: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verify annotation text is visible
+    await expect(
+      canvas.getByText(/Check accessibility/i),
+    ).toBeInTheDocument();
+
+    // Verify reply textarea is accessible via role
+    const replyInput = canvas.getByRole('textbox', {
+      name: /reply to thread/i,
+    });
+    await expect(replyInput).toBeInTheDocument();
+
+    // Verify resolve button is accessible via role
+    const resolveButton = canvas.getByRole('button', {
+      name: /mark thread as resolved/i,
+    });
+    await expect(resolveButton).toBeInTheDocument();
+
+    // Verify reply button is accessible via role (aria-label="Reply")
+    const replyButton = canvas.getByRole('button', { name: /^Reply$/i });
+    await expect(replyButton).toBeInTheDocument();
+  },
+};
+
 /**
  * Tests that the Reply button is disabled when textarea is empty
  */

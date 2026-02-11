@@ -88,10 +88,13 @@ const JSDOM_INCOMPATIBLE_PLAY: Set<string> = new Set([
   // SuggestionPreview: diff/apply button assertions
   'SuggestionPreview/ApplyButtonDisabledWithConflict',
   'SuggestionPreview/DiffDisplayVerification',
+  // SuggestionPreview: a11y check asserts diff view labels (Before:/After:)
+  'SuggestionPreview/AccessibilityCheck',
   // App: full app rendering with tabs/navigation
   'App/Default',
   'App/NavigationFlow',
   'App/WithScopeContent',
+  'App/AccessibilityCheck',
 ]);
 
 // Generate tests for each composed story

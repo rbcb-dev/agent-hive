@@ -212,6 +212,55 @@ export const KeyboardNavigation: Story = {
   },
 };
 
+// =============================================================================
+// Accessibility Stories
+// =============================================================================
+
+/**
+ * Accessibility check for ThreadList.
+ *
+ * Verifies:
+ * - Thread items are visible and readable
+ * - Status indicators are rendered as text
+ * - Thread items are clickable
+ * - Keyboard Tab can focus interactive elements
+ *
+ * @tags a11y
+ */
+export const AccessibilityCheck: Story = {
+  tags: ['a11y'],
+  args: {
+    threads: [openThread1, resolvedThread, openThread2],
+    selectedThread: null,
+    onSelectThread: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Verify thread preview text is visible
+    await expect(canvas.getByText(/async\/await/i)).toBeInTheDocument();
+    await expect(canvas.getByText(/simplified with reduce/i)).toBeInTheDocument();
+
+    // Verify status indicators are visible as text (readable by screen readers)
+    const openIndicators = canvas.getAllByText('open');
+    await expect(openIndicators.length).toBeGreaterThan(0);
+    await expect(canvas.getByText('resolved')).toBeInTheDocument();
+
+    // Verify a thread item is clickable
+    const threadItem = canvas
+      .getByText(/async\/await/i)
+      .closest('.thread-list-item');
+    if (threadItem) {
+      await userEvent.click(threadItem);
+    }
+    await expect(args.onSelectThread).toHaveBeenCalledWith('thread-1');
+
+    // Tab navigation should move focus to interactive elements
+    await userEvent.tab();
+    await expect(document.activeElement).not.toBe(document.body);
+  },
+};
+
 // Generate many threads for VirtualList testing
 const manyThreads: ThreadSummary[] = Array.from({ length: 100 }, (_, i) =>
   createMockThreadSummary({
