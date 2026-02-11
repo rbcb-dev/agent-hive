@@ -27,6 +27,14 @@ export interface DiffViewerProps {
   onAddThread?: (path: string, line: number, body: string) => void;
   onReply?: (threadId: string, body: string) => void;
   onResolve?: (threadId: string) => void;
+  onUnresolve?: (threadId: string) => void;
+  onDelete?: (threadId: string) => void;
+  onEditAnnotation?: (
+    threadId: string,
+    annotationId: string,
+    body: string,
+  ) => void;
+  onDeleteAnnotation?: (threadId: string, annotationId: string) => void;
 }
 
 /**
@@ -90,6 +98,10 @@ export function DiffViewer({
   onAddThread,
   onReply,
   onResolve,
+  onUnresolve,
+  onDelete,
+  onEditAnnotation,
+  onDeleteAnnotation,
 }: DiffViewerProps): React.ReactElement {
   // Track which change key has the composer open (null = closed)
   const [composerChangeKey, setComposerChangeKey] = useState<string | null>(
@@ -190,6 +202,10 @@ export function DiffViewer({
                 thread={thread}
                 onReply={onReply ?? (() => {})}
                 onResolve={onResolve ?? (() => {})}
+                onUnresolve={onUnresolve}
+                onDelete={onDelete}
+                onEditAnnotation={onEditAnnotation}
+                onDeleteAnnotation={onDeleteAnnotation}
               />
             ))}
           </>
@@ -222,6 +238,10 @@ export function DiffViewer({
     parsedFile,
     onReply,
     onResolve,
+    onUnresolve,
+    onDelete,
+    onEditAnnotation,
+    onDeleteAnnotation,
     composerChangeKey,
     composerLineNumber,
     onAddThread,

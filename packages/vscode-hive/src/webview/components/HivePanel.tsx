@@ -121,6 +121,34 @@ function HivePanelContent(): React.ReactElement {
     [actions],
   );
 
+  const handleUnresolve = useCallback(
+    (threadId: string) => {
+      actions.unresolveThread(threadId);
+    },
+    [actions],
+  );
+
+  const handleDeleteThread = useCallback(
+    (threadId: string) => {
+      actions.deleteThread(threadId);
+    },
+    [actions],
+  );
+
+  const handleEditAnnotation = useCallback(
+    (threadId: string, annotationId: string, body: string) => {
+      actions.editAnnotation(threadId, annotationId, body);
+    },
+    [actions],
+  );
+
+  const handleDeleteAnnotation = useCallback(
+    (threadId: string, annotationId: string) => {
+      actions.deleteAnnotation(threadId, annotationId);
+    },
+    [actions],
+  );
+
   // Context line highlight state (visual feedback only)
   const [highlightedLine, setHighlightedLine] = useState<number | null>(null);
   const contextRef = useRef<HTMLDivElement>(null);
@@ -279,6 +307,10 @@ function HivePanelContent(): React.ReactElement {
             onAddThread={handleAddThread}
             onReply={handleReply}
             onResolve={handleResolve}
+            onUnresolve={handleUnresolve}
+            onDelete={handleDeleteThread}
+            onEditAnnotation={handleEditAnnotation}
+            onDeleteAnnotation={handleDeleteAnnotation}
           />
         </div>
       );

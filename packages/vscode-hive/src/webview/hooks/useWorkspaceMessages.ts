@@ -60,17 +60,19 @@ export function useWorkspaceMessages(): void {
               content: message.content,
             });
             break;
-          case 'reviewThreadsUpdate':
-            dispatch({
-              type: 'SET_REVIEW_THREADS',
-              threads: message.threads,
-            });
-            break;
           case 'sessionUpdate':
             dispatch({
               type: 'SET_REVIEW_SESSION',
               session: message.session,
             });
+            // Bridge: also update reviewThreads from session threads
+            // so diff thread rendering stays in sync
+            if (message.session?.threads) {
+              dispatch({
+                type: 'SET_REVIEW_THREADS',
+                threads: message.session.threads,
+              });
+            }
             break;
           case 'commitHistory':
             dispatch({

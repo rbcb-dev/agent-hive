@@ -489,7 +489,7 @@ describe('useWorkspaceMessages — review thread messages', () => {
     capturedHandler = null;
   });
 
-  it('handles reviewThreadsUpdate message and updates state', () => {
+  it('sessionUpdate bridges threads to reviewThreads state', () => {
     const { result } = renderHook(
       () => {
         useWorkspaceMessages();
@@ -507,8 +507,29 @@ describe('useWorkspaceMessages — review thread messages', () => {
 
     act(() => {
       capturedHandler!({
-        type: 'reviewThreadsUpdate',
-        threads,
+        type: 'sessionUpdate',
+        session: {
+          schemaVersion: 1,
+          id: 'sess-bridge',
+          featureName: 'feature-one',
+          scope: 'feature' as const,
+          status: 'in_progress' as const,
+          verdict: null,
+          summary: null,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+          threads,
+          diffs: {},
+          gitMeta: {
+            repoRoot: '/repo',
+            baseRef: 'main',
+            headRef: 'feature',
+            mergeBase: 'abc123',
+            capturedAt: '2026-01-01T00:00:00Z',
+            diffStats: { files: 0, insertions: 0, deletions: 0 },
+            diffSummary: [],
+          },
+        },
       });
     });
 

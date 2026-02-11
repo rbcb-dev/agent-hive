@@ -18,6 +18,7 @@ import React, {
   useCallback,
 } from 'react';
 import type {
+  AnnotationType,
   FeatureInfo,
   DiffPayload,
   PlanComment,
@@ -84,7 +85,7 @@ export interface HiveWorkspaceActions {
     uri: string,
     range: Range,
     body: string,
-    type: string,
+    type: AnnotationType,
   ) => void;
   replyToThread: (threadId: string, body: string) => void;
   resolveThread: (threadId: string) => void;
@@ -273,7 +274,7 @@ export function HiveWorkspaceProvider({
       uri: string,
       range: Range,
       body: string,
-      annotationType: string,
+      annotationType: AnnotationType,
     ) => {
       postMessage({
         type: 'addComment',

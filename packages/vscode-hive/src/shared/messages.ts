@@ -8,12 +8,12 @@
 import type {
   ReviewSession,
   ReviewConfig,
-  ReviewThread,
   TaskCommit,
   Range,
   FeatureInfo,
   DiffPayload,
   PlanComment,
+  AnnotationType,
 } from 'hive-core';
 
 /**
@@ -31,7 +31,7 @@ export type WebviewToExtensionMessage =
         end: { line: number; character: number };
       };
       body: string;
-      annotationType: string;
+      annotationType: AnnotationType;
     }
   | { type: 'reply'; threadId: string; body: string }
   | { type: 'resolve'; threadId: string }
@@ -161,5 +161,4 @@ export type ExtensionToWebviewMessage =
       task: string;
       sha: string;
       diffs: DiffPayload[];
-    }
-  | { type: 'reviewThreadsUpdate'; threads: ReviewThread[] };
+    };

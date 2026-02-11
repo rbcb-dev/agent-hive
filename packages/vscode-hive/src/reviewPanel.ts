@@ -360,7 +360,7 @@ export class ReviewPanel {
     uri?: string;
     range: Range;
     body: string;
-    annotationType: string;
+    annotationType: AnnotationType;
   }): Promise<void> {
     if (!this._currentSession) {
       this._postMessage({ type: 'error', message: 'No active session' });
@@ -374,7 +374,7 @@ export class ReviewPanel {
         message.uri || null,
         message.range,
         {
-          type: message.annotationType as AnnotationType,
+          type: message.annotationType,
           body: message.body,
           author: { type: 'human', name: 'user' },
         },
@@ -826,7 +826,17 @@ export class ReviewPanel {
    * type-level tests. Wire a real sender (e.g. SuggestionPreview → postMessage)
    * when the suggestion-apply UX is ready.
    */
-  private async _handleApplySuggestion(message: any): Promise<void> {
+  private async _handleApplySuggestion(message: {
+    type: 'applySuggestion';
+    threadId: string;
+    annotationId: string;
+    uri: string;
+    range: {
+      start: { line: number; character: number };
+      end: { line: number; character: number };
+    };
+    replacement: string;
+  }): Promise<void> {
     console.log('[HIVE WEBVIEW] Applying suggestion');
 
     try {
