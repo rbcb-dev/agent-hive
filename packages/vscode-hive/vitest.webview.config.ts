@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['src/webview/**/*.test.ts', 'src/webview/**/*.test.tsx'],
+    include: ['src/webview/**/*.test.ts', 'src/webview/**/*.test.tsx', 'src/shared/**/*.test.ts'],
     globals: true,
     setupFiles: ['./src/webview/__tests__/setup.ts'],
     testTimeout: 15000, // Increase timeout for antd component first-render overhead
