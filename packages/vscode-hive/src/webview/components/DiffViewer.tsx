@@ -143,16 +143,19 @@ export function DiffViewer({
     return new Set(threads.map((t) => t.range.start.line));
   }, [threads]);
 
-  // Build widgets map: changeKey → InlineDiffThread widget + composer widget
+  // Build widgets map: changeKey → InlineDiffThread widget(s) + composer widget
   const widgets = useMemo(() => {
     const widgetMap: Record<string, React.ReactNode> = {};
 
-    // Add thread widgets
+    // Add thread widgets — support multiple threads per change key
     if (threads && threads.length > 0 && parsedFile) {
       const allChanges: ChangeData[] = parsedFile.hunks.reduce<ChangeData[]>(
         (acc, hunk) => [...acc, ...hunk.changes],
         [],
       );
+
+      // Group threads by change key
+      const threadsByKey = new Map<string, typeof threads>();
 
       for (const thread of threads) {
         const targetLine = thread.range.start.line;
@@ -171,14 +174,26 @@ export function DiffViewer({
 
         if (matchingChange) {
           const key = getChangeKey(matchingChange);
-          widgetMap[key] = (
-            <InlineDiffThread
-              thread={thread}
-              onReply={onReply ?? (() => {})}
-              onResolve={onResolve ?? (() => {})}
-            />
-          );
+          const existing = threadsByKey.get(key) ?? [];
+          existing.push(thread);
+          threadsByKey.set(key, existing);
         }
+      }
+
+      // Render grouped threads into widget map
+      for (const [key, keyThreads] of threadsByKey) {
+        widgetMap[key] = (
+          <>
+            {keyThreads.map((thread) => (
+              <InlineDiffThread
+                key={thread.id}
+                thread={thread}
+                onReply={onReply ?? (() => {})}
+                onResolve={onResolve ?? (() => {})}
+              />
+            ))}
+          </>
+        );
       }
     }
 

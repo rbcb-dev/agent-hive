@@ -61,8 +61,8 @@ function resolveFileFromChanges(
 }
 
 function HivePanelContent(): React.ReactElement {
-  const { state } = useHiveWorkspace();
-  const { activeView, activeFeature, activeTask, activeFile, fileChanges } =
+  const { state, actions } = useHiveWorkspace();
+  const { activeView, activeFeature, activeTask, activeFile, fileChanges, reviewThreads } =
     state;
   const { planContent, planComments, contextContent } = useWorkspaceContent();
 
@@ -71,6 +71,38 @@ function HivePanelContent(): React.ReactElement {
     if (!activeFile || fileChanges.size === 0) return null;
     return resolveFileFromChanges(fileChanges, activeFile);
   }, [activeFile, fileChanges]);
+
+  // Filter review threads for the active diff file's URI
+  const fileThreads = useMemo(() => {
+    if (!activeFile || !reviewThreads || reviewThreads.length === 0) return [];
+    return reviewThreads.filter((t) => t.uri === activeFile);
+  }, [activeFile, reviewThreads]);
+
+  // Thread action callbacks
+  const handleAddThread = useCallback(
+    (path: string, line: number, body: string) => {
+      if (activeFeature) {
+        const entityId = activeTask ?? activeFeature;
+        const range = { start: { line, character: 0 }, end: { line, character: 0 } };
+        actions.addThread(entityId, path, range, body, 'comment');
+      }
+    },
+    [activeFeature, activeTask, actions],
+  );
+
+  const handleReply = useCallback(
+    (threadId: string, body: string) => {
+      actions.replyToThread(threadId, body);
+    },
+    [actions],
+  );
+
+  const handleResolve = useCallback(
+    (threadId: string) => {
+      actions.resolveThread(threadId);
+    },
+    [actions],
+  );
 
   // Plan comment callbacks — send messages to extension
   const handleAddPlanComment = useCallback(
@@ -157,7 +189,13 @@ function HivePanelContent(): React.ReactElement {
     case 'code':
       return (
         <div className="hive-panel-diff">
-          <DiffViewer file={selectedDiffFile} />
+          <DiffViewer
+            file={selectedDiffFile}
+            threads={fileThreads}
+            onAddThread={handleAddThread}
+            onReply={handleReply}
+            onResolve={handleResolve}
+          />
         </div>
       );
 
