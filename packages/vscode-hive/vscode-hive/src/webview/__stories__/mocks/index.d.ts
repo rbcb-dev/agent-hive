@@ -5,7 +5,6 @@
  * that depend on hive-core types like ReviewThread, DiffFile, etc.
  */
 import type { ReviewThread, ReviewAnnotation, DiffFile, DiffHunk, ThreadStatus, AnnotationType, Range } from 'hive-core';
-import type { FileTreeItem } from '../../types';
 export interface CreateMockReviewThreadOptions {
     id?: string;
     entityId?: string;
@@ -67,20 +66,3 @@ export interface CreateMockDiffFileOptions {
  * const binary = createMockDiffFile({ path: 'image.png', isBinary: true });
  */
 export declare function createMockDiffFile(options?: CreateMockDiffFileOptions): DiffFile;
-export interface CreateMockFileTreeItemOptions {
-    path?: string;
-    name?: string;
-    status?: FileTreeItem['status'];
-    commentCount?: number;
-    additions?: number;
-    deletions?: number;
-}
-/**
- * Create a mock FileTreeItem with sensible defaults
- *
- * @example
- * const item = createMockFileTreeItem();
- * const added = createMockFileTreeItem({ path: 'src/new.ts', status: 'A' });
- * const withComments = createMockFileTreeItem({ commentCount: 5 });
- */
-export declare function createMockFileTreeItem(options?: CreateMockFileTreeItemOptions): FileTreeItem;

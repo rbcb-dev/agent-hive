@@ -56,6 +56,18 @@ export declare const ReplyWithButton: Story;
  */
 export declare const ResolveAction: Story;
 /**
+ * Accessibility check for ThreadPanel.
+ *
+ * Verifies:
+ * - Annotation text is visible for screen readers
+ * - Reply textarea is accessible via role and label
+ * - Reply and Resolve buttons are accessible via role queries
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
+/**
  * Tests that the Reply button is disabled when textarea is empty
  */
 export declare const ReplyButtonDisabledWhenEmpty: Story;

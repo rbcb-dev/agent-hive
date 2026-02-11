@@ -12,6 +12,15 @@ declare const meta: {
             control: "object";
             description: string;
         };
+        viewType: {
+            control: "select";
+            options: string[];
+            description: string;
+        };
+        onLineClick: {
+            action: string;
+            description: string;
+        };
     };
 };
 export default meta;
@@ -73,3 +82,27 @@ export declare const AccessibleDiff: Story;
  * This story shows 5 hunks with 30 lines each (150 total lines).
  */
 export declare const LargeDiff: Story;
+/**
+ * Verifies that hunks are rendered correctly with file header, stats,
+ * and diff content visible.
+ */
+export declare const HunkRendering: Story;
+/**
+ * Verifies that clicking a line gutter triggers onLineClick with the
+ * correct file path and line number.
+ *
+ * Note: react-diff-view renders gutter cells as <td> with click handlers.
+ * This test clicks a gutter cell and asserts the callback args.
+ */
+export declare const LineClickInteraction: Story;
+/**
+ * Accessibility check for DiffViewer.
+ *
+ * Verifies:
+ * - File path and stats are visible for screen readers
+ * - Diff content is navigable
+ * - Keyboard focus works on interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;

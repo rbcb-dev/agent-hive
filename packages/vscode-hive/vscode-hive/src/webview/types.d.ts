@@ -2,7 +2,7 @@
  * Webview types for the Hive Review UI
  * Re-exports core types and adds webview-specific message types
  */
-export type { ReviewScope, ReviewStatus, ReviewVerdict, ThreadStatus, AnnotationType, Position, Range, GitMeta, ReviewAnnotation, ReviewThread, DiffHunkLine, DiffHunk, DiffFile, DiffPayload, ReviewSession, ReviewIndex, } from 'hive-core';
+export type { ReviewScope, ReviewStatus, ReviewVerdict, ThreadStatus, AnnotationType, Position, Range, GitMeta, ReviewAnnotation, ReviewThread, DiffHunkLine, DiffHunk, DiffFile, DiffPayload, ReviewSession, ReviewIndex, FeatureInfo, PlanComment, } from 'hive-core';
 /**
  * Messages sent from webview to extension
  */
@@ -33,6 +33,13 @@ export type WebviewToExtensionMessage = {
     type: 'resolve';
     threadId: string;
 } | {
+    type: 'applySuggestion';
+    threadId: string;
+    annotationId: string;
+    uri: string;
+    range: import('hive-core').Range;
+    replacement: string;
+} | {
     type: 'submit';
     verdict: string;
     summary: string;
@@ -48,6 +55,22 @@ export type WebviewToExtensionMessage = {
 } | {
     type: 'requestFile';
     uri: string;
+} | {
+    type: 'requestFeatures';
+} | {
+    type: 'requestFeatureDiffs';
+    feature: string;
+} | {
+    type: 'requestTaskDiff';
+    feature: string;
+    task: string;
+} | {
+    type: 'requestPlanContent';
+    feature: string;
+} | {
+    type: 'requestContextContent';
+    feature: string;
+    name: string;
 };
 /**
  * Messages sent from extension to webview
@@ -55,9 +78,13 @@ export type WebviewToExtensionMessage = {
 export type ExtensionToWebviewMessage = {
     type: 'sessionData';
     session: import('hive-core').ReviewSession;
+    config: import('hive-core').ReviewConfig;
 } | {
     type: 'sessionUpdate';
     session: import('hive-core').ReviewSession;
+} | {
+    type: 'configUpdate';
+    config: import('hive-core').ReviewConfig;
 } | {
     type: 'error';
     message: string;
@@ -79,18 +106,35 @@ export type ExtensionToWebviewMessage = {
     type: 'fileError';
     uri: string;
     error: string;
-};
-/**
- * File tree item for navigation
- */
-export interface FileTreeItem {
-    path: string;
+} | {
+    type: 'suggestionApplied';
+    threadId: string;
+    annotationId: string;
+    success: boolean;
+    error?: string;
+} | {
+    type: 'featuresData';
+    features: import('hive-core').FeatureInfo[];
+} | {
+    type: 'featureDiffs';
+    feature: string;
+    diffs: Record<string, import('hive-core').DiffPayload[]>;
+} | {
+    type: 'taskDiff';
+    feature: string;
+    task: string;
+    diffs: import('hive-core').DiffPayload[];
+} | {
+    type: 'planContent';
+    feature: string;
+    content: string;
+    comments: import('hive-core').PlanComment[];
+} | {
+    type: 'contextContent';
+    feature: string;
     name: string;
-    status: 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | 'B';
-    commentCount: number;
-    additions: number;
-    deletions: number;
-}
+    content: string;
+};
 /**
  * Thread summary for navigation
  */

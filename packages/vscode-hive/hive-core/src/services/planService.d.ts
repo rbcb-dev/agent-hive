@@ -8,6 +8,12 @@ export declare class PlanService {
     isApproved(featureName: string): boolean;
     revokeApproval(featureName: string): void;
     getComments(featureName: string): PlanComment[];
+    /**
+     * Migrate a comment from old format to the current schema.
+     * Old format may lack author, timestamp, or have replies as string[].
+     */
+    private migrateComment;
+    private getFileMtime;
     addComment(featureName: string, comment: Omit<PlanComment, 'id' | 'timestamp'>): PlanComment;
     clearComments(featureName: string): void;
 }
