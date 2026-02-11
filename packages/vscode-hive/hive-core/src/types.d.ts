@@ -45,6 +45,18 @@ export interface WorkerSession {
     /** Number of messages exchanged in session */
     messageCount?: number;
 }
+export interface TaskCommit {
+    sha: string;
+    message: string;
+    timestamp: string;
+}
+export interface TaskChangedFile {
+    path: string;
+    status: 'added' | 'modified' | 'deleted' | 'renamed';
+    insertions: number;
+    deletions: number;
+    oldPath?: string;
+}
 export interface TaskStatus {
     /** Schema version for forward compatibility (default: 1) */
     schemaVersion?: number;
@@ -66,6 +78,10 @@ export interface TaskStatus {
      * Resolved from plan.md dependency annotations during hive_tasks_sync.
      */
     dependsOn?: string[];
+    /** Commit history for this task (appended on each worktree commit) */
+    commits?: TaskCommit[];
+    /** Changed files with per-file stats from the latest commit */
+    changedFiles?: TaskChangedFile[];
 }
 export interface PlanComment {
     id: string;

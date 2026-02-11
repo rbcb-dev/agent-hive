@@ -1194,6 +1194,23 @@ Re-run with updated summary showing verification results.`;
 
           const diff = await worktreeService.getDiff(feature, task);
 
+          // Get detailed per-file diff stats for structured tracking
+          const detailedFiles = await worktreeService.getDetailedDiff(
+            feature,
+            task,
+          );
+
+          // Build commit tracking data
+          const currentStatus = taskService.getRawStatus(feature, task);
+          const existingCommits = currentStatus?.commits || [];
+          const newCommit = commitResult.sha
+            ? {
+                sha: commitResult.sha,
+                message: `hive(${task}): ${summary.slice(0, 50)}`,
+                timestamp: new Date().toISOString(),
+              }
+            : null;
+
           const statusLabel = status === 'completed' ? 'success' : status;
           const reportLines: string[] = [
             `# Task Report: ${task}`,
@@ -1244,9 +1261,14 @@ Re-run with updated summary showing verification results.`;
           taskService.writeReport(feature, task, reportLines.join('\n'));
 
           const finalStatus = status === 'completed' ? 'done' : status;
+          const commits = newCommit
+            ? [...existingCommits, newCommit]
+            : existingCommits;
           taskService.update(feature, task, {
             status: finalStatus as any,
             summary,
+            commits: commits.length > 0 ? commits : undefined,
+            changedFiles: detailedFiles.length > 0 ? detailedFiles : undefined,
           });
 
           const worktree = await worktreeService.get(feature, task);

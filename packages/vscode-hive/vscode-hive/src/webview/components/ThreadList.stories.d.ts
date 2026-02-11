@@ -45,6 +45,18 @@ export declare const StatusIndicators: Story;
  */
 export declare const KeyboardNavigation: Story;
 /**
+ * Accessibility check for ThreadList.
+ *
+ * Verifies:
+ * - Thread items are visible and readable
+ * - Status indicators are rendered as text
+ * - Thread items are clickable
+ * - Keyboard Tab can focus interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
+/**
  * Large list using VirtualList (>50 items) for performance
  */
 export declare const LargeList: Story;

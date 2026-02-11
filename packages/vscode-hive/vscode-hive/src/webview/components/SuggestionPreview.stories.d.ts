@@ -8,16 +8,8 @@ declare const meta: {
     };
     tags: string[];
     argTypes: {
-        isApplied: {
-            control: "boolean";
-            description: string;
-        };
-        isApplying: {
-            control: "boolean";
-            description: string;
-        };
-        hasConflict: {
-            control: "boolean";
+        suggestionStatus: {
+            control: "object";
             description: string;
         };
     };
@@ -68,6 +60,18 @@ export declare const DiffDisplayVerification: Story;
  * Test toggling between split and unified diff views
  */
 export declare const ToggleDiffView: Story;
+/**
+ * Accessibility check for SuggestionPreview.
+ *
+ * Verifies:
+ * - Suggestion body text is visible for screen readers
+ * - Apply button is accessible via role query
+ * - Diff view labels (Before/After) are visible
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
 /**
  * Suggestion with markdown formatting in the body
  */

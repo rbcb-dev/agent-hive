@@ -1189,6 +1189,135 @@ Depends on multiple non-existent tasks.
     });
   });
 
+  describe('commits and changedFiles fields', () => {
+    it('preserves commits array on update', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        status: 'in_progress',
+        commits: [
+          {
+            sha: 'abc123',
+            message: 'hive(01-test-task): initial changes',
+            timestamp: '2025-01-23T00:00:00Z',
+          },
+        ],
+      });
+
+      const result = service.update(featureName, '01-test-task', {
+        status: 'done',
+        summary: 'Completed',
+      });
+
+      expect(result.commits).toBeDefined();
+      expect(result.commits).toHaveLength(1);
+      expect(result.commits![0].sha).toBe('abc123');
+      expect(result.commits![0].message).toBe(
+        'hive(01-test-task): initial changes',
+      );
+      expect(result.commits![0].timestamp).toBe('2025-01-23T00:00:00Z');
+    });
+
+    it('preserves changedFiles array on update', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        status: 'in_progress',
+        changedFiles: [
+          {
+            path: 'src/types.ts',
+            status: 'modified',
+            insertions: 10,
+            deletions: 2,
+          },
+          {
+            path: 'src/new-file.ts',
+            status: 'added',
+            insertions: 50,
+            deletions: 0,
+          },
+        ],
+      });
+
+      const result = service.update(featureName, '01-test-task', {
+        status: 'done',
+      });
+
+      expect(result.changedFiles).toBeDefined();
+      expect(result.changedFiles).toHaveLength(2);
+      expect(result.changedFiles![0].path).toBe('src/types.ts');
+      expect(result.changedFiles![0].status).toBe('modified');
+      expect(result.changedFiles![0].insertions).toBe(10);
+      expect(result.changedFiles![0].deletions).toBe(2);
+    });
+
+    it('handles renamed files with oldPath', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        status: 'in_progress',
+        changedFiles: [
+          {
+            path: 'src/newName.ts',
+            status: 'renamed',
+            insertions: 0,
+            deletions: 0,
+            oldPath: 'src/oldName.ts',
+          },
+        ],
+      });
+
+      const result = service.getRawStatus(featureName, '01-test-task');
+
+      expect(result?.changedFiles).toBeDefined();
+      expect(result!.changedFiles![0].status).toBe('renamed');
+      expect(result!.changedFiles![0].oldPath).toBe('src/oldName.ts');
+    });
+
+    it('existing tasks without commits/changedFiles load correctly', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      // Legacy task without new fields
+      setupTask(featureName, '01-test-task', {
+        status: 'done',
+        summary: 'Old task',
+      });
+
+      const result = service.getRawStatus(featureName, '01-test-task');
+
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe('done');
+      expect(result?.commits).toBeUndefined();
+      expect(result?.changedFiles).toBeUndefined();
+    });
+
+    it('multiple commits accumulate correctly', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        status: 'in_progress',
+        commits: [
+          {
+            sha: 'commit1',
+            message: 'first commit',
+            timestamp: '2025-01-23T00:00:00Z',
+          },
+          {
+            sha: 'commit2',
+            message: 'second commit',
+            timestamp: '2025-01-23T01:00:00Z',
+          },
+        ],
+      });
+
+      const result = service.getRawStatus(featureName, '01-test-task');
+
+      expect(result?.commits).toHaveLength(2);
+      expect(result!.commits![0].sha).toBe('commit1');
+      expect(result!.commits![1].sha).toBe('commit2');
+    });
+  });
+
   describe('buildSpecContent - task type inference', () => {
     it('should infer greenfield type when plan section has only Create: files', () => {
       const featureName = 'test-feature';

@@ -1,3 +1,4 @@
+import type { TaskChangedFile } from '../types.js';
 export interface WorktreeInfo {
     path: string;
     branch: string;
@@ -45,6 +46,12 @@ export declare class WorktreeService {
     create(feature: string, step: string, baseBranch?: string): Promise<WorktreeInfo>;
     get(feature: string, step: string): Promise<WorktreeInfo | null>;
     getDiff(feature: string, step: string, baseCommit?: string): Promise<DiffResult>;
+    /**
+     * Get detailed per-file diff stats (insertions, deletions, status) for a worktree.
+     * Uses git diff --numstat and --name-status to produce structured TaskChangedFile[].
+     * Does NOT modify the existing getDiff() signature.
+     */
+    getDetailedDiff(feature: string, step: string, baseCommit?: string): Promise<TaskChangedFile[]>;
     exportPatch(feature: string, step: string, baseBranch?: string): Promise<string>;
     applyDiff(feature: string, step: string, baseBranch?: string): Promise<ApplyResult>;
     revertDiff(feature: string, step: string, baseBranch?: string): Promise<ApplyResult>;

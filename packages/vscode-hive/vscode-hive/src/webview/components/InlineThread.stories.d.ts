@@ -58,6 +58,18 @@ export declare const ResolveInteraction: Story;
  */
 export declare const ReplyInteraction: Story;
 /**
+ * Accessibility check for InlineThread.
+ *
+ * Verifies:
+ * - Annotation text is visible for screen readers
+ * - Close and Resolve buttons are accessible via role queries
+ * - Reply input is focusable and has a placeholder
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
+/**
  * Interactive test - reply button is disabled when input is empty
  */
 export declare const ReplyButtonDisabled: Story;

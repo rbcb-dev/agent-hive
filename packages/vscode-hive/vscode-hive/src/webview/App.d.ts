@@ -1,17 +1,19 @@
 /**
  * Main App component - Hive Review UI
  *
- * This component now uses custom hooks for state management:
- * - useReviewSession: Manages session state, scope, file/thread selection, and extension messaging
+ * This component integrates the new HivePanel (sidebar + content) layout
+ * with the existing review session functionality:
+ * - HiveWorkspaceProvider: Shared workspace state for sidebar navigation
+ * - HivePanel: Master-detail layout with FeatureSidebar and content area
+ * - useReviewSession: Manages review session state for review mode
  * - useFileContentCache: Manages file content caching with TTL
  *
  * Layout:
  * Uses antd Layout components with HiveThemeProvider for theming:
  * - Layout: Root container with minHeight 100vh
- * - Header: Contains ScopeTabs for navigation
- * - Sider: Collapsible sidebar with FileNavigator and ThreadList
- * - Content: Main content area with DiffViewer/CodeViewer/MarkdownViewer
- * - Footer: ReviewSummary for submission
+ * - Header: Contains ScopeTabs for review-specific navigation
+ * - Main: HivePanel (sidebar + content area driven by HiveWorkspaceProvider)
+ * - Footer: ReviewSummary for submission (when in review mode)
  */
 import React from 'react';
 /**
