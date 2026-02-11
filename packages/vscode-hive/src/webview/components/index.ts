@@ -25,3 +25,5 @@ export type { InlineThreadProps } from './InlineThread';
 
 export { ThreadView } from './ThreadView';
 export type { ThreadViewProps } from './ThreadView';
+
+export { FeatureSidebar } from './FeatureSidebar';
