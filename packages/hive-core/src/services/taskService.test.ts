@@ -131,6 +131,77 @@ describe('TaskService', () => {
       ).toThrow(/not found/);
     });
 
+    it('stores blocker payload when status is blocked', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        startedAt: new Date().toISOString(),
+      });
+
+      const blocker = {
+        reason: 'Need clarification on API format',
+        options: ['Option A: REST', 'Option B: GraphQL'],
+        recommendation: 'Option A because it matches existing patterns',
+        context: 'The upstream service uses REST endpoints',
+      };
+
+      const result = service.update(featureName, '01-test-task', {
+        status: 'blocked',
+        summary: 'Blocked on API decision',
+        blocker,
+      });
+
+      expect(result.status).toBe('blocked');
+      expect(result.blocker).toEqual(blocker);
+      expect(result.blocker!.reason).toBe('Need clarification on API format');
+      expect(result.blocker!.options).toEqual([
+        'Option A: REST',
+        'Option B: GraphQL',
+      ]);
+      expect(result.blocker!.recommendation).toBe(
+        'Option A because it matches existing patterns',
+      );
+      expect(result.blocker!.context).toBe(
+        'The upstream service uses REST endpoints',
+      );
+
+      // Verify persisted to disk
+      const statusPath = path.join(
+        TEST_DIR,
+        '.hive',
+        'features',
+        featureName,
+        'tasks',
+        '01-test-task',
+        'status.json',
+      );
+      const persisted = JSON.parse(fs.readFileSync(statusPath, 'utf-8'));
+      expect(persisted.blocker).toEqual(blocker);
+    });
+
+    it('stores blocker with only required reason field', () => {
+      const featureName = 'test-feature';
+      setupFeature(featureName);
+      setupTask(featureName, '01-test-task', {
+        startedAt: new Date().toISOString(),
+      });
+
+      const blocker = {
+        reason: 'Missing dependency',
+      };
+
+      const result = service.update(featureName, '01-test-task', {
+        status: 'blocked',
+        blocker,
+      });
+
+      expect(result.status).toBe('blocked');
+      expect(result.blocker).toEqual(blocker);
+      expect(result.blocker!.options).toBeUndefined();
+      expect(result.blocker!.recommendation).toBeUndefined();
+      expect(result.blocker!.context).toBeUndefined();
+    });
+
     it('preserves existing fields on update', () => {
       const featureName = 'test-feature';
       setupFeature(featureName);

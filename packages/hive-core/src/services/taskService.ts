@@ -484,7 +484,12 @@ export class TaskService {
     updates: Partial<
       Pick<
         TaskStatus,
-        'status' | 'summary' | 'baseCommit' | 'commits' | 'changedFiles'
+        | 'status'
+        | 'summary'
+        | 'baseCommit'
+        | 'commits'
+        | 'changedFiles'
+        | 'blocker'
       >
     >,
     lockOptions?: LockOptions,

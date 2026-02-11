@@ -83,6 +83,13 @@ export interface TaskChangedFile {
   oldPath?: string;
 }
 
+export interface BlockerPayload {
+  reason: string;
+  context?: string;
+  options?: string[];
+  recommendation?: string;
+}
+
 export interface TaskStatus {
   /** Schema version for forward compatibility (default: 1) */
   schemaVersion?: number;
@@ -108,6 +115,8 @@ export interface TaskStatus {
   commits?: TaskCommit[];
   /** Changed files with per-file stats from the latest commit */
   changedFiles?: TaskChangedFile[];
+  /** Blocker details when task status is 'blocked' */
+  blocker?: BlockerPayload;
 }
 
 export interface PlanCommentReply {

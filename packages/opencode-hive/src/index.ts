@@ -1166,8 +1166,8 @@ Re-run with updated summary showing verification results.`;
             taskService.update(feature, task, {
               status: 'blocked',
               summary,
-              blocker: blocker as any,
-            } as any);
+              blocker: blocker,
+            });
 
             const worktree = await worktreeService.get(feature, task);
             return JSON.stringify(
