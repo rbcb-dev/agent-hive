@@ -180,6 +180,47 @@ export class PlanService {
     return newComment;
   }
 
+  resolveComment(featureName: string, commentId: string): void {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    comment.resolved = true;
+    writeJson(commentsPath, data);
+  }
+
+  addReply(
+    featureName: string,
+    commentId: string,
+    reply: Omit<PlanCommentReply, 'id' | 'timestamp'>,
+  ): PlanCommentReply {
+    const commentsPath = getCommentsPath(this.projectRoot, featureName);
+    const data = readJson<CommentsJson>(commentsPath) || { threads: [] };
+
+    const comment = data.threads.find((c) => c.id === commentId);
+    if (!comment) {
+      throw new Error(`Comment '${commentId}' not found`);
+    }
+
+    const newReply: PlanCommentReply = {
+      ...reply,
+      id: `reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (!comment.replies) {
+      comment.replies = [];
+    }
+    comment.replies.push(newReply);
+    writeJson(commentsPath, data);
+
+    return newReply;
+  }
+
   clearComments(featureName: string): void {
     const commentsPath = getCommentsPath(this.projectRoot, featureName);
     writeJson(commentsPath, { threads: [] });
