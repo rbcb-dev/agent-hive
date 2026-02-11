@@ -9,9 +9,15 @@ interface StoredReply {
   timestamp: string;
 }
 
+/** Range anchor matching hive-core's Range type. All lines are 0-based (VS Code native). */
+interface StoredRange {
+  start: { line: number; character: number };
+  end: { line: number; character: number };
+}
+
 interface StoredThread {
   id: string;
-  line: number;
+  range: StoredRange;
   body: string;
   author: 'human' | 'agent';
   timestamp: string;
@@ -21,13 +27,15 @@ interface StoredThread {
 
 /**
  * Old format stored by previous versions of PlanCommentController.
- * replies was string[], no author/timestamp fields.
+ * Used `line` (single number) instead of `range`, replies was string[],
+ * no author/timestamp fields.
  */
 interface LegacyStoredThread {
   id: string;
-  line: number;
+  line?: number;
+  range?: StoredRange;
   body: string;
-  replies?: string[];
+  replies?: (string | StoredReply)[];
   author?: string;
   timestamp?: string;
 }
@@ -61,6 +69,7 @@ export class PlanCommentController {
       '.hive/features/*/comments.json',
     );
     this.commentsWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+    this.commentsWatcher.onDidCreate((uri) => this.onCommentsFileChanged(uri));
     this.commentsWatcher.onDidChange((uri) => this.onCommentsFileChanged(uri));
     this.commentsWatcher.onDidDelete((uri) => this.onCommentsFileChanged(uri));
   }
@@ -242,7 +251,11 @@ export class PlanCommentController {
 
       for (const raw of data.threads) {
         const stored = this.migrateStoredThread(raw, commentsPath);
-        if (!raw.author || !raw.timestamp) {
+        if (
+          !raw.author ||
+          !raw.timestamp ||
+          ('line' in raw && !('range' in raw))
+        ) {
           needsMigration = true;
         }
 
@@ -262,7 +275,12 @@ export class PlanCommentController {
 
         const thread = this.controller.createCommentThread(
           uri,
-          new vscode.Range(stored.line, 0, stored.line, 0),
+          new vscode.Range(
+            stored.range.start.line,
+            stored.range.start.character,
+            stored.range.end.line,
+            stored.range.end.character,
+          ),
           comments,
         );
         thread.canReply = true;
@@ -281,8 +299,8 @@ export class PlanCommentController {
   }
 
   /**
-   * Migrate a thread from old format (string[] replies, no author/timestamp)
-   * to the current format (StoredReply[] replies, author + timestamp).
+   * Migrate a thread from old format (line-only, string[] replies, no author/timestamp)
+   * to the current format (Range-based, StoredReply[] replies, author + timestamp).
    */
   private migrateStoredThread(
     raw: StoredThread | LegacyStoredThread,
@@ -290,6 +308,19 @@ export class PlanCommentController {
   ): StoredThread {
     const timestamp = raw.timestamp || this.getFileMtime(commentsPath);
     const author = (raw.author as 'human' | 'agent') || 'human';
+
+    // Migrate line → range: if old `line` field exists but no `range`, convert
+    let range: StoredRange;
+    if (raw.range && typeof raw.range === 'object') {
+      range = raw.range;
+    } else {
+      const line =
+        'line' in raw && typeof raw.line === 'number' ? raw.line : 0;
+      range = {
+        start: { line, character: 0 },
+        end: { line, character: 0 },
+      };
+    }
 
     let replies: StoredReply[] | undefined;
     if (Array.isArray(raw.replies) && raw.replies.length > 0) {
@@ -308,7 +339,7 @@ export class PlanCommentController {
 
     return {
       id: raw.id,
-      line: raw.line,
+      range,
       body: raw.body,
       author,
       timestamp,
@@ -337,7 +368,19 @@ export class PlanCommentController {
       if (thread.comments.length === 0) return;
 
       const [first, ...rest] = thread.comments;
-      const line = thread.range?.start.line ?? 0;
+      const threadRange = thread.range;
+      const range: StoredRange = threadRange
+        ? {
+            start: {
+              line: threadRange.start.line,
+              character: threadRange.start.character,
+            },
+            end: {
+              line: threadRange.end.line,
+              character: threadRange.end.character,
+            },
+          }
+        : { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
       const getBodyText = (body: string | vscode.MarkdownString): string =>
         typeof body === 'string' ? body : body.value;
 
@@ -350,7 +393,7 @@ export class PlanCommentController {
 
       threads.push({
         id,
-        line,
+        range,
         body: getBodyText(first.body),
         author: 'human',
         timestamp: now,

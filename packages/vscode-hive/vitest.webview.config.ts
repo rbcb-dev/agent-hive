@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['src/webview/**/*.test.ts', 'src/webview/**/*.test.tsx', 'src/shared/**/*.test.ts'],
+    include: ['src/webview/**/*.test.ts', 'src/webview/**/*.test.tsx', 'src/shared/**/*.test.ts', 'src/__tests__/**/*.test.ts'],
     globals: true,
     setupFiles: ['./src/webview/__tests__/setup.ts'],
     testTimeout: 15000, // Increase timeout for antd component first-render overhead
@@ -44,6 +44,8 @@ export default defineConfig({
       'hive-core': resolve(__dirname, '../hive-core/src'),
       // Mock @vscode/codicons CSS import for tests
       '@vscode/codicons/dist/codicon.css': resolve(__dirname, 'src/webview/__tests__/__mocks__/codicon.css'),
+      // Mock vscode module for extension-side unit tests
+      vscode: resolve(__dirname, 'src/__tests__/__mocks__/vscode.ts'),
     },
   },
   // Ensure shiki can be properly resolved
