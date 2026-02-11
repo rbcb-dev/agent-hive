@@ -37,7 +37,15 @@ const SKIP_COMPONENT_PREFIXES = [
  * Individual stories to skip (for stories outside skipped components
  * that still cause issues in browser mode).
  */
-const SKIP_IN_VISUAL = new Set<string>([]);
+const SKIP_IN_VISUAL = new Set<string>([
+  // DiffViewer thread stories embed InlineThread sub-components which
+  // cause the same timeout issues as standalone InlineThread/ThreadPanel.
+  // They pass with --update (baseline capture) but timeout on verify runs.
+  // Tested functionally in storybook.spec.ts (jsdom) instead.
+  'components-diffviewer--with-threads',
+  'components-diffviewer--add-thread',
+  'components-diffviewer--resolve-thread',
+]);
 
 // Import story modules — runtime components (same as storybook.spec.ts)
 import * as ScopeTabsStories from '../components/ScopeTabs.stories';
@@ -50,6 +58,8 @@ import * as CodeViewerStories from '../components/CodeViewer.stories';
 import * as DiffViewerStories from '../components/DiffViewer.stories';
 import * as MarkdownViewerStories from '../components/MarkdownViewer.stories';
 import * as SuggestionPreviewStories from '../components/SuggestionPreview.stories';
+import * as CommitHistoryStories from '../components/CommitHistory.stories';
+import * as PlanReviewStories from '../components/PlanReview.stories';
 import * as AppStories from '../App.stories';
 // Import story modules — sidebar + integrated layout
 import * as FeatureSidebarStories from '../components/FeatureSidebar/FeatureSidebar.stories';
@@ -84,6 +94,8 @@ const storyModules = {
   DiffViewer: composeStories(DiffViewerStories),
   MarkdownViewer: composeStories(MarkdownViewerStories),
   SuggestionPreview: composeStories(SuggestionPreviewStories),
+  CommitHistory: composeStories(CommitHistoryStories),
+  PlanReview: composeStories(PlanReviewStories),
   App: composeStories(AppStories),
   // Sidebar + integrated layout
   FeatureSidebar: composeStories(FeatureSidebarStories),
