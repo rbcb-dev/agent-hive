@@ -74,6 +74,18 @@ export declare const SwitchingVerdicts: Story;
  */
 export declare const VerdictStatistics: Story;
 /**
+ * Accessibility check for ReviewSummary.
+ *
+ * Verifies:
+ * - Verdict buttons are discoverable via role queries
+ * - Summary textarea has a placeholder for screen readers
+ * - Submit button is present and accessible
+ * - Keyboard Tab moves through interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
+/**
  * Keyboard Submit - Tests Cmd/Ctrl+Enter keyboard shortcut
  * Verifies that pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) triggers submit
  */

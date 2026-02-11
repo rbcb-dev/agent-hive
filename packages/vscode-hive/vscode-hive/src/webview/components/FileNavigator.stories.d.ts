@@ -62,3 +62,14 @@ export declare const CommentBadgeInteraction: Story;
  * File icons - shows different icons for different file types
  */
 export declare const FileIcons: Story;
+/**
+ * Accessibility check for FileNavigator.
+ *
+ * Verifies:
+ * - File items are clickable and focusable
+ * - Folder toggle is keyboard accessible
+ * - File names are readable by screen readers
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;

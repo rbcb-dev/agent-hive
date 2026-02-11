@@ -69,6 +69,13 @@ export interface WorkerSession {
   messageCount?: number;
 }
 
+export interface BlockerPayload {
+  reason: string;
+  context?: string;
+  options?: string[];
+  recommendation?: string;
+}
+
 export interface TaskStatus {
   /** Schema version for forward compatibility (default: 1) */
   schemaVersion?: number;
@@ -90,6 +97,8 @@ export interface TaskStatus {
    * Resolved from plan.md dependency annotations during hive_tasks_sync.
    */
   dependsOn?: string[];
+  /** Blocker details when task status is 'blocked' */
+  blocker?: BlockerPayload;
 }
 
 export interface PlanComment {

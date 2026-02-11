@@ -135,6 +135,18 @@ export declare const ComplexDocument: Story;
  */
 export declare const CopyToClipboard: Story;
 /**
+ * Accessibility check for MarkdownViewer.
+ *
+ * Verifies:
+ * - Headings are accessible via role queries
+ * - Mode toggle buttons (Rendered/Raw) are accessible
+ * - Content text is visible for screen readers
+ * - Keyboard Tab navigates between interactive elements
+ *
+ * @tags a11y
+ */
+export declare const AccessibilityCheck: Story;
+/**
  * Demonstrates scrolling with maxHeight prop.
  * The content exceeds the container height, enabling vertical scrolling.
  */
