@@ -276,3 +276,104 @@ describe('useWorkspaceMessages', () => {
     expect(extensionMessages).toHaveLength(6);
   });
 });
+
+describe('useWorkspaceMessages — mounted integration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedHandler = null;
+  });
+
+  it('auto-requests features, dispatches response, and requests diffs on feature select', () => {
+    // Mount the hook with initial empty state
+    const { result } = renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper({ features: [] }) },
+    );
+
+    // Step 1: Verify requestFeatures sent on mount
+    expect(mockPostMessage).toHaveBeenCalledWith({ type: 'requestFeatures' });
+
+    // Step 2: Simulate extension sending featuresData back
+    expect(capturedHandler).toBeDefined();
+    act(() => {
+      capturedHandler!({
+        type: 'featuresData',
+        features: mockFeatures,
+      });
+    });
+    expect(result.current.state.features).toEqual(mockFeatures);
+
+    // Step 3: User selects a feature — should trigger requestFeatureDiffs
+    mockPostMessage.mockClear();
+    act(() => {
+      result.current.actions.selectFeature('feature-one');
+    });
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'requestFeatureDiffs',
+      feature: 'feature-one',
+    });
+
+    // Step 4: Simulate extension sending featureDiffs back
+    act(() => {
+      capturedHandler!({
+        type: 'featureDiffs',
+        feature: 'feature-one',
+        diffs: { 'task-a': [mockDiffPayload] },
+      });
+    });
+    expect(result.current.state.fileChanges).toEqual(
+      new Map([['task-a', [mockDiffPayload]]]),
+    );
+
+    // Step 5: User selects a task — should trigger requestTaskDiff
+    mockPostMessage.mockClear();
+    act(() => {
+      result.current.actions.selectTask('task-a');
+    });
+    expect(mockPostMessage).toHaveBeenCalledWith({
+      type: 'requestTaskDiff',
+      feature: 'feature-one',
+      task: 'task-a',
+    });
+  });
+
+  it('does not send requestFeatureDiffs when no feature is active', () => {
+    renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      { wrapper: createWrapper({ features: mockFeatures }) },
+    );
+
+    // Only requestFeatures should have been sent, not requestFeatureDiffs
+    expect(mockPostMessage).toHaveBeenCalledTimes(1);
+    expect(mockPostMessage).toHaveBeenCalledWith({ type: 'requestFeatures' });
+  });
+
+  it('does not send requestTaskDiff when no task is active', () => {
+    renderHook(
+      () => {
+        useWorkspaceMessages();
+        return useHiveWorkspace();
+      },
+      {
+        wrapper: createWrapper({
+          features: mockFeatures,
+          activeFeature: 'feature-one',
+        }),
+      },
+    );
+
+    // requestFeatures + requestFeatureDiffs (from activeFeature), but NOT requestTaskDiff
+    const calls = mockPostMessage.mock.calls.map(
+      (c: unknown[]) => (c[0] as { type: string }).type,
+    );
+    expect(calls).toContain('requestFeatures');
+    expect(calls).toContain('requestFeatureDiffs');
+    expect(calls).not.toContain('requestTaskDiff');
+  });
+});

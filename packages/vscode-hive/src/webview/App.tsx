@@ -29,7 +29,7 @@ import { ReviewSummary } from './components/ReviewSummary';
 import { DiffViewer } from './components/DiffViewer';
 import { CodeViewer } from './components/CodeViewer';
 import { MarkdownViewer } from './components/MarkdownViewer';
-import { useReviewSession, useFileContentCache } from './hooks';
+import { useReviewSession, useFileContentCache, useWorkspaceMessages } from './hooks';
 import { addMessageListener } from './vscodeApi';
 import type { ReviewThread, DiffFile } from 'hive-core';
 import type { ExtensionToWebviewMessage } from './types';
@@ -69,6 +69,22 @@ function extractContentFromDiff(file: DiffFile): string {
   }
 
   return lines.join('\n');
+}
+
+/**
+ * WorkspaceView — Workspace mode branch of the App
+ *
+ * Calls useWorkspaceMessages() to connect HiveWorkspaceProvider state
+ * to extension messaging (auto-requests features on mount, diffs on
+ * feature/task selection). Only mounted when no review session is active.
+ */
+function WorkspaceView({
+  style,
+}: {
+  style?: React.CSSProperties;
+}): React.ReactElement {
+  useWorkspaceMessages();
+  return <HivePanel style={style} />;
 }
 
 export function App(): React.ReactElement {
@@ -250,8 +266,8 @@ export function App(): React.ReactElement {
               </Layout>
             </Layout>
           ) : (
-            /* Workspace mode: HivePanel with sidebar navigation */
-            <HivePanel style={{ flex: 1 }} />
+            /* Workspace mode: HivePanel with sidebar navigation + messaging */
+            <WorkspaceView style={{ flex: 1 }} />
           )}
           <div
             style={{
