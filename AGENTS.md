@@ -92,6 +92,7 @@ Storybook testing uses **Vitest portable stories** (not `@storybook/test-runner`
 - **Image snapshots**: `vitest-image-snapshot` generates baseline PNGs in `packages/vscode-hive/__image_snapshots__/`; diff outputs (`__diff_output__/`) are gitignored
 - **NX pipeline**: `build-storybook` (`@nx/storybook:build`) → `test-storybook` (`@nx/vitest:test`) → `test-storybook-visual` (`@nx/vitest:test`) — chained via `dependsOn`
 - **File convention**: Storybook tests use `.spec.ts` extension to avoid collision with component tests (`.test.ts`)
+- **Workspace story caveats**: Complex workspace interaction stories (e.g., App + sidebar navigation) may be incompatible with jsdom portable-story runs. Skip those in functional tests and validate them in `test-storybook-visual` (Vitest browser mode with Playwright). Keep skip rationale explicit in spec files and tie it to browser-mode coverage.
 
 #### Visual Snapshot Testing
 
@@ -190,7 +191,36 @@ packages/
 │       ├── hooks/       # Event hooks
 │       └── skills/      # Skill definitions
 └── vscode-hive/         # VS Code extension
+    └── src/
+        ├── reviewPanel.ts           # Extension-side webview host + message handling
+        └── webview/
+            ├── App.tsx              # Root app component
+            ├── components/
+            │   ├── FeatureSidebar/  # Compound component (Navigator + ChangedFiles)
+            │   ├── DiffViewer.tsx   # Inline diff rendering
+            │   └── SuggestionPreview.tsx  # Suggestion display (composition-based)
+            ├── providers/
+            │   └── HiveWorkspaceProvider.tsx  # Shared workspace state (active feature/task/file)
+            ├── hooks/
+            │   ├── useHiveWorkspace.ts       # Workspace context consumer
+            │   └── useWorkspaceMessages.ts   # VS Code ↔ webview messaging
+            ├── primitives/          # Reusable UI primitives (Tree, FileIcon, Badge, etc.)
+            └── theme/               # VS Code theme integration
 ```
+
+### vscode-hive Webview UI Architecture
+
+The webview uses a **master-detail workspace pattern**:
+
+- **`FeatureSidebar`** is a compound component: `FeatureSidebar`, `FeatureSidebar.Navigator`, `FeatureSidebar.ChangedFiles`
+- Shared workspace state lives in **`HiveWorkspaceProvider`** (active feature/task/file + file changes)
+- Sidebar selection drives the detail panel view (feature → plan/context, task → task diffs)
+- **`ChangedFiles` behavior is context-dependent**:
+  - Feature/plan/context selection → aggregated feature-level file changes (all tasks)
+  - Task selection → task-scoped file changes only
+- Feature-level aggregation resolves duplicate file paths with last-write-wins semantics
+- Prefer existing primitives (`Tree`, `FileIcon`, etc.) over reimplementation
+- Render markdown and diffs **in-webview** — do not rely on native editor jumps for review UX
 
 ### Tests
 
@@ -198,6 +228,9 @@ packages/
 - Storybook test files use `.spec.ts` suffix (to keep Vitest configs separate)
 - Place tests next to source files or in `__tests__/` directories
 - Use descriptive test names
+- Include per-component `AccessibilityCheck` stories with explicit a11y assertions
+- Add integrated workspace stories for cross-component flows (e.g., App + sidebar navigation)
+- When a Storybook failure is pre-existing, document it in task context — do not mask it as a regression
 
 ## Commit Messages
 
