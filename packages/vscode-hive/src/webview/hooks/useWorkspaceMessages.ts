@@ -60,6 +60,18 @@ export function useWorkspaceMessages(): void {
               content: message.content,
             });
             break;
+          case 'reviewThreadsUpdate':
+            dispatch({
+              type: 'SET_REVIEW_THREADS',
+              threads: message.threads,
+            });
+            break;
+          case 'sessionUpdate':
+            dispatch({
+              type: 'SET_REVIEW_SESSION',
+              session: message.session,
+            });
+            break;
         }
       },
     );
